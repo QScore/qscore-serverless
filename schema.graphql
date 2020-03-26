@@ -1,4 +1,4 @@
-const schema = `type GeofenceEvent {
+type GeofenceEvent {
     id: ID!
     timestamp: String!
     eventType: GeofenceEventType!
@@ -52,6 +52,4 @@ type CreateUserEventPayload {
 
 type Query {
     getUserScore(userId: String!): Float!
-}`
-
-export { schema }
+}
