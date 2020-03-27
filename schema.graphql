@@ -22,15 +22,16 @@ type User {
 }
 
 schema {
-    mutation: RootMutation
+    mutation: Mutation
+    query: Query
 }
 
-type RootMutation {
+type Mutation {
     createGeofenceEvent(input: CreateGeofenceEventInput!): CreateGeofenceEventPayload
-    createUser(input CreateUserEventInput!): CreateUserEventPayload
+    createUser(input: CreateUserEventInput!): CreateUserEventPayload
 }
 
-input GeofenceEventInput {
+input CreateGeofenceEventInput {
     timestamp: String!
     eventType: GeofenceEventType!
     userLocationLat: String!
@@ -38,7 +39,7 @@ input GeofenceEventInput {
     userId: String!
 }
 
-type GeofenceEventPayload {
+type CreateGeofenceEventPayload {
     geofenceEvent: GeofenceEvent
 }
 

@@ -1,30 +1,4 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
-
 service: qscore
-# app and org for use with dashboard.serverless.com
-#app: your-app-name
-#org: your-org-name
-
-# You can pin your service to only deploy with a specific Serverless version
-# Check out our docs for more details
-# frameworkVersion: "=X.X.X"
-
-provider:
-  name: aws
-  runtime: nodejs12.x
-  stage: dev
-  region: us-east-1
 
 plugins:
   - serverless-appsync-plugin
@@ -32,7 +6,61 @@ plugins:
   - serverless-appsync-offline
   - serverless-offline
 
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/GeofenceEvents"
+
+functions:
+  graphql:
+    handler: handler.graphqlHandler
+    events:
+      - http:
+          path: query
+          method: get
+
 custom:
+  accountId: { Ref: AWS::AccountId }
+  appSync:
+    name: qscore
+    authenticationType: AMAZON_COGNITO_USER_POOLS
+    userPoolConfig:
+      awsRegion: us-east-1 # required # region
+      defaultAction: ALLOW
+      userPoolId: {Ref: CognitoUserPoolUsers}
+    mappingTemplates:
+      - dataSource: GeofenceEvents #name of dynamodb table
+        type: Mutation
+        field: createGeofenceEvent
+        request: "createGeofenceEvent-request.vtl"
+        response: "createGeofenceEvent-response.vtl"
+    dataSources:
+      - type: AMAZON_DYNAMODB
+        name: GeofenceEvents
+        description: 'Geofence Events table'
+        config:
+          tableName: 'GeofenceEvents'
+          iamRoleStatements:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+              Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/GeofenceEvents"
   appsync-offline:
     port: 62222
     dynamodb:
@@ -45,261 +73,51 @@ custom:
       inMemory: true
       migrate: true
       seed: false
-      # seed: true
-    # seed:
-    #   test:
-    #     sources:
-    #       - table: Users
-    #         sources: [seed-data/Users.json]	
-    #       - table: Tweets
-    #         sources: [seed-data/Tweets.json]
 
-  appSync:
-    name: qscore # defaults to api
-    authenticationType: AMAZON_COGNITO_USER_POOLS # API_KEY is also supported
-    userPoolConfig:
-      awsRegion: us-east-1 # required # region
-      defaultAction: ALLOW
-      userPoolId: {Ref: CognitoUserPoolUsers}
-    # region: # defaults to provider region
-    # mappingTemplatesLocation: # defaults to mapping-templates
-    mappingTemplates:
-      - dataSource: Users
-        type: Query
-        field: getUserInfo
-        request: "getUserInfo-request-mapping-template.txt"
-        response: "getUserInfo-response-mapping-template.txt"
-      - dataSource: Users
-        type: Query
-        field: meInfo
-        request: "meInfo-request-mapping-template.txt"
-        response: "meInfo-response-mapping-template.txt"
-      - dataSource: Tweets
-        type: User
-        field: topTweet
-        request: "topTweet-request-mapping-template.txt"
-        response: "topTweet-response-mapping-template.txt"
-      - dataSource: Tweets
-        type: User
-        field: tweets
-        request: "tweets-request-mapping-template.txt"
-        response: "tweets-response-mapping-template.txt"
-      - dataSource: Tweets
-        type: Mutation
-        field: createTweet
-        request: "createTweet-request-mapping-template.txt"
-        response: "createTweet-response-mapping-template.txt"
-      - dataSource: Tweets
-        type: Mutation
-        field: deleteTweet
-        request: "deleteTweet-request-mapping-template.txt"
-        response: "deleteTweet-response-mapping-template.txt"
-      - dataSource: Tweets
-        type: Mutation
-        field: reTweet
-        request: "reTweet-request-mapping-template.txt"
-        response: "reTweet-response-mapping-template.txt"
-      - dataSource: Tweets
-        type: Mutation
-        field: updateTweet
-        request: "updateTweet-request-mapping-template.txt"
-        response: "updateTweet-response-mapping-template.txt"
-      - dataSource: Users
-        type: Mutation
-        field: updateUserInfo
-        request: "updateUserInfo-request-mapping-template.txt"
-        response: "updateUserInfo-response-mapping-template.txt"
-    # schema: # defaults schema.graphql
-    #serviceRole: # if not provided, a default role is generated
-    dataSources:
-      - type: AMAZON_DYNAMODB
-        name: Users
-        description: 'Users table'
-        config:
-          tableName: 'Users'
-          iamRoleStatements: # custom IAM Role statements for this DataSource. Ignored if `serviceRoleArn` is present. Auto-generated if both `serviceRoleArn` and `iamRoleStatements` are omitted
-            - Effect: "Allow"
-              Action:
-                - "dynamodb:Query"
-                - "dynamodb:UpdateItem"
-              Resource:
-                - "arn:aws:dynamodb:${self:provider.region}:*:table/Users"
-                - "arn:aws:dynamodb:${self:provider.region}:*:table/Users/*"
-      - type: AMAZON_DYNAMODB
-        name: Tweets
-        description: 'Tweets table'
-        config:
-          tableName: 'Tweets'
-          iamRoleStatements: # custom IAM Role statements for this DataSource. Ignored if `serviceRoleArn` is present. Auto-generated if both `serviceRoleArn` and `iamRoleStatements` are omitted
-            - Effect: "Allow"
-              Action:
-                - "dynamodb:Query"
-                - "dynamodb:UpdateItem"
-                - "dynamodb:PutItem"
-                - "dynamodb:DeleteItem"
-              Resource:
-                - "arn:aws:dynamodb:${self:provider.region}:*:table/Tweets"
-                - "arn:aws:dynamodb:${self:provider.region}:*:table/Tweets/*"
-# you can overwrite defaults here
-#  stage: dev
-#  region: us-east-1
-
-# you can add statements to the Lambda function's IAM Role here
-#  iamRoleStatements:
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:ListBucket"
-#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:PutObject"
-#      Resource:
-#        Fn::Join:
-#          - ""
-#          - - "arn:aws:s3:::"
-#            - "Ref" : "ServerlessDeploymentBucket"
-#            - "/*"
-
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
-
-# you can add packaging information here
-#package:
-#  include:
-#    - include-me.js
-#    - include-me-dir/**
-#  exclude:
-#    - exclude-me.js
-#    - exclude-me-dir/**
-
-functions:
-  graphql:
-    handler: handler.graphqlHandler
-    events:
-    - http:
-        path: graphql
-        method: post
-        cors: true
-    - http:
-        path: graphql
-        method: get
-        cors: true
-
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
-#    events:
-#      - http:
-#          path: users/create
-#          method: get
-#      - websocket: $connect
-#      - s3: ${env:BUCKET}
-#      - schedule: rate(10 minutes)
-#      - sns: greeter-topic
-#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-#      - alexaSkill: amzn1.ask.skill.xx-xx-xx-xx
-#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
-#      - iot:
-#          sql: "SELECT * FROM 'some_topic'"
-#      - cloudwatchEvent:
-#          event:
-#            source:
-#              - "aws.ec2"
-#            detail-type:
-#              - "EC2 Instance State-change Notification"
-#            detail:
-#              state:
-#                - pending
-#      - cloudwatchLog: '/aws/lambda/hello'
-#      - cognitoUserPool:
-#          pool: MyUserPool
-#          trigger: PreSignUp
-#      - alb:
-#          listenerArn: arn:aws:elasticloadbalancing:us-east-1:XXXXXX:listener/app/my-load-balancer/50dc6c495c0c9188/
-#          priority: 1
-#          conditions:
-#            host: example.com
-#            path: /hello
-
-#    Define function environment variables here
-#    environment:
-#      variable2: value2
-
-# you can add CloudFormation resource templates here
 resources:
   Resources:
     GeofenceEventsTable:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: GeofenceEvents
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-          # - AttributeName: timestamp
-          #   AttributeType: S
-          # - AttributeName: eventType
-          #   AttributeType: S
-          # - AttributeName: lat
-          #   AttributeType: S
-          # - AttributeName: lng
-          #   AttributeType: S
-          # - AttributeName: userId
-          #   AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
         ProvisionedThroughput:
           ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-    UserTable:
-      Type: AWS::DynamoDB::Table
+          WriteCapacityUnits: 1 
+        GlobalSecondaryIndexes:
+          - IndexName: time-index
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+    CognitoUserPoolUsers:
+      Type: AWS::Cognito::UserPool
+      DeletionPolicy: Retain
       Properties:
-        TableName: Users
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-          # - AttributeName: username
-          #   AttributeType: S
-        KeySchema:
-          - AttributeName: id
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1          
-        # GlobalSecondaryIndexes:
-        #   - IndexName: top-index
-        #     KeySchema:
-        #       - AttributeName: handle
-        #         KeyType: HASH
-        #       - AttributeName: retweet_count
-        #         KeyType: RANGE
-        #     Projection:
-        #       ProjectionType: ALL
-        #     ProvisionedThroughput:
-        #       ReadCapacityUnits: 50
-        #       WriteCapacityUnits: 50
-        #   - IndexName: tweet-index
-        #     KeySchema:
-        #       - AttributeName: handle
-        #         KeyType: HASH
-        #       - AttributeName: created_at
-        #         KeyType: RANGE
-        #     Projection:
-        #       ProjectionType: ALL
-        #     ProvisionedThroughput:
-        #       ReadCapacityUnits: 50
-        #       WriteCapacityUnits: 50
-        
-
-
-
-#  Resources:
-#    NewResource:
-#      Type: AWS::S3::Bucket
-#      Properties:
-#        BucketName: my-new-bucket
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"
+        UserPoolName: QScoreUserPool
+        AutoVerifiedAttributes:
+          - email
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: false
+            RequireUppercase: true
+        UsernameAttributes:
+          - email
