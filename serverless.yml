@@ -1,10 +1,13 @@
 service: qscore
 
 plugins:
-  - serverless-appsync-plugin
   - serverless-dynamodb-local
-  - serverless-appsync-offline
   - serverless-offline
+  - serverless-bundle
+  # - serverless-dotenv-plugin
+
+package:
+  individually: true
 
 provider:
   name: aws
@@ -14,72 +17,54 @@ provider:
   iamRoleStatements:
     - Effect: Allow
       Action:
+        - dynamodb:DescribeTable
         - dynamodb:Query
         - dynamodb:Scan
         - dynamodb:GetItem
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/GeofenceEvents"
+        - dynamodb:GetRecords
+        - dynamodb:GetShardIterator
+        - dynamodb:DescribeStream
+        - dynamodb:ListStreams
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:*"
+  environment:
+    GEOFENCE_EVENTS_TABLE_NAME: ${self:custom.geofenceEventsTableName}
 
 functions:
   graphql:
     handler: handler.graphqlHandler
     events:
-      - http:
-          path: query
-          method: get
+    - http:
+        path: graphql
+        method: post
+        cors: true
+    - http:
+        path: graphql
+        method: get
+        cors: true
 
 custom:
   accountId: { Ref: AWS::AccountId }
-  appSync:
-    name: qscore
-    authenticationType: AMAZON_COGNITO_USER_POOLS
-    userPoolConfig:
-      awsRegion: us-east-1 # required # region
-      defaultAction: ALLOW
-      userPoolId: {Ref: CognitoUserPoolUsers}
-    mappingTemplates:
-      - dataSource: GeofenceEvents #name of dynamodb table
-        type: Mutation
-        field: createGeofenceEvent
-        request: "createGeofenceEvent-request.vtl"
-        response: "createGeofenceEvent-response.vtl"
-    dataSources:
-      - type: AMAZON_DYNAMODB
-        name: GeofenceEvents
-        description: 'Geofence Events table'
-        config:
-          tableName: 'GeofenceEvents'
-          iamRoleStatements:
-            - Effect: Allow
-              Action:
-                - dynamodb:Query
-                - dynamodb:Scan
-                - dynamodb:GetItem
-                - dynamodb:PutItem
-                - dynamodb:UpdateItem
-                - dynamodb:DeleteItem
-              Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/GeofenceEvents"
-  appsync-offline:
-    port: 62222
-    dynamodb:
-      client:
-        endpoint: "http://localhost:8000"
-        region: localhost
   dynamodb:
     start:
       port: 8000
       inMemory: true
       migrate: true
       seed: false
+    stages:
+      - dev
+  webpackIncludeModules: true
+  stage: ${opt:stage, self:provider.stage}
+  geofenceEventsTableName: ${self:custom.stage}-GeofenceEvents
 
 resources:
   Resources:
     GeofenceEventsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: GeofenceEvents
+        TableName: ${self:custom.geofenceEventsTableName}
         KeySchema:
           - AttributeName: id
             KeyType: HASH
