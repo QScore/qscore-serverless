@@ -100,7 +100,7 @@ resources:
               ReadCapacityUnits: 1
               WriteCapacityUnits: 1
 
-    CognitoUserPoolUsers:
+    CognitoUserPool:
       Type: AWS::Cognito::UserPool
       DeletionPolicy: Retain
       Properties:
@@ -114,8 +114,17 @@ resources:
             RequireNumbers: true
             RequireSymbols: false
             RequireUppercase: true
-        UsernameAttributes:
-          - email
+
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        # Generate an app client name based on the stage
+        ClientName: ${self:custom.stage}-user-pool-client
+        UserPoolId:
+          Ref: CognitoUserPool
+        ExplicitAuthFlows:
+          - ADMIN_NO_SRP_AUTH
+        GenerateSecret: false
 
     ApiGatewayAuthorizer:
       DependsOn:
@@ -128,4 +137,4 @@ resources:
           Ref: ApiGatewayRestApi
         Type: COGNITO_USER_POOLS
         ProviderARNs:
-          - Fn::GetAtt: [CognitoUserPoolUsers, Arn]
+          - Fn::GetAtt: [CognitoUserPool, Arn]
