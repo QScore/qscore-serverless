@@ -28,7 +28,7 @@ provider:
         - dynamodb:GetShardIterator
         - dynamodb:DescribeStream
         - dynamodb:ListStreams
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:*"
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:*" 
   environment:
     GEOFENCE_EVENTS_TABLE_NAME: ${self:custom.geofenceEventsTableName}
 
@@ -40,10 +40,19 @@ functions:
         path: graphql
         method: post
         cors: true
+        authorizer:
+          type: COGNITO_USER_POOLS
+          authorizerId:
+            Ref: ApiGatewayAuthorizer
     - http:
         path: graphql
         method: get
         cors: true
+        authorizer:
+          type: COGNITO_USER_POOLS
+          authorizerId:
+            Ref: ApiGatewayAuthorizer
+
 
 custom:
   accountId: { Ref: AWS::AccountId }
@@ -90,6 +99,7 @@ resources:
             ProvisionedThroughput:
               ReadCapacityUnits: 1
               WriteCapacityUnits: 1
+
     CognitoUserPoolUsers:
       Type: AWS::Cognito::UserPool
       DeletionPolicy: Retain
@@ -106,3 +116,16 @@ resources:
             RequireUppercase: true
         UsernameAttributes:
           - email
+
+    ApiGatewayAuthorizer:
+      DependsOn:
+        - ApiGatewayRestApi
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        Name: cognito-authorizer
+        IdentitySource: method.request.header.Authorization
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        Type: COGNITO_USER_POOLS
+        ProviderARNs:
+          - Fn::GetAtt: [CognitoUserPoolUsers, Arn]
