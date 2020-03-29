@@ -1,27 +1,26 @@
-import { ApolloServer, gql } from "apollo-server-lambda";
-import { schema } from "./schema";
-import resolvers from "./resolvers";
+import { ApolloServer } from 'apollo-server-lambda';
+import { makeExecutableSchema } from 'graphql-tools';
+import { merge } from 'lodash';
+import { typeDef as geofenceEventTypeDef, resolvers as geofenceEventResolvers} from './data/types/geofenceEvent.js';
+
+// Resolvers
+const schema = makeExecutableSchema({
+  typeDefs: [geofenceEventTypeDef],
+  resolvers: merge(geofenceEventResolvers)
+});
 
 const server = new ApolloServer({
-  typeDefs: schema,
-  resolvers: resolvers,
-  formatError: error => {
-    return error;
-  },
-  formatResponse: response => {
-    return response;
-  },
+  schema,
   context: ({ event, context }) => ({
     headers: event.headers,
     functionName: context.functionName,
     event,
     context
-  }),
-  tracing: true,
-  playground: true
-});
+  })
+})
 
 exports.graphqlHandler = (event, context, callback) => {
+  console.log(`>>RUNNING`)
   const handler = server.createHandler({
     cors: {
       origin: "*",
@@ -31,4 +30,13 @@ exports.graphqlHandler = (event, context, callback) => {
     }
   });
   return handler(event, context, callback);
+}
+
+exports.record = (event, context, callback) => {
+  event.Records.forEach((record) => {
+    console.log(record.eventID);
+    console.log(record.eventName);
+    console.log('DynamoDB Record: %j', record.dynamodb);
+  });
+  callback(null, `Successfully processed ${event.Records.length} records.`);
 }

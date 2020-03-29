@@ -32,11 +32,9 @@ type Mutation {
 }
 
 input CreateGeofenceEventInput {
-    timestamp: String!
     eventType: GeofenceEventType!
     userLocationLat: String!
     userLocationLng: String!
-    userId: String!
 }
 
 type CreateGeofenceEventPayload {
