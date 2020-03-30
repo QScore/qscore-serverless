@@ -31,6 +31,8 @@ provider:
       Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:*" 
   environment:
     GEOFENCE_EVENTS_TABLE_NAME: ${self:custom.geofenceEventsTableName}
+    COGNITO_USER_POOL_ID: us-east-1_Z0sSzTcff
+    COGNITO_APP_CLIENT_ID: 6jmg79u9ce6k05c1f7vp3cdvah
 
 functions:
   graphql:
@@ -52,7 +54,12 @@ functions:
           type: COGNITO_USER_POOLS
           authorizerId:
             Ref: ApiGatewayAuthorizer
-
+  facebookLogin:
+    handler: facebookHandler.facebookLoginHandler
+    events:
+    - http:
+        path: facebookLogin
+        method: post
 
 custom:
   accountId: { Ref: AWS::AccountId }
@@ -115,10 +122,17 @@ resources:
             RequireSymbols: false
             RequireUppercase: true
 
+    CognitoUserPoolGroupFacebook:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties: 
+        Description: "Facebook users"
+        GroupName: "Facebook"
+        UserPoolId:
+          Ref: CognitoUserPool
+
     CognitoUserPoolClient:
       Type: AWS::Cognito::UserPoolClient
       Properties:
-        # Generate an app client name based on the stage
         ClientName: ${self:custom.stage}-user-pool-client
         UserPoolId:
           Ref: CognitoUserPool
@@ -132,7 +146,7 @@ resources:
       Type: AWS::ApiGateway::Authorizer
       Properties:
         Name: cognito-authorizer
-        IdentitySource: method.request.header.Authorization
+        IdentitySource: Authorization
         RestApiId:
           Ref: ApiGatewayRestApi
         Type: COGNITO_USER_POOLS
