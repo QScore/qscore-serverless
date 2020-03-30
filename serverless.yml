@@ -31,8 +31,8 @@ provider:
       Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:*" 
   environment:
     GEOFENCE_EVENTS_TABLE_NAME: ${self:custom.geofenceEventsTableName}
-    COGNITO_USER_POOL_ID: us-east-1_Z0sSzTcff
-    COGNITO_APP_CLIENT_ID: 6jmg79u9ce6k05c1f7vp3cdvah
+    COGNITO_USER_POOL_ID: us-east-1_fgU3VeHPf
+    COGNITO_APP_CLIENT_ID: 211t02fip0bj2qqrqod8orkcnl
 
 functions:
   graphql:
@@ -112,6 +112,8 @@ resources:
       DeletionPolicy: Retain
       Properties:
         UserPoolName: QScoreUserPool
+        UsernameAttributes:
+          - email
         AutoVerifiedAttributes:
           - email
         Policies:
@@ -146,7 +148,7 @@ resources:
       Type: AWS::ApiGateway::Authorizer
       Properties:
         Name: cognito-authorizer
-        IdentitySource: Authorization
+        IdentitySource: method.request.header.Authorization
         RestApiId:
           Ref: ApiGatewayRestApi
         Type: COGNITO_USER_POOLS
