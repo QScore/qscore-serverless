@@ -29,6 +29,13 @@ provider:
         - dynamodb:DescribeStream
         - dynamodb:ListStreams
       Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:*" 
+    - Effect: Allow
+      Action:
+        - cognito-idp:adminGetUser
+        - cognito-idp:adminCreateUser
+        - cognito-idp:adminAddUserToGroup
+        - cognito-idp:adminSetUserPassword
+      Resource: "arn:aws:cognito-idp:${opt:region, self:provider.region}:*:*"
   environment:
     GEOFENCE_EVENTS_TABLE_NAME: ${self:custom.geofenceEventsTableName}
     COGNITO_USER_POOL_ID: us-east-1_fgU3VeHPf
