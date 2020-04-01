@@ -1,7 +1,6 @@
 import { gql } from 'apollo-server-lambda'
 import uuid from 'uuid/v1'
 import dynamodb from 'serverless-dynamodb-client';
-import { ForbiddenError } from 'apollo-server-lambda'
 const client = dynamodb.doc
 
 export const typeDef = gql`
@@ -50,7 +49,6 @@ type Query {
 export const resolvers = {
     Mutation: {
         createGeofenceEvent: async (parent, args, context, info) => {
-            validateAuth(context)
             const params = {
                 TableName: process.env.GEOFENCE_EVENTS_TABLE_NAME,
                 Item: {
@@ -59,7 +57,7 @@ export const resolvers = {
                     eventType: args.input.eventType,
                     userLocationLat: args.input.userLocationLat,
                     userLocationLng: args.input.userLocationLng,
-                    userId: context.event.requestContext.identity.cognitoIdentityId
+                    userId: context.event.requestContext.authorizer.userId
                 }
             }
             await client.put(params).promise()
@@ -76,17 +74,5 @@ export const resolvers = {
                 }
             }
         }
-    }
-}
-
-function validateAuth(context) {
-    // console.log(">>AUTH: identity" + JSON.stringify(context.event.requestContext.identity))
-    try {
-        const cognitoId = context.event.requestContext.identity.cognitoIdentityId
-        if (!cognitoId) {
-            throw new ForbiddenError("Cognito identity not found")
-        }
-    } catch (error) {
-        throw new ForbiddenError("Unable to validate auth, cognito id is empty")
     }
 }

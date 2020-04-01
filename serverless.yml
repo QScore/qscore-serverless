@@ -4,7 +4,6 @@ plugins:
   - serverless-dynamodb-local
   - serverless-offline
   - serverless-bundle
-  # - serverless-dotenv-plugin
 
 package:
   individually: true
@@ -38,8 +37,7 @@ provider:
       Resource: "arn:aws:cognito-idp:${opt:region, self:provider.region}:*:*"
   environment:
     GEOFENCE_EVENTS_TABLE_NAME: ${self:custom.geofenceEventsTableName}
-    COGNITO_USER_POOL_ID: us-east-1_fgU3VeHPf
-    COGNITO_APP_CLIENT_ID: 211t02fip0bj2qqrqod8orkcnl
+    FIREBASE_DATABASE_URL: ${self:custom.secrets.FIREBASE_DATABASE_URL}
 
 functions:
   graphql:
@@ -50,25 +48,20 @@ functions:
         method: post
         cors: true
         authorizer:
-          type: COGNITO_USER_POOLS
-          authorizerId:
-            Ref: ApiGatewayAuthorizer
+          name: firebaseAuthorizer
     - http:
         path: graphql
         method: get
         cors: true
         authorizer:
-          type: COGNITO_USER_POOLS
-          authorizerId:
-            Ref: ApiGatewayAuthorizer
-  facebookLogin:
-    handler: facebookHandler.facebookLoginHandler
-    events:
-    - http:
-        path: facebookLogin
-        method: post
+          name: firebaseAuthorizer
+        
+  firebaseAuthorizer:
+    handler: auth/firebaseAuthorizer.handler
+    cors: true
 
 custom:
+  secrets: ${file(environment.json)}
   accountId: { Ref: AWS::AccountId }
   dynamodb:
     start:
@@ -113,51 +106,3 @@ resources:
             ProvisionedThroughput:
               ReadCapacityUnits: 1
               WriteCapacityUnits: 1
-
-    CognitoUserPool:
-      Type: AWS::Cognito::UserPool
-      DeletionPolicy: Retain
-      Properties:
-        UserPoolName: QScoreUserPool
-        UsernameAttributes:
-          - email
-        AutoVerifiedAttributes:
-          - email
-        Policies:
-          PasswordPolicy:
-            MinimumLength: 8
-            RequireLowercase: true
-            RequireNumbers: true
-            RequireSymbols: false
-            RequireUppercase: true
-
-    CognitoUserPoolGroupFacebook:
-      Type: AWS::Cognito::UserPoolGroup
-      Properties: 
-        Description: "Facebook users"
-        GroupName: "Facebook"
-        UserPoolId:
-          Ref: CognitoUserPool
-
-    CognitoUserPoolClient:
-      Type: AWS::Cognito::UserPoolClient
-      Properties:
-        ClientName: ${self:custom.stage}-user-pool-client
-        UserPoolId:
-          Ref: CognitoUserPool
-        ExplicitAuthFlows:
-          - ADMIN_NO_SRP_AUTH
-        GenerateSecret: false
-
-    ApiGatewayAuthorizer:
-      DependsOn:
-        - ApiGatewayRestApi
-      Type: AWS::ApiGateway::Authorizer
-      Properties:
-        Name: cognito-authorizer
-        IdentitySource: method.request.header.Authorization
-        RestApiId:
-          Ref: ApiGatewayRestApi
-        Type: COGNITO_USER_POOLS
-        ProviderARNs:
-          - Fn::GetAtt: [CognitoUserPool, Arn]
