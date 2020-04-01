@@ -105,3 +105,7 @@ dist
 
 #webpack
 .webpack
+
+#secrets
+./environment.json
+./auth/serviceAccountKey.json
