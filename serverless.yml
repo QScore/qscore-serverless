@@ -37,6 +37,7 @@ provider:
       Resource: "arn:aws:cognito-idp:${opt:region, self:provider.region}:*:*"
   environment:
     GEOFENCE_EVENTS_TABLE_NAME: ${self:custom.geofenceEventsTableName}
+    USERS_TABLE_NAME: ${self:custom.usersTableName}
     FIREBASE_DATABASE_URL: ${self:custom.secrets.FIREBASE_DATABASE_URL}
 
 functions:
@@ -53,12 +54,20 @@ functions:
         path: graphql
         method: get
         cors: true
-        authorizer:
-          name: firebaseAuthorizer
         
   firebaseAuthorizer:
     handler: auth/firebaseAuthorizer.handler
     cors: true
+
+  updateScore:
+    handler: score/updateScore.handler
+    events:
+    - stream:
+        type: dynamodb
+        arn:
+          Fn::GetAtt:
+            - GeofenceEventsTable
+            - StreamArn
 
 custom:
   secrets: ${file(environment.json)}
@@ -74,6 +83,7 @@ custom:
   webpackIncludeModules: true
   stage: ${opt:stage, self:provider.stage}
   geofenceEventsTableName: ${self:custom.stage}-GeofenceEvents
+  usersTableName: ${self:custom.stage}-UsersTable
 
 resources:
   Resources:
@@ -81,6 +91,8 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:custom.geofenceEventsTableName}
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
         KeySchema:
           - AttributeName: id
             KeyType: HASH
@@ -106,3 +118,16 @@ resources:
             ProvisionedThroughput:
               ReadCapacityUnits: 1
               WriteCapacityUnits: 1
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.usersTableName}
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
