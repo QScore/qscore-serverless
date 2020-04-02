@@ -49,6 +49,7 @@ type Query {
 export const resolvers = {
     Mutation: {
         createGeofenceEvent: async (parent, args, context, info) => {
+            console.log(JSON.stringify(context.event.requestContext))
             const params = {
                 TableName: process.env.GEOFENCE_EVENTS_TABLE_NAME,
                 Item: {

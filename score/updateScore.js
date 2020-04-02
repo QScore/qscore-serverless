@@ -1,7 +1,6 @@
-'use strict'
 const AWS = require("aws-sdk")
-const userTableName = 'User-loivngaec5garnxoi5qb3sh6py-develop'
-const eventsTableName = 'Event-loivngaec5garnxoi5qb3sh6py-develop'
+const userTableName = process.env.USERS_TABLE_NAME
+const eventsTableName = process.env.GEOFENCE_EVENTS_TABLE_NAME
 const documentClient = new AWS.DynamoDB.DocumentClient()
 const oneDayMillis = (24 * 60 * 60 * 1000)
 const yesterdayMillis = new Date().getTime() - oneDayMillis
@@ -12,7 +11,7 @@ exports.handler = async (event) => {
         .map(record => record.dynamodb.NewImage)
 
     for (const newEvent of newEvents) {
-        const userId = newEvent.userSub.S
+        const userId = newEvent.userId.S
         const eventsResult = await getAllEvents(userId)
         const events = eventsResult.Items.map(event => {
             let output = {
@@ -46,14 +45,14 @@ exports.handler = async (event) => {
             return event.timestamp >= yesterdayMillis
         })
 
-        //Handle error case where no events in last 24 hours.  We update every event so this 
+        //Handle error case where no events in last 24 hours.  We update every event so this
         //should not happen
         if (last24HoursEvents.length == 0) {
             console.log("No events in the last 24 hours, this should never happen")
             return
         }
 
-        //Handle edge case where first event in last 24 hours is away.  
+        //Handle edge case where first event in last 24 hours is away.
         //That means user was home for part of the beginning of 24 hr period.
         //We can assume a fake home event 24 hours ago if they were away
         if (last24HoursEvents && last24HoursEvents[0].atHome == "away") {
@@ -104,13 +103,13 @@ async function getAllEvents(userId) {
     // Query and build score
     const eventParams = {
         TableName: eventsTableName,
-        IndexName: "UserEvents",
-        KeyConditionExpression: '#userSub = :userSub',
+        IndexName: "time-index",
+        KeyConditionExpression: '#userId = :userId',
         ExpressionAttributeValues: {
-            ':userSub': userId
+            ':userId': userId
         },
         ExpressionAttributeNames: {
-            '#userSub': "userSub"
+            '#userId': "userId"
         }
     }
 
