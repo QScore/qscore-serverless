@@ -14,8 +14,6 @@ const initializeSdk = function () {
 // Helper funtion for generating the response API Gateway requires to handle the token verification
 const generateIamPolicy = (effect, resource, data) => {
     // Map values into context object passed into Lambda function, if data is present
-    console.log(">>DATA: " + JSON.stringify(data))
-
     const authResponse = {
         principalId: data ? data.user_id : 'unavailable',
         policyDocument: {
@@ -35,19 +33,15 @@ const generateIamPolicy = (effect, resource, data) => {
             picture: data.picture
         }
     }
-    console.log(">> Authresponse: " + JSON.stringify(authResponse))
-
     return authResponse;
 }
 
-console.log(">>Starting up")
 export const handler = async (event, context) => {
     try {
-        console.log(">>inside exports")
         // Return from function if no authorizationToken present in header
         // context.fail('Unauthorized') will trigger API Gateway to return 401 response
         if (!event.authorizationToken) {
-            console.log(">> missing token")
+            console.log("Missing token")
             return context.fail('Unauthorized');
         }
 
@@ -57,24 +51,23 @@ export const handler = async (event, context) => {
 
         // Return from function if authorization header is not formatted properly
         if (!(tokenParts[0].toLowerCase() === 'bearer' && tokenValue)) {
-            console.log(">> header not formatted properly")
+            console.log("Header not formatted properly")
             return context.fail('Unauthorized');
         }
 
         // Prepare for validating Firebase JWT token by initializing SDK
         initializeSdk();
-        console.log(">> initialized sdk")
 
         // Call the firebase-admin provided token verification function with
         // the token provided by the client
         // Generate Allow on successful validation, otherwise catch the error and Deny the request
         let resp = await admin.auth().verifyIdToken(tokenValue);
 
-        console.log(">> FIREBASE authorization response: " + JSON.stringify(resp))
+        console.log("Allowing request")
         return generateIamPolicy('Allow', event.methodArn, resp);
 
     } catch (err) {
-        console.log(">> error validating: " + err)
+        console.log("Error validating: " + err)
         return generateIamPolicy('Deny', event.methodArn, null);
     }
 }

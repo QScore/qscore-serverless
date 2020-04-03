@@ -27,19 +27,20 @@ type UpdateUserInfoPayload {
     username: String!
 }
 
+type CurrentUserPayload {
+    user: User!
+}
+
 type Query {
-    currentUser: User!
+    currentUser: CurrentUserPayload!
 }
 `
 
 export const resolvers = {
     Mutation: {
         updateUserInfo: async (parent, args, context, info) => {
-            console.log(JSON.stringify(context.event.requestContext))
-
             const id = context.event.requestContext.authorizer.userId
             const username = args.input.username
-
             const params = {
                 TableName: process.env.USERS_TABLE_NAME,
                 Key: { id: id },
@@ -56,6 +57,24 @@ export const resolvers = {
             return {
                 "id": id,
                 "username": username
+            }
+        }
+    },
+
+    Query: {
+        currentUser: async (parent, args, context, info) => {
+            const id = context.event.requestContext.authorizer.userId
+            const params = {
+                TableName: process.env.USERS_TABLE_NAME,
+                Key: { id: id }
+            }
+            const result = await client.get(params).promise()
+            return {
+                "user": {
+                    "id": result.Item.id,
+                    "username": result.Item.username || "",
+                    "score": result.Item.score || 100
+                }
             }
         }
     }
