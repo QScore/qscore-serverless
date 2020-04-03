@@ -42,7 +42,7 @@ type CreateGeofenceEventPayload {
 }
 
 type Query {
-    test: String   
+    test: String
 }
 `
 
