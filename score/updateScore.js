@@ -4,6 +4,7 @@ const eventsTableName = process.env.GEOFENCE_EVENTS_TABLE_NAME
 const documentClient = new AWS.DynamoDB.DocumentClient()
 const oneDayMillis = (24 * 60 * 60 * 1000)
 const yesterdayMillis = new Date().getTime() - oneDayMillis
+const debug = false
 
 exports.handler = async (event) => {
     const newEvents = event.Records
@@ -16,11 +17,11 @@ exports.handler = async (event) => {
         const events = eventsResult.Items.map(event => {
             let output = {
                 "timestamp": event.timestamp,
-                "atHome": event.atHome
+                "atHome": event.eventType
             }
             return output
         })
-        console.log("Queried all events: " + JSON.stringify(events.length))
+        if (debug) console.log("Queried all events: " + JSON.stringify(events.length))
 
         //Handler case where there are no events for this user, this should never happen
         if (events.length == 0) {
@@ -30,8 +31,16 @@ exports.handler = async (event) => {
         //Filter out duplicate atHome status events
         const filteredEvents = events.filter((event, index) => {
             const previousEvent = events[index - 1]
+            if (debug) console.log("Filtering previous event: " + (!previousEvent || previousEvent.atHome) + " current: " + event.atHome)
             return !previousEvent || previousEvent.atHome != event.atHome
         })
+
+        if (debug) {
+            console.log("Filtered event size: " + filteredEvents.length)
+            filteredEvents.forEach((event) => {
+                console.log(event.atHome + " " + event.timestamp)
+            })
+        }
 
         //If there's only one event all time, automatic 100% score
         if (filteredEvents.length == 1) {
@@ -45,6 +54,13 @@ exports.handler = async (event) => {
             return event.timestamp >= yesterdayMillis
         })
 
+        if (debug) {
+            console.log("Last 24 hours events: " + last24HoursEvents.length)
+            last24HoursEvents.forEach((event) => {
+                console.log(event.atHome + " " + event.timestamp)
+            })
+        }
+
         //Handle error case where no events in last 24 hours.  We update every event so this
         //should not happen
         if (last24HoursEvents.length == 0) {
@@ -55,12 +71,21 @@ exports.handler = async (event) => {
         //Handle edge case where first event in last 24 hours is away.
         //That means user was home for part of the beginning of 24 hr period.
         //We can assume a fake home event 24 hours ago if they were away
-        if (last24HoursEvents && last24HoursEvents[0].atHome == "away") {
+        if (last24HoursEvents && last24HoursEvents[0].atHome == "AWAY") {
+            if (debug) console.log("Adding fake event")
             const fakeEvent = {
                 "timestamp": yesterdayMillis,
                 "atHome": "home"
             }
             last24HoursEvents.unshift(fakeEvent)
+        }
+
+        //Filter out events in the last 24 hours
+        if (debug) {
+            console.log("Last 24 hours events updated: " + last24HoursEvents.length)
+            last24HoursEvents.forEach((event) => {
+                console.log(event.atHome + " " + event.timestamp)
+            })
         }
 
         //Find time at home
@@ -74,7 +99,7 @@ exports.handler = async (event) => {
 
         //Create score:
         const finalScore = timeAtHome / oneDayMillis * 100
-        console.log(`Final score: ${finalScore}`)
+        if (debug) console.log(`Final score: ${finalScore}`)
 
         await updateUserScore(userId, finalScore)
         return `Successfully updated score ${finalScore} for user ${userId}:`
