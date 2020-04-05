@@ -3,8 +3,7 @@ const userTableName = process.env.USERS_TABLE_NAME
 const eventsTableName = process.env.GEOFENCE_EVENTS_TABLE_NAME
 const documentClient = new AWS.DynamoDB.DocumentClient()
 const oneDayMillis = (24 * 60 * 60 * 1000)
-const now = new Date().getTime()
-const yesterdayMillis = now - oneDayMillis
+const yesterdayMillis = new Date().getTime() - oneDayMillis
 const debug = false
 
 export async function updateScore(userId) {
@@ -37,13 +36,6 @@ export async function updateScore(userId) {
         filteredEvents.forEach((event) => {
             console.log(event.atHome + " " + event.timestamp)
         })
-    }
-
-    //If there's only one event all time, automatic 100% score
-    if (filteredEvents.length == 1) {
-        console.log("Only 1 event, automatic 100%")
-        await updateUserScore(userId, 100)
-        return 100
     }
 
     const last24HoursEvents = filteredEvents
@@ -79,7 +71,7 @@ export async function updateScore(userId) {
     if (last24HoursEvents && last24HoursEvents[last24HoursEvents.length - 1].atHome == "HOME") {
         if (debug) console.log("Adding fake last event")
         const fakeEvent = {
-            "timestamp": now,
+            "timestamp": new Date().getTime(),
             "atHome": "AWAY"
         }
         last24HoursEvents.push(fakeEvent)
