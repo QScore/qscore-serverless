@@ -6,7 +6,7 @@ const client = dynamodb.doc
 export const typeDef = gql`
 type GeofenceEvent {
     id: ID!
-    timestamp: String!
+    timestamp: Int!
     eventType: GeofenceEventType!
     userLocation: Location!
     userId: String!
@@ -54,7 +54,7 @@ export const resolvers = {
                 TableName: process.env.GEOFENCE_EVENTS_TABLE_NAME,
                 Item: {
                     id: uuid(),
-                    timestamp: Date.now().toString(),
+                    timestamp: Date.now(),
                     eventType: args.input.eventType,
                     userLocationLat: args.input.userLocationLat,
                     userLocationLng: args.input.userLocationLng,
