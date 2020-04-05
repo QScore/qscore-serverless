@@ -59,15 +59,15 @@ functions:
     handler: auth/firebaseAuthorizer.handler
     cors: true
 
-  updateScore:
-    handler: score/updateScore.handler
-    events:
-    - stream:
-        type: dynamodb
-        arn:
-          Fn::GetAtt:
-            - GeofenceEventsTable
-            - StreamArn
+  # updateScore:
+  #   handler: score/updateScore.handler
+  #   events:
+  #   - stream:
+  #       type: dynamodb
+  #       arn:
+  #         Fn::GetAtt:
+  #           - GeofenceEventsTable
+  #           - StreamArn
 
 custom:
   secrets: ${file(environment.json)}
@@ -100,7 +100,7 @@ resources:
           - AttributeName: id
             AttributeType: S
           - AttributeName: timestamp
-            AttributeType: S
+            AttributeType: N
           - AttributeName: userId
             AttributeType: S
         ProvisionedThroughput:
@@ -128,6 +128,20 @@ resources:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
+          - AttributeName: username
+            AttributeType: S
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - IndexName: username-index
+            KeySchema:
+              - AttributeName: username
+                KeyType: HASH
+              - AttributeName: id
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
