@@ -2,8 +2,8 @@ service: qscore
 
 plugins:
   - serverless-dynamodb-local
+  - serverless-plugin-typescript
   - serverless-offline
-  - serverless-bundle
 
 package:
   individually: true

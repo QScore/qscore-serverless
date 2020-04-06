@@ -17,7 +17,9 @@
   },
   "homepage": "https://github.com/polson/qscore-serverless#readme",
   "dependencies": {
+    "@ibm/plex": "^4.0.2",
     "apollo-server-lambda": "^2.11.0",
+    "apollo-server-types": "^0.3.0",
     "firebase": "^7.13.1",
     "firebase-admin": "^8.10.0",
     "graphql": "^14.6.0",
@@ -28,5 +30,11 @@
     "serverless-dynamodb-local": "^0.2.39",
     "serverless-offline": "^6.1.2",
     "serverless-plugin-graphiql": "^0.4.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.47",
+    "@types/uuid": "^7.0.2",
+    "serverless-plugin-typescript": "^1.1.9",
+    "typescript": "^3.8.3"
   }
 }
