@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "strictNullChecks": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "sourceMap": true,
+        "allowJs": true,
+        "target": "es2020",
+        "outDir": ".build",
+        "moduleResolution": "node",
+        "module": "commonjs",
+        "resolveJsonModule": true,
+        "lib": [
+            "es2020"
+        ],
+        "rootDir": "./"
+    }
+}

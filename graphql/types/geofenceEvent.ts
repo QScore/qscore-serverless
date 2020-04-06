@@ -1,7 +1,7 @@
-import { gql } from 'apollo-server-lambda'
-import uuid from 'uuid/v1'
-import dynamodb from 'serverless-dynamodb-client';
-const client = dynamodb.doc
+import { gql, ApolloError } from 'apollo-server-lambda'
+import { v4 as uuid } from 'uuid';
+import * as AWS from 'aws-sdk';
+const client = new AWS.DynamoDB.DocumentClient
 
 export const typeDef = gql`
 type GeofenceEvent {
@@ -48,10 +48,15 @@ type Query {
 
 export const resolvers = {
     Mutation: {
-        createGeofenceEvent: async (parent, args, context, info) => {
+        createGeofenceEvent: async (_parent: any, args: any, context: any, _info: any) => {
+            const geofenceEventsTableName = process.env.GEOFENCE_EVENTS_TABLE_NAME
+            if (!geofenceEventsTableName) {
+                throw new ApolloError("Unable to find Geofence Events table name")
+            }
+
             console.log(JSON.stringify(context.event.requestContext))
-            const params = {
-                TableName: process.env.GEOFENCE_EVENTS_TABLE_NAME,
+            const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
+                TableName: geofenceEventsTableName,
                 Item: {
                     id: uuid(),
                     timestamp: Date.now(),

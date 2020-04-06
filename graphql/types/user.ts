@@ -1,8 +1,9 @@
-import { gql } from 'apollo-server-lambda'
-import dynamodb from 'serverless-dynamodb-client';
-const client = dynamodb.doc
-const userTableName = process.env.USERS_TABLE_NAME
+import * as AWS from 'aws-sdk'
+import { gql, ApolloError } from 'apollo-server-lambda'
 import { updateScore } from '../../score/scoreManager'
+
+const client = new AWS.DynamoDB.DocumentClient()
+const userTableName = process.env.USERS_TABLE_NAME
 
 export const typeDef = gql`
 type User {
@@ -49,7 +50,7 @@ type Query {
 
 export const resolvers = {
     User: {
-        score: async (parent, args, context, info) => {
+        score: async (_parent: any, _args: any, context: any, _info: any) => {
             const userId = getUserIdFromContext(context)
             const result = await updateScore(userId)
             return result
@@ -57,7 +58,10 @@ export const resolvers = {
     },
 
     Mutation: {
-        updateUserInfo: async (parent, args, context, info) => {
+        updateUserInfo: async (_parent: any, args: any, context: any, _info: any) => {
+            if (!userTableName) {
+                throw new ApolloError("User table name could not be resolved")
+            }
             const id = getUserIdFromContext(context)
             const username = args.input.username
             const params = {
@@ -81,13 +85,22 @@ export const resolvers = {
     },
 
     Query: {
-        currentUser: async (parent, args, context, info) => {
+        currentUser: async (_parent: any, _args: any, context: any, _info: any) => {
+            if (!userTableName) {
+                throw new ApolloError("User table name could not be resolved")
+            }
+
             const id = getUserIdFromContext(context)
-            const params = {
+            const params: AWS.DynamoDB.DocumentClient.GetItemInput = {
                 TableName: userTableName,
                 Key: { id: id }
             }
+
             const result = await client.get(params).promise()
+            if (!result.Item) {
+                throw new ApolloError("Current user could not be resolved")
+            }
+
             return {
                 "user": {
                     "id": result.Item.id,
@@ -96,28 +109,12 @@ export const resolvers = {
             }
         },
 
-        searchUsers: async (parent, args, context, info) => {
-            const query = args.input.searchQuery
-            const params = {
-                TableName: userTableName,
-                IndexName: "username-index",
-                KeyConditionExpression: 'begins_with(username, :query)',
-                ExpressionAttributeValues: {
-                    ':query': query
-                }
-            }
-            const result = await client.query(params).promise()
-            return {
-                "user": {
-                    "id": result.Item.id,
-                    "username": result.Item.username || "",
-                    "score": result.Item.score || 100
-                }
-            }
+        searchUsers: async (_parent: any, _args: any, _context: any, _info: any) => {
+            return ""
         }
     }
 }
 
-function getUserIdFromContext(context) {
+function getUserIdFromContext(context: any): string {
     return context.event.requestContext.authorizer.userId
 }

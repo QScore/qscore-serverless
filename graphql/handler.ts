@@ -1,7 +1,8 @@
-import { ApolloServer } from 'apollo-server-lambda';
+import { ApolloServer } from "apollo-server-lambda";
 import { makeExecutableSchema, mergeSchemas } from "graphql-tools"
 import { typeDef as geofenceEventTypeDef, resolvers as geofenceEventResolvers} from './types/geofenceEvent.js';
 import { typeDef as userTypeDef, resolvers as userResolvers} from './types/user.js';
+import { Context, Callback } from 'aws-lambda';
 
 const schema = mergeSchemas({
   schemas: [
@@ -26,7 +27,7 @@ const server = new ApolloServer({
   })
 })
 
-exports.graphqlHandler = (event, context, callback) => {
+exports.graphqlHandler = (event: any, context: Context, callback: Callback) => {
   const handler = server.createHandler({
     cors: {
       origin: "*",
