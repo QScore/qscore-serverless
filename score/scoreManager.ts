@@ -5,7 +5,7 @@ const debug = false
 export async function calculateScore(userId: string, repository: Repository): Promise<number> {
     const oneDayMillis = moment.duration(1,'d').asMilliseconds()
     const yesterdayMillis = moment().subtract(1, 'day').unix()
-    const events = await repository.getEventsFrom(userId, yesterdayMillis)
+    const events = await repository.getEventsFromStartTime(userId, yesterdayMillis)
 
     if (debug) console.log("Queried all events: " + JSON.stringify(events.length))
 
@@ -47,11 +47,11 @@ export async function calculateScore(userId: string, repository: Repository): Pr
     //Handle edge case where first event in last 24 hours is AWAY.
     //That means user was home for part of the beginning of 24 hr period.
     //We can assume a fake home event 24 hours ago if they were away
-    if (last24HoursEvents && last24HoursEvents[0].eventType == "AWAY") {
+    if (last24HoursEvents && last24HoursEvents[0].eventType == EventType.AWAY) {
         if (debug) console.log("Adding fake first event")
         const fakeEvent: Event = {
             timestamp: yesterdayMillis,
-            eventType: "HOME"
+            eventType: EventType.HOME
         }
         last24HoursEvents.unshift(fakeEvent)
     }
@@ -59,11 +59,11 @@ export async function calculateScore(userId: string, repository: Repository): Pr
     //Handle edge case where last event in last 24 hours is HOME.
     //That means user was home for the remaining part of 24 hr period.
     //We can assume a fake home event 24 hours ago if they were away
-    if (last24HoursEvents && last24HoursEvents[last24HoursEvents.length - 1].eventType == "HOME") {
+    if (last24HoursEvents && last24HoursEvents[last24HoursEvents.length - 1].eventType == EventType.HOME) {
         if (debug) console.log("Adding fake last event")
         const fakeEvent: Event = {
             timestamp: new Date().getTime(),
-            eventType: "AWAY"
+            eventType: EventType.AWAY
         }
         last24HoursEvents.push(fakeEvent)
     }
@@ -80,7 +80,7 @@ export async function calculateScore(userId: string, repository: Repository): Pr
     var timeAtHome = 0
     last24HoursEvents.forEach((event, index) => {
         const previousEvent = last24HoursEvents[index - 1]
-        if (previousEvent && event.eventType == "AWAY" && previousEvent.eventType == "HOME") {
+        if (previousEvent && event.eventType == EventType.AWAY && previousEvent.eventType == EventType.HOME) {
             timeAtHome += event.timestamp - previousEvent.timestamp
             if (debug) console.log("Added to timeAtHome: " + timeAtHome + " 24 hours == " + oneDayMillis)
         }

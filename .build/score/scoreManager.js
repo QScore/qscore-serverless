@@ -1,24 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const AWS = require("aws-sdk");
-const userTableName = process.env.USERS_TABLE_NAME;
-const eventsTableName = process.env.GEOFENCE_EVENTS_TABLE_NAME;
-const documentClient = new AWS.DynamoDB.DocumentClient();
-const oneDayMillis = (24 * 60 * 60 * 1000);
-const yesterdayMillis = new Date().getTime() - oneDayMillis;
+const moment = require("moment");
 const debug = false;
-async function updateScore(userId) {
-    const eventsResult = await getAllEvents(userId);
-    if (!eventsResult.Items) {
-        console.log("Unable to get events");
-        return 0;
-    }
-    const events = eventsResult.Items;
+async function calculateScore(userId, repository) {
+    const oneDayMillis = moment.duration(1, 'd').asMilliseconds();
+    const yesterdayMillis = moment().subtract(1, 'day').unix();
+    const events = await repository.getEventsFromStartTime(userId, yesterdayMillis);
     if (debug)
         console.log("Queried all events: " + JSON.stringify(events.length));
     if (events.length == 0) {
         console.log("No events found for this user, automatic 0");
-        await updateUserScore(userId, 0);
         return 0;
     }
     const filteredEvents = events.filter((event, index) => {
@@ -42,23 +33,23 @@ async function updateScore(userId) {
     }
     if (last24HoursEvents.length == 0) {
         console.log("No events in the last 24 hours");
-        return;
+        return -1;
     }
-    if (last24HoursEvents && last24HoursEvents[0].eventType == "AWAY") {
+    if (last24HoursEvents && last24HoursEvents[0].eventType == EventType.AWAY) {
         if (debug)
             console.log("Adding fake first event");
         const fakeEvent = {
             timestamp: yesterdayMillis,
-            eventType: "HOME"
+            eventType: EventType.HOME
         };
         last24HoursEvents.unshift(fakeEvent);
     }
-    if (last24HoursEvents && last24HoursEvents[last24HoursEvents.length - 1].eventType == "HOME") {
+    if (last24HoursEvents && last24HoursEvents[last24HoursEvents.length - 1].eventType == EventType.HOME) {
         if (debug)
             console.log("Adding fake last event");
         const fakeEvent = {
             timestamp: new Date().getTime(),
-            eventType: "AWAY"
+            eventType: EventType.AWAY
         };
         last24HoursEvents.push(fakeEvent);
     }
@@ -71,7 +62,7 @@ async function updateScore(userId) {
     var timeAtHome = 0;
     last24HoursEvents.forEach((event, index) => {
         const previousEvent = last24HoursEvents[index - 1];
-        if (previousEvent && event.eventType == "AWAY" && previousEvent.eventType == "HOME") {
+        if (previousEvent && event.eventType == EventType.AWAY && previousEvent.eventType == EventType.HOME) {
             timeAtHome += event.timestamp - previousEvent.timestamp;
             if (debug)
                 console.log("Added to timeAtHome: " + timeAtHome + " 24 hours == " + oneDayMillis);
@@ -80,39 +71,9 @@ async function updateScore(userId) {
     const finalScore = timeAtHome / oneDayMillis * 100;
     if (debug)
         console.log(`Final score: ${finalScore}`);
-    await updateUserScore(userId, finalScore);
-    console.log(`Successfully updated score ${finalScore} for user ${userId}`);
+    if (debug)
+        console.log(`Successfully updated score ${finalScore} for user ${userId}`);
     return finalScore;
 }
-exports.updateScore = updateScore;
-async function updateUserScore(userId, score) {
-    const userParams = {
-        TableName: userTableName,
-        Key: { id: userId },
-        UpdateExpression: 'set #score = :score',
-        ExpressionAttributeNames: {
-            '#score': 'score'
-        },
-        ExpressionAttributeValues: {
-            ':score': score
-        }
-    };
-    return documentClient.update(userParams).promise();
-}
-async function getAllEvents(userId) {
-    const eventParams = {
-        TableName: eventsTableName,
-        IndexName: "time-index",
-        KeyConditionExpression: '#userId = :userId AND #timestamp >= :yesterdayMillis',
-        ExpressionAttributeNames: {
-            '#userId': "userId",
-            '#timestamp': "timestamp"
-        },
-        ExpressionAttributeValues: {
-            ':userId': userId,
-            ':yesterdayMillis': yesterdayMillis
-        }
-    };
-    return documentClient.query(eventParams).promise();
-}
+exports.calculateScore = calculateScore;
 //# sourceMappingURL=scoreManager.js.map

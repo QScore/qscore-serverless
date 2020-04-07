@@ -23,12 +23,12 @@ describe('updateScore', function () {
         // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
-            { timestamp: 100000, eventType: "HOME" },
-            { timestamp: 200000, eventType: "AWAY" }
+            { timestamp: 100000, eventType: EventType.HOME },
+            { timestamp: 200000, eventType: EventType.AWAY }
         ]
 
-        // const result = new Promise<Event[]>(() => events)
-        repository.getEventsFrom.resolves(events)
+        
+        repository.getEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
@@ -39,12 +39,12 @@ describe('updateScore', function () {
         // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
-            { timestamp: 100000, eventType: "AWAY" },
-            { timestamp: 200000, eventType: "HOME" }
+            { timestamp: 100000, eventType: EventType.AWAY },
+            { timestamp: 200000, eventType: EventType.HOME }
         ]
 
-        // const result = new Promise<Event[]>(() => events)
-        repository.getEventsFrom.resolves(events)
+        
+        repository.getEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
@@ -55,11 +55,11 @@ describe('updateScore', function () {
         // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
-            { timestamp: 100000, eventType: "AWAY" }
+            { timestamp: 100000, eventType: EventType.AWAY }
         ]
 
-        // const result = new Promise<Event[]>(() => events)
-        repository.getEventsFrom.resolves(events)
+        
+        repository.getEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
@@ -70,11 +70,11 @@ describe('updateScore', function () {
         // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
-            { timestamp: 0, eventType: "AWAY" }
+            { timestamp: 0, eventType: EventType.AWAY }
         ]
 
-        // const result = new Promise<Event[]>(() => events)
-        repository.getEventsFrom.resolves(events)
+        
+        repository.getEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
@@ -85,11 +85,11 @@ describe('updateScore', function () {
         // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
-            { timestamp: 0, eventType: "HOME" }
+            { timestamp: 0, eventType: EventType.HOME }
         ]
 
-        // const result = new Promise<Event[]>(() => events)
-        repository.getEventsFrom.resolves(events)
+        
+        repository.getEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
@@ -100,18 +100,18 @@ describe('updateScore', function () {
         // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
-            { timestamp: 100000, eventType: "HOME" },
-            { timestamp: 200000, eventType: "HOME" },
-            { timestamp: 300000, eventType: "AWAY" },
-            { timestamp: 400000, eventType: "HOME" },
-            { timestamp: 500000, eventType: "AWAY" },
-            { timestamp: 600000, eventType: "AWAY" },
-            { timestamp: 700000, eventType: "HOME" },
-            { timestamp: 800000, eventType: "AWAY" },
+            { timestamp: 100000, eventType: EventType.HOME },
+            { timestamp: 200000, eventType: EventType.HOME },
+            { timestamp: 300000, eventType: EventType.AWAY },
+            { timestamp: 400000, eventType: EventType.HOME },
+            { timestamp: 500000, eventType: EventType.AWAY },
+            { timestamp: 600000, eventType: EventType.AWAY },
+            { timestamp: 700000, eventType: EventType.HOME },
+            { timestamp: 800000, eventType: EventType.AWAY },
         ]
 
-        // const result = new Promise<Event[]>(() => events)
-        repository.getEventsFrom.resolves(events)
+        
+        repository.getEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
