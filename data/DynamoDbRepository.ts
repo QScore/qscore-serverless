@@ -2,8 +2,9 @@ import * as AWS from "aws-sdk"
 const documentClient = new AWS.DynamoDB.DocumentClient()
 const userTableName: string = process.env.USERS_TABLE_NAME!
 const eventsTableName = process.env.GEOFENCE_EVENTS_TABLE_NAME!
+import { v4 as uuid } from 'uuid';
 
-export class DynamoDbRepository implements Repository {
+class DynamoDbRepository implements Repository {
     documentClient: AWS.DynamoDB.DocumentClient
     userTableName: string
     eventsTableName: string
@@ -12,6 +13,31 @@ export class DynamoDbRepository implements Repository {
         this.documentClient = documentClient
         this.userTableName = userTableName
         this.eventsTableName = eventsTableName
+    }
+
+    async createEvent(userId: string, eventType: EventType, userLocation: Location): Promise<EventFull> {
+        const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
+            TableName: eventsTableName,
+            Item: {
+                id: uuid(),
+                timestamp: Date.now(),
+                eventType: eventType,
+                userLocationLat: userLocation.lat,
+                userLocationLng: userLocation.lng,
+                userId: userId
+            }
+        }
+        await documentClient.put(params).promise()
+        return {
+            id : params.Item.id,
+            timestamp: params.Item.timestamp,
+            eventType: params.Item.eventType,
+            userLocation: {
+                latitude: params.Item.userLocationLat,
+                longitude: params.Item.userLocationLng,
+            },
+            userId: params.Item.userId
+        }
     }
 
     async updateUserScore(userId: string, score: number) {
@@ -29,7 +55,7 @@ export class DynamoDbRepository implements Repository {
         await documentClient.update(userParams).promise()
     }
 
-    async getEventsFrom(userId: string, startTimestamp: number): Promise<Event[]> {
+    async getEventsFromStartTime(userId: string, startTimestamp: number): Promise<Event[]> {
         const eventParams: AWS.DynamoDB.DocumentClient.QueryInput = {
             TableName: eventsTableName,
             IndexName: "time-index",
