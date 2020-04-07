@@ -5,13 +5,4 @@ interface Repository {
     getEventsFrom(userId: string, startTimestamp: number) : Promise<Event[]>
 }
 
-interface User {
-    id: String
-    username: String
-    score: String
-}
 
-interface Event {
-    readonly timestamp: number
-    readonly eventType: "HOME" | "AWAY"
-}

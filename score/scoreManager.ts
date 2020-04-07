@@ -1,9 +1,10 @@
-const oneDayMillis = (24 * 60 * 60 * 1000)
+import * as moment from 'moment'
+
 const debug = false
 
 export async function calculateScore(userId: string, repository: Repository): Promise<number> {
-    
-    const yesterdayMillis = new Date().getTime() - oneDayMillis
+    const oneDayMillis = moment.duration(1,'d').asMilliseconds()
+    const yesterdayMillis = moment().subtract(1, 'day').unix()
     const events = await repository.getEventsFrom(userId, yesterdayMillis)
 
     if (debug) console.log("Queried all events: " + JSON.stringify(events.length))
@@ -89,6 +90,6 @@ export async function calculateScore(userId: string, repository: Repository): Pr
     const finalScore = timeAtHome / oneDayMillis * 100
     if (debug) console.log(`Final score: ${finalScore}`)
 
-    console.log(`Successfully updated score ${finalScore} for user ${userId}`)
+    if (debug) console.log(`Successfully updated score ${finalScore} for user ${userId}`)
     return finalScore
 }
