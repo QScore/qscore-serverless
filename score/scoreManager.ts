@@ -1,4 +1,5 @@
 import * as moment from 'moment'
+import '../data/Repository'
 
 const debug = false
 
