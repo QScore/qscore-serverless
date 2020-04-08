@@ -69,6 +69,10 @@ export const resolvers = {
 
     Query: {
         currentUser: async (_parent: any, _args: any, context: any, _info: any) => {
+            console.log(`context: ${JSON.stringify(context)}`)
+            console.log(`_parent: ${JSON.stringify(_parent)}`)
+            console.log(`_info: ${JSON.stringify(_info)}`)
+            console.log(`_args: ${JSON.stringify(_args)}`)
             const id = getUserIdFromContext(context)
             const user = await repository.getCurrentuser(id)
             if (!user) {

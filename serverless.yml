@@ -38,6 +38,7 @@ provider:
   environment:
     GEOFENCE_EVENTS_TABLE_NAME: ${self:custom.geofenceEventsTableName}
     USERS_TABLE_NAME: ${self:custom.usersTableName}
+    USERS_TABLE_V2: ${self:custom.usersV2TableName}
     FIREBASE_DATABASE_URL: ${self:custom.secrets.FIREBASE_DATABASE_URL}
 
 functions:
@@ -84,6 +85,7 @@ custom:
   stage: ${opt:stage, self:provider.stage}
   geofenceEventsTableName: ${self:custom.stage}-GeofenceEvents
   usersTableName: ${self:custom.stage}-UsersTable
+  usersV2TableName: ${self:custom.stage}-Users-v2
 
 resources:
   Resources:
@@ -145,3 +147,20 @@ resources:
             ProvisionedThroughput:
               ReadCapacityUnits: 1
               WriteCapacityUnits: 1
+    UsersTableV2:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.usersV2TableName}
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1

@@ -1,8 +1,12 @@
 import * as AWS from "aws-sdk"
+import { v4 as uuid } from 'uuid';
+import './model/Event'
+import './model/Location'
+import './model/User'
+
 const documentClient = new AWS.DynamoDB.DocumentClient()
 const userTableName: string = process.env.USERS_TABLE_NAME!
 const eventsTableName = process.env.GEOFENCE_EVENTS_TABLE_NAME!
-import { v4 as uuid } from 'uuid';
 
 class DynamoDbRepository implements Repository {
     documentClient: AWS.DynamoDB.DocumentClient

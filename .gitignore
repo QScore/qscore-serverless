@@ -109,3 +109,6 @@ dist
 #secrets
 ./environment.json
 ./auth/serviceAccountKey.json
+
+#build
+.build
