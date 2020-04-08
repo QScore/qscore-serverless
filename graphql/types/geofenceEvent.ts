@@ -44,25 +44,19 @@ type Query {
 }
 `
 
-const resolversInjectable = {
-    repository: dynamoDbRepository,
-
-    resolvers: {
-        Mutation: {
-            createGeofenceEvent: async (_parent: any, args: any, context: any, _info: any) => {
-                const userId = context.event.requestContext.authorizer.userId
-                const eventType = args.input.eventType
-                const userLocation = {
-                    lat: args.input.userLocationLat,
-                    lng: args.input.userLocationLng
-                }
-                const event = await resolversInjectable.repository.createEvent(userId, eventType, userLocation)
-                return {
-                    "geofenceEvent": event
-                }
+export const resolvers = {
+    Mutation: {
+        createGeofenceEvent: async (_parent: any, args: any, context: any, _info: any) => {
+            const userId = context.event.requestContext.authorizer.userId
+            const eventType = args.input.eventType
+            const userLocation = {
+                lat: args.input.userLocationLat,
+                lng: args.input.userLocationLng
+            }
+            const event = await dynamoDbRepository.createEvent(userId, eventType, userLocation)
+            return {
+                "geofenceEvent": event
             }
         }
     }
 }
-
-export const resolvers = resolversInjectable.resolvers

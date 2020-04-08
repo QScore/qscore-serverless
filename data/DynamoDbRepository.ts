@@ -3,12 +3,15 @@ import { v4 as uuid } from 'uuid';
 import './model/Event'
 import './model/Location'
 import './model/User'
+import { Repository } from "./Repository";
+import { EventType, EventFull, Event } from "./model/Event";
+import { Location } from "./model/Location";
 
 const documentClient = new AWS.DynamoDB.DocumentClient()
 const userTableName: string = process.env.USERS_TABLE_NAME!
-const eventsTableName = process.env.GEOFENCE_EVENTS_TABLE_NAME!
+const eventsTableName: string = process.env.GEOFENCE_EVENTS_TABLE_NAME!
 
-class DynamoDbRepository implements Repository {
+export class DynamoDbRepository implements Repository {
     documentClient: AWS.DynamoDB.DocumentClient
     userTableName: string
     eventsTableName: string
@@ -20,28 +23,25 @@ class DynamoDbRepository implements Repository {
     }
 
     async createEvent(userId: string, eventType: EventType, userLocation: Location): Promise<EventFull> {
+        //Get most recent event and see if it is alternating event type, otherwise ignore.
+        const latestEvent = await this.getLatestEventForUser(userId)
+        if (latestEvent && latestEvent.eventType === eventType) {
+            return this.convertItemToEvent(latestEvent)
+        }
+
         const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
             TableName: eventsTableName,
             Item: {
                 id: uuid(),
                 timestamp: Date.now(),
-                eventType: eventType,
+                eventType: eventType.toString(),
                 userLocationLat: userLocation.lat,
                 userLocationLng: userLocation.lng,
                 userId: userId
             }
         }
         await documentClient.put(params).promise()
-        return {
-            id : params.Item.id,
-            timestamp: params.Item.timestamp,
-            eventType: params.Item.eventType,
-            userLocation: {
-                latitude: params.Item.userLocationLat,
-                longitude: params.Item.userLocationLng,
-            },
-            userId: params.Item.userId
-        }
+        return this.convertItemToEvent(params.Item)
     }
 
     async updateUserScore(userId: string, score: number) {
@@ -75,7 +75,35 @@ class DynamoDbRepository implements Repository {
         }
 
         const result = await documentClient.query(eventParams).promise()
-        return result.Items as Event[]
+        if (!result.Items) {
+            return []
+        }
+        return result.Items.map((item: any) => {
+            return this.convertItemToEvent(item)
+        })
+    }
+
+    async getLatestEventForUser(userId: string): Promise<EventFull | undefined> {
+        const params: AWS.DynamoDB.DocumentClient.QueryInput = {
+            TableName: eventsTableName,
+            IndexName: "time-index",
+            KeyConditionExpression: '#userId = :userId',
+            ExpressionAttributeNames: {
+                '#userId': "userId"
+            },
+            ExpressionAttributeValues: {
+                ':userId': userId
+            },
+            Limit: 1,
+            ScanIndexForward: false
+        }
+
+        const result = await documentClient.query(params).promise()
+        if (!result.Items || result.Items.length == 0) {
+            return undefined
+        }
+        const item = result.Items[0]
+        return this.convertItemToEvent(item)
     }
 
     async updateUsername(userId: string, username: string) {
@@ -93,7 +121,7 @@ class DynamoDbRepository implements Repository {
         await documentClient.update(params).promise()
     }
 
-    async getCurrentuser(userId: string): Promise<User | undefined> {
+    async getCurrentUser(userId: string): Promise<User | undefined> {
         const params: AWS.DynamoDB.DocumentClient.GetItemInput = {
             TableName: userTableName,
             Key: { id: userId }
@@ -106,6 +134,21 @@ class DynamoDbRepository implements Repository {
             "id": result.Item.id,
             "username": result.Item.username,
             "score": result.Item.score
+        }
+    }
+
+    convertItemToEvent(item: AWS.DynamoDB.DocumentClient.AttributeMap): EventFull {
+        const eventType: string = item.eventType.toString()
+        const typedEventType = eventType as keyof typeof EventType;
+        return {
+            id: item.id,
+            timestamp: item.timestamp,
+            eventType: EventType[typedEventType],
+            userLocation: {
+                latitude: item.userLocationLat,
+                longitude: item.userLocationLng,
+            },
+            userId: item.userId
         }
     }
 }
