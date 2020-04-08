@@ -1,11 +1,16 @@
 import * as moment from 'moment'
-import '../data/Repository'
+import { EventType, Event } from '../data/model/Event'
+import { Repository } from '../data/Repository'
 
-const debug = false
+const debug = true
 
 export async function calculateScore(userId: string, repository: Repository): Promise<number> {
+    if (debug) console.log("Inside calculateScore")
     const oneDayMillis = moment.duration(1,'d').asMilliseconds()
-    const yesterdayMillis = moment().subtract(1, 'day').unix()
+    const yesterdayMillis = moment().utc().subtract(1, 'day').valueOf()
+
+    if (debug) console.log(`Getting events from ${yesterdayMillis}`)
+
     const events = await repository.getEventsFromStartTime(userId, yesterdayMillis)
 
     if (debug) console.log("Queried all events: " + JSON.stringify(events.length))
@@ -88,7 +93,7 @@ export async function calculateScore(userId: string, repository: Repository): Pr
     })
 
     //Create score:
-    const finalScore = timeAtHome / oneDayMillis * 100
+    const finalScore = Math.min(timeAtHome / oneDayMillis * 100, 100)
     if (debug) console.log(`Final score: ${finalScore}`)
 
     if (debug) console.log(`Successfully updated score ${finalScore} for user ${userId}`)

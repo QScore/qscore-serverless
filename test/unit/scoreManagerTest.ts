@@ -5,6 +5,8 @@ import '../../data/model/User'
 import '../../data/Repository'
 import * as moment from 'moment'
 import * as assert from 'assert'
+import { Repository } from '../../data/Repository';
+import { Event, EventType } from '../../data/model/Event';
 
 let clock: sinon.SinonFakeTimers
 

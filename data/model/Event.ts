@@ -1,9 +1,14 @@
-interface Event {
+export enum EventType {
+    HOME = "HOME",
+    AWAY = "AWAY"
+}
+
+export interface Event {
     readonly timestamp: number
     readonly eventType: EventType
 }
 
-interface EventFull extends Event {
+export interface EventFull extends Event {
     id: string,
     timestamp: number,
     eventType: EventType,
@@ -12,9 +17,4 @@ interface EventFull extends Event {
         longitude: number
     },
     userId: string
-}
-
-enum EventType {
-    HOME = "HOME",
-    AWAY = "AWAY"
 }
