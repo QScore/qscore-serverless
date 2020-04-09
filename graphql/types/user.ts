@@ -50,6 +50,10 @@ export const resolvers = {
         score: async (_parent: any, _args: any, context: any, _info: any) => {
             const userId = getUserIdFromContext(context)
             const score = await calculateScore(userId, repository)
+            if (score == -1) {
+                //Use existing score
+                return _parent.score || 0
+            }
             await repository.updateUserScore(userId, score)
             return score
         }
@@ -78,7 +82,8 @@ export const resolvers = {
             return {
                 "user": {
                     "id": user.id,
-                    "username": user.username
+                    "username": user.username,
+                    "score": user.score
                     //score will get calculated separately
                 }
             }

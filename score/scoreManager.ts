@@ -2,7 +2,7 @@ import * as moment from 'moment'
 import { EventType, Event } from '../data/model/Event'
 import { Repository } from '../data/Repository'
 
-const debug = true
+const debug = false
 
 export async function calculateScore(userId: string, repository: Repository): Promise<number> {
     if (debug) console.log("Inside calculateScore")
@@ -45,6 +45,7 @@ export async function calculateScore(userId: string, repository: Repository): Pr
     }
 
     //Handle error case where no events in last 24 hours.
+    //TODO: This is actually not an error
     if (last24HoursEvents.length == 0) {
         console.log("No events in the last 24 hours")
         return -1
