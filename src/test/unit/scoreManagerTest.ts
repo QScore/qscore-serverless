@@ -3,7 +3,6 @@ import sinon, { stubInterface } from "ts-sinon";
 import '../../data/model/Event'
 import '../../data/model/User'
 import '../../data/Repository'
-import * as moment from 'moment'
 import * as assert from 'assert'
 import { Repository } from '../../data/Repository';
 import { Event, EventType } from '../../data/model/Event';
@@ -12,7 +11,7 @@ let clock: sinon.SinonFakeTimers
 
 beforeEach(async function () {
     clock = sinon.useFakeTimers({
-        now: moment.duration(1, 'd').asMilliseconds()
+        now: 24*60*60*1000
     });
 })
 

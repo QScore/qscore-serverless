@@ -1,7 +1,7 @@
 import { ApolloServer } from "apollo-server-lambda";
 import { makeExecutableSchema, mergeSchemas } from "graphql-tools"
-import { typeDef as geofenceEventTypeDef, resolvers as geofenceEventResolvers} from './types/geofenceEvent.js';
-import { typeDef as userTypeDef, resolvers as userResolvers} from './types/user.js';
+import { typeDef as geofenceEventTypeDef, resolvers as geofenceEventResolvers} from './types/geofenceEvent';
+import { typeDef as userTypeDef, resolvers as userResolvers} from './types/user';
 import { Context, Callback } from 'aws-lambda';
 
 const schema = mergeSchemas({
