@@ -1,8 +1,8 @@
 service: qscore
 
 plugins:
+  - serverless-webpack
   - serverless-dynamodb-local
-  - serverless-plugin-typescript
   - serverless-offline
 
 package:
@@ -43,7 +43,7 @@ provider:
 
 functions:
   graphql:
-    handler: graphql/handler.graphqlHandler
+    handler: src/graphql/handler.graphqlHandler
     events:
     - http:
         path: graphql
@@ -57,7 +57,7 @@ functions:
         cors: true
         
   firebaseAuthorizer:
-    handler: auth/firebaseAuthorizer.handler
+    handler: src/auth/firebaseAuthorizer.handler
     cors: true
 
   # updateScore:
@@ -81,11 +81,15 @@ custom:
       seed: false
     stages:
       - dev
-  webpackIncludeModules: true
   stage: ${opt:stage, self:provider.stage}
   geofenceEventsTableName: ${self:custom.stage}-GeofenceEvents
   usersTableName: ${self:custom.stage}-UsersTable
   usersV2TableName: ${self:custom.stage}-Users-v2
+  webpackIncludeModules: true
+  webpack:
+    webpackConfig: 'webpack.config.js'
+    packager: 'npm'
+    includeModules: false
 
 resources:
   Resources:

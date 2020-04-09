@@ -1,4 +1,3 @@
-import * as moment from 'moment'
 import { EventType, Event } from '../data/model/Event'
 import { Repository } from '../data/Repository'
 
@@ -6,8 +5,8 @@ const debug = false
 
 export async function calculateScore(userId: string, repository: Repository): Promise<number> {
     if (debug) console.log("Inside calculateScore")
-    const oneDayMillis = moment.duration(1,'d').asMilliseconds()
-    const yesterdayMillis = moment().utc().subtract(1, 'day').valueOf()
+    const oneDayMillis = 24*60*60*1000
+    const yesterdayMillis = Date.now() - oneDayMillis
 
     if (debug) console.log(`Getting events from ${yesterdayMillis}`)
 
