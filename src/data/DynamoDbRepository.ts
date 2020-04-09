@@ -26,9 +26,8 @@ export class DynamoDbRepository implements Repository {
         //Get most recent event and see if it is alternating event type, otherwise ignore.
         const latestEvent = await this.getLatestEventForUser(userId)
         if (latestEvent && latestEvent.eventType === eventType) {
-            return this.convertItemToEvent(latestEvent)
+            return latestEvent
         }
-
         const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
             TableName: eventsTableName,
             Item: {

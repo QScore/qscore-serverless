@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin'
-import * as serviceAccount from './serviceAccountKey.json'
+import serviceAccount from './serviceAccountKey.json'
 import { Context } from 'aws-lambda';
 
 const initializeSdk = function () {

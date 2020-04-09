@@ -1,11 +1,8 @@
-import { calculateScore } from '../../score/scoreManager'
+import { calculateScore } from '../../src/score/scoreManager'
 import sinon, { stubInterface } from "ts-sinon";
-import '../../data/model/Event'
-import '../../data/model/User'
-import '../../data/Repository'
 import * as assert from 'assert'
-import { Repository } from '../../data/Repository';
-import { Event, EventType } from '../../data/model/Event';
+import { Repository } from '../../src/data/Repository';
+import { Event, EventType } from '../../src/data/model/Event';
 
 let clock: sinon.SinonFakeTimers
 
@@ -21,7 +18,6 @@ afterEach(function () {
 
 describe('updateScore', function () {
     it('should calculate score with first event Home', async () => {
-        // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
             { timestamp: 100000, eventType: EventType.HOME },
@@ -37,7 +33,6 @@ describe('updateScore', function () {
     })
 
     it('should calculate score with first event Away', async () => {
-        // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
             { timestamp: 100000, eventType: EventType.AWAY },
@@ -53,7 +48,6 @@ describe('updateScore', function () {
     })
 
     it('should calculate score with only one away event at time 100000', async () => {
-        // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
             { timestamp: 100000, eventType: EventType.AWAY }
@@ -68,7 +62,6 @@ describe('updateScore', function () {
     })
 
     it('should calculate score with only one away event at time 0', async () => {
-        // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
             { timestamp: 0, eventType: EventType.AWAY }
@@ -83,7 +76,6 @@ describe('updateScore', function () {
     })
 
     it('should calculate score with only one home event at time 0', async () => {
-        // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
             { timestamp: 0, eventType: EventType.HOME }
@@ -98,7 +90,6 @@ describe('updateScore', function () {
     })
 
     it('should calculate score with multiple duplicate events', async () => {
-        // const oneDayMillis = moment.duration(1,'d').asMilliseconds()
         const repository = stubInterface<Repository>()
         const events:Event[] = [
             { timestamp: 100000, eventType: EventType.HOME },

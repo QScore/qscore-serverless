@@ -53,10 +53,13 @@ export const resolvers = {
                 lat: args.input.userLocationLat,
                 lng: args.input.userLocationLng
             }
+            console.log("userLocation: " + JSON.stringify(userLocation))
             const event = await dynamoDbRepository.createEvent(userId, eventType, userLocation)
-            return {
+            const result =  {
                 "geofenceEvent": event
             }
+            console.log(">>RESULT: " + JSON.stringify(result))
+            return result
         }
     }
 }
