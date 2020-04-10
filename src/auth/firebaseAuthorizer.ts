@@ -28,10 +28,10 @@ const generateIamPolicy = (effect: any, resource: any, data: any) => {
             ]
         },
         context: {
-            userId: data.user_id,
-            email: data.email,
-            name: data.name,
-            picture: data.picture
+            userId: data ? data.user_id : 'unavailable',
+            email: data ? data.email : 'unavailable',
+            name: data ? data.name : 'unavailable',
+            picture: data ? data.picture : 'unavailable'
         }
     }
     return authResponse;

@@ -1,6 +1,7 @@
 const path = require('path');
 const nodeExternals = require('webpack-node-externals');
 const slsw = require('serverless-webpack');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 module.exports = {
     context: __dirname,
@@ -20,6 +21,7 @@ module.exports = {
         symlinks: false,
         cacheWithContext: false,
     },
+    plugins: [new ForkTsCheckerWebpackPlugin()],
     module: {
         rules: [
             {

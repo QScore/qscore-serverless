@@ -7,6 +7,7 @@ plugins:
 
 package:
   individually: true
+  excludeDevDependencies: false
 
 provider:
   name: aws
@@ -89,7 +90,7 @@ custom:
   webpack:
     webpackConfig: 'webpack.config.js'
     packager: 'npm'
-    includeModules: false
+    includeModules: true
 
 resources:
   Resources:
