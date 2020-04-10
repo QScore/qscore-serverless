@@ -4,7 +4,7 @@ import dynamoDbRepository from '../../data/DynamoDbRepository'
 export const typeDef = gql`
 type GeofenceEvent {
     id: ID!
-    timestamp: Int!
+    timestamp: String!
     eventType: GeofenceEventType!
     userLocation: Location!
     userId: String!

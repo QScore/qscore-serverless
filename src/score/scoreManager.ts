@@ -1,21 +1,14 @@
 import { EventType, Event } from '../data/model/Event'
 import { Repository } from '../data/Repository'
 
-const debug = false
-
 export async function calculateScore(userId: string, repository: Repository): Promise<number> {
-    const oneDayMillis = 24*60*60*1000
+    const oneDayMillis = 24 * 60 * 60 * 1000
     const yesterdayMillis = Date.now() - oneDayMillis
 
     let start = Date.now()
     const events = await repository.getEventsFromStartTime(userId, yesterdayMillis)
     let elapsed = Date.now() - start
     console.log(">>Fetching events took: " + elapsed)
-
-    //Handler case where there are no events for this user, this should never happen
-    if (events.length == 0) {
-        return 0
-    }
 
     //Filter out duplicate atHome status events
     const filteredEvents = events.filter((event, index) => {
@@ -28,7 +21,13 @@ export async function calculateScore(userId: string, repository: Repository): Pr
     //Handle error case where no events in last 24 hours.
     //TODO: This is actually not an error
     if (last24HoursEvents.length == 0) {
-        return -1
+        //Find last known event for user
+        const event = await repository.getLatestEventForUser(userId)
+        if (event.eventType === EventType.HOME) {
+            return 100
+        } else {
+            return 0
+        }
     }
 
     //Handle edge case where first event in last 24 hours is AWAY.
@@ -59,7 +58,6 @@ export async function calculateScore(userId: string, repository: Repository): Pr
         const previousEvent = last24HoursEvents[index - 1]
         if (previousEvent && event.eventType == EventType.AWAY && previousEvent.eventType == EventType.HOME) {
             timeAtHome += event.timestamp - previousEvent.timestamp
-            // if (debug) console.log("Added to timeAtHome: " + timeAtHome + " 24 hours == " + oneDayMillis)
         }
     })
 

@@ -1,3 +1,5 @@
+
+//TODO: Convert this to type instead of enum
 export enum EventType {
     HOME = "HOME",
     AWAY = "AWAY"
