@@ -1,0 +1,453 @@
+[
+    {
+        "PK": "USER#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "SK": "EVENT#9999",
+        "type": "User",
+        "userId": "898ec208-efbd-470a-9351-6d0903e01ccc",
+        "username": "Dallas69",
+        "usernameLowercase": "dallas69",
+        "followerCount": 2185,
+        "followingCount": 9196
+    },
+    {
+        "PK": "USER#f5fbf387-8824-488e-8d62-acae997bf155",
+        "SK": "EVENT#9999",
+        "type": "User",
+        "userId": "f5fbf387-8824-488e-8d62-acae997bf155",
+        "username": "Ilene.Bayer",
+        "usernameLowercase": "ilene.bayer",
+        "followerCount": 8553,
+        "followingCount": 2083
+    },
+    {
+        "PK": "USER#57d7653e-852d-4741-95e4-b73df79d6fc3",
+        "SK": "EVENT#9999",
+        "type": "User",
+        "userId": "57d7653e-852d-4741-95e4-b73df79d6fc3",
+        "username": "Savannah_Wyman52",
+        "usernameLowercase": "savannah_wyman52",
+        "followerCount": 5740,
+        "followingCount": 4492
+    },
+    {
+        "PK": "USER#3445870d-eb81-4fd7-8b40-6c1caa2dfe12",
+        "SK": "EVENT#9999",
+        "type": "User",
+        "userId": "3445870d-eb81-4fd7-8b40-6c1caa2dfe12",
+        "username": "Stanley58",
+        "usernameLowercase": "stanley58",
+        "followerCount": 1274,
+        "followingCount": 8519
+    },
+    {
+        "PK": "USER#aa396452-e300-4012-9633-f8425246cb73",
+        "SK": "EVENT#9999",
+        "type": "User",
+        "userId": "aa396452-e300-4012-9633-f8425246cb73",
+        "username": "Haylee_Bradtke19",
+        "usernameLowercase": "haylee_bradtke19",
+        "followerCount": 993,
+        "followingCount": 2110
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "EVENT#9999",
+        "type": "User",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "username": "Bernie42",
+        "usernameLowercase": "bernie42",
+        "followerCount": 7109,
+        "followingCount": 2971
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "EVENT#9999",
+        "type": "User",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "username": "Randal_Wuckert",
+        "usernameLowercase": "randal_wuckert",
+        "followerCount": 4075,
+        "followingCount": 8563
+    },
+    {
+        "PK": "USER#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "SK": "EVENT#9999",
+        "type": "User",
+        "userId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "username": "Jaquelin.Koelpin72",
+        "usernameLowercase": "jaquelin.koelpin72",
+        "followerCount": 8288,
+        "followingCount": 6339
+    },
+    {
+        "PK": "USER#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "SK": "EVENT#1970-01-01T01:51:17.393Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-01T01:51:17.393Z",
+        "type": "Event",
+        "userId": "898ec208-efbd-470a-9351-6d0903e01ccc"
+    },
+    {
+        "PK": "USER#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "SK": "EVENT#1970-01-01T11:04:18.338Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T11:04:18.338Z",
+        "type": "Event",
+        "userId": "898ec208-efbd-470a-9351-6d0903e01ccc"
+    },
+    {
+        "PK": "USER#f5fbf387-8824-488e-8d62-acae997bf155",
+        "SK": "EVENT#1970-01-01T00:52:41.196Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T00:52:41.196Z",
+        "type": "Event",
+        "userId": "f5fbf387-8824-488e-8d62-acae997bf155"
+    },
+    {
+        "PK": "USER#f5fbf387-8824-488e-8d62-acae997bf155",
+        "SK": "EVENT#1970-01-01T02:37:42.895Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T02:37:42.895Z",
+        "type": "Event",
+        "userId": "f5fbf387-8824-488e-8d62-acae997bf155"
+    },
+    {
+        "PK": "USER#f5fbf387-8824-488e-8d62-acae997bf155",
+        "SK": "EVENT#1970-01-01T04:04:58.865Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T04:04:58.865Z",
+        "type": "Event",
+        "userId": "f5fbf387-8824-488e-8d62-acae997bf155"
+    },
+    {
+        "PK": "USER#f5fbf387-8824-488e-8d62-acae997bf155",
+        "SK": "EVENT#1970-01-01T14:47:51.914Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-01T14:47:51.914Z",
+        "type": "Event",
+        "userId": "f5fbf387-8824-488e-8d62-acae997bf155"
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "EVENT#1970-01-01T12:17:08.010Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T12:17:08.010Z",
+        "type": "Event",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc"
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "EVENT#1970-01-01T16:43:30.460Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T16:43:30.460Z",
+        "type": "Event",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc"
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "EVENT#1970-01-01T07:38:36.783Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T07:38:36.783Z",
+        "type": "Event",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc"
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "EVENT#1970-01-01T00:09:07.412Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-01T00:09:07.412Z",
+        "type": "Event",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc"
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "EVENT#1970-01-01T16:37:46.028Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-01T16:37:46.028Z",
+        "type": "Event",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc"
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "EVENT#1970-01-01T00:17:40.818Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T00:17:40.818Z",
+        "type": "Event",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8"
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "EVENT#1970-01-01T11:42:57.155Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T11:42:57.155Z",
+        "type": "Event",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8"
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "EVENT#1970-01-01T23:22:25.214Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-01T23:22:25.214Z",
+        "type": "Event",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8"
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "EVENT#1970-01-01T15:01:39.504Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T15:01:39.504Z",
+        "type": "Event",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8"
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "EVENT#1970-01-01T03:49:40.535Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-01T03:49:40.535Z",
+        "type": "Event",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8"
+    },
+    {
+        "PK": "USER#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "SK": "EVENT#1970-01-01T16:12:38.844Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-01T16:12:38.844Z",
+        "type": "Event",
+        "userId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3"
+    },
+    {
+        "PK": "USER#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "SK": "EVENT#1970-01-01T01:20:50.037Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-01T01:20:50.037Z",
+        "type": "Event",
+        "userId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3"
+    },
+    {
+        "PK": "USER#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "SK": "EVENT#1970-01-01T03:17:12.659Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-01T03:17:12.659Z",
+        "type": "Event",
+        "userId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3"
+    },
+    {
+        "PK": "USER#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "SK": "EVENT#1970-01-01T02:57:48.318Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T02:57:48.318Z",
+        "type": "Event",
+        "userId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3"
+    },
+    {
+        "PK": "USER#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "SK": "EVENT#1970-01-01T09:16:17.315Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T09:16:17.315Z",
+        "type": "Event",
+        "userId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3"
+    },
+    {
+        "PK": "USER#f5fbf387-8824-488e-8d62-acae997bf155",
+        "SK": "FOLLOWING#aa396452-e300-4012-9633-f8425246cb73",
+        "type": "Following",
+        "followingUserId": "aa396452-e300-4012-9633-f8425246cb73",
+        "userId": "f5fbf387-8824-488e-8d62-acae997bf155"
+    },
+    {
+        "PK": "USER#f5fbf387-8824-488e-8d62-acae997bf155",
+        "SK": "FOLLOWING#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "type": "Following",
+        "followingUserId": "898ec208-efbd-470a-9351-6d0903e01ccc",
+        "userId": "f5fbf387-8824-488e-8d62-acae997bf155"
+    },
+    {
+        "PK": "USER#57d7653e-852d-4741-95e4-b73df79d6fc3",
+        "SK": "FOLLOWING#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "type": "Following",
+        "followingUserId": "898ec208-efbd-470a-9351-6d0903e01ccc",
+        "userId": "57d7653e-852d-4741-95e4-b73df79d6fc3"
+    },
+    {
+        "PK": "USER#aa396452-e300-4012-9633-f8425246cb73",
+        "SK": "FOLLOWING#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "type": "Following",
+        "followingUserId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "userId": "aa396452-e300-4012-9633-f8425246cb73"
+    },
+    {
+        "PK": "USER#aa396452-e300-4012-9633-f8425246cb73",
+        "SK": "FOLLOWING#57d7653e-852d-4741-95e4-b73df79d6fc3",
+        "type": "Following",
+        "followingUserId": "57d7653e-852d-4741-95e4-b73df79d6fc3",
+        "userId": "aa396452-e300-4012-9633-f8425246cb73"
+    },
+    {
+        "PK": "USER#aa396452-e300-4012-9633-f8425246cb73",
+        "SK": "FOLLOWING#3445870d-eb81-4fd7-8b40-6c1caa2dfe12",
+        "type": "Following",
+        "followingUserId": "3445870d-eb81-4fd7-8b40-6c1caa2dfe12",
+        "userId": "aa396452-e300-4012-9633-f8425246cb73"
+    },
+    {
+        "PK": "USER#aa396452-e300-4012-9633-f8425246cb73",
+        "SK": "FOLLOWING#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "type": "Following",
+        "followingUserId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "userId": "aa396452-e300-4012-9633-f8425246cb73"
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "FOLLOWING#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "type": "Following",
+        "followingUserId": "898ec208-efbd-470a-9351-6d0903e01ccc",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc"
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "FOLLOWING#aa396452-e300-4012-9633-f8425246cb73",
+        "type": "Following",
+        "followingUserId": "aa396452-e300-4012-9633-f8425246cb73",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc"
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "FOLLOWING#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "type": "Following",
+        "followingUserId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc"
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "FOLLOWING#f5fbf387-8824-488e-8d62-acae997bf155",
+        "type": "Following",
+        "followingUserId": "f5fbf387-8824-488e-8d62-acae997bf155",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc"
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "FOLLOWING#3445870d-eb81-4fd7-8b40-6c1caa2dfe12",
+        "type": "Following",
+        "followingUserId": "3445870d-eb81-4fd7-8b40-6c1caa2dfe12",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc"
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "FOLLOWING#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "type": "Following",
+        "followingUserId": "898ec208-efbd-470a-9351-6d0903e01ccc",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8"
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "FOLLOWING#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "type": "Following",
+        "followingUserId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8"
+    },
+    {
+        "PK": "USER#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "SK": "FOLLOWER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "type": "Follower",
+        "followerUserId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "userId": "898ec208-efbd-470a-9351-6d0903e01ccc"
+    },
+    {
+        "PK": "USER#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "SK": "FOLLOWER#f5fbf387-8824-488e-8d62-acae997bf155",
+        "type": "Follower",
+        "followerUserId": "f5fbf387-8824-488e-8d62-acae997bf155",
+        "userId": "898ec208-efbd-470a-9351-6d0903e01ccc"
+    },
+    {
+        "PK": "USER#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "SK": "FOLLOWER#3445870d-eb81-4fd7-8b40-6c1caa2dfe12",
+        "type": "Follower",
+        "followerUserId": "3445870d-eb81-4fd7-8b40-6c1caa2dfe12",
+        "userId": "898ec208-efbd-470a-9351-6d0903e01ccc"
+    },
+    {
+        "PK": "USER#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "SK": "FOLLOWER#57d7653e-852d-4741-95e4-b73df79d6fc3",
+        "type": "Follower",
+        "followerUserId": "57d7653e-852d-4741-95e4-b73df79d6fc3",
+        "userId": "898ec208-efbd-470a-9351-6d0903e01ccc"
+    },
+    {
+        "PK": "USER#57d7653e-852d-4741-95e4-b73df79d6fc3",
+        "SK": "FOLLOWER#aa396452-e300-4012-9633-f8425246cb73",
+        "type": "Follower",
+        "followerUserId": "aa396452-e300-4012-9633-f8425246cb73",
+        "userId": "57d7653e-852d-4741-95e4-b73df79d6fc3"
+    },
+    {
+        "PK": "USER#57d7653e-852d-4741-95e4-b73df79d6fc3",
+        "SK": "FOLLOWER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "type": "Follower",
+        "followerUserId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "userId": "57d7653e-852d-4741-95e4-b73df79d6fc3"
+    },
+    {
+        "PK": "USER#3445870d-eb81-4fd7-8b40-6c1caa2dfe12",
+        "SK": "FOLLOWER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "type": "Follower",
+        "followerUserId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "userId": "3445870d-eb81-4fd7-8b40-6c1caa2dfe12"
+    },
+    {
+        "PK": "USER#aa396452-e300-4012-9633-f8425246cb73",
+        "SK": "FOLLOWER#f5fbf387-8824-488e-8d62-acae997bf155",
+        "type": "Follower",
+        "followerUserId": "f5fbf387-8824-488e-8d62-acae997bf155",
+        "userId": "aa396452-e300-4012-9633-f8425246cb73"
+    },
+    {
+        "PK": "USER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "SK": "FOLLOWER#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "type": "Follower",
+        "followerUserId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "userId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc"
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "FOLLOWER#898ec208-efbd-470a-9351-6d0903e01ccc",
+        "type": "Follower",
+        "followerUserId": "898ec208-efbd-470a-9351-6d0903e01ccc",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8"
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "FOLLOWER#e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "type": "Follower",
+        "followerUserId": "e84fdc6d-509d-4b8d-9cec-eab03f2b0cdc",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8"
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "FOLLOWER#aa396452-e300-4012-9633-f8425246cb73",
+        "type": "Follower",
+        "followerUserId": "aa396452-e300-4012-9633-f8425246cb73",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8"
+    },
+    {
+        "PK": "USER#68c18f2b-f67d-4f03-8700-a5461c9c19f8",
+        "SK": "FOLLOWER#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "type": "Follower",
+        "followerUserId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "userId": "68c18f2b-f67d-4f03-8700-a5461c9c19f8"
+    },
+    {
+        "PK": "USER#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "SK": "FOLLOWER#f5fbf387-8824-488e-8d62-acae997bf155",
+        "type": "Follower",
+        "followerUserId": "f5fbf387-8824-488e-8d62-acae997bf155",
+        "userId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3"
+    },
+    {
+        "PK": "USER#667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3",
+        "SK": "FOLLOWER#57d7653e-852d-4741-95e4-b73df79d6fc3",
+        "type": "Follower",
+        "followerUserId": "57d7653e-852d-4741-95e4-b73df79d6fc3",
+        "userId": "667f0a6c-a0b0-47ff-bd22-01db6d1ce5c3"
+    }
+]

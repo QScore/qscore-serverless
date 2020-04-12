@@ -6,7 +6,7 @@ export async function calculateScore(userId: string, repository: Repository): Pr
     const yesterdayMillis = Date.now() - oneDayMillis
 
     let start = Date.now()
-    const events = await repository.getEventsFromStartTime(userId, yesterdayMillis)
+    const events = await repository.getUserAndEventsFromStartTime(userId, yesterdayMillis)
     let elapsed = Date.now() - start
     console.log(">>Fetching events took: " + elapsed)
 
@@ -19,7 +19,6 @@ export async function calculateScore(userId: string, repository: Repository): Pr
     const last24HoursEvents = filteredEvents
 
     //Handle error case where no events in last 24 hours.
-    //TODO: This is actually not an error
     if (last24HoursEvents.length == 0) {
         //Find last known event for user
         const event = await repository.getLatestEventForUser(userId)

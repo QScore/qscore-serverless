@@ -1,6 +1,6 @@
 import { gql, ApolloError } from 'apollo-server-lambda'
 import { calculateScore } from '../../score/scoreManager'
-import repository from '../../data/DynamoDbRepository'
+import { dynamoDbRepository } from '../../data/DynamoDbRepository'
 
 export const typeDef = gql`
 type User {
@@ -49,12 +49,12 @@ export const resolvers = {
     User: {
         score: async (_parent: any, _args: any, context: any, _info: any) => {
             const userId = getUserIdFromContext(context)
-            const score = await calculateScore(userId, repository)
+            const score = await calculateScore(userId, dynamoDbRepository)
             if (score == -1) {
                 //Use existing score
                 return _parent.score || 0
             }
-            await repository.updateUserScore(userId, score)
+            await dynamoDbRepository.updateUserScore(userId, score)
             return score
         }
     },
@@ -63,7 +63,7 @@ export const resolvers = {
         updateUserInfo: async (_parent: any, args: any, context: any, _info: any) => {
             const userId = getUserIdFromContext(context)
             const username = args.input.username
-            await repository.updateUsername(userId, username)
+            await dynamoDbRepository.updateUsername(userId, username)
             return {
                 "id": userId,
                 "username": username
@@ -74,7 +74,7 @@ export const resolvers = {
     Query: {
         currentUser: async (_parent: any, _args: any, context: any, _info: any) => {
             const id = getUserIdFromContext(context)
-            const user = await repository.getCurrentUser(id)
+            const user = await dynamoDbRepository.getCurrentUser(id)
             if (!user) {
                 throw new ApolloError("Current user could not be resolved")
             }
