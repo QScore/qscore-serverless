@@ -1,90 +1,113 @@
 import * as AWS from "aws-sdk"
-import { v4 as uuid } from 'uuid';
 import './model/Event'
 import './model/Location'
 import './model/User'
 import { Repository } from "./Repository";
 import { EventType, EventFull, Event } from "./model/Event";
-import { Location } from "./model/Location";
+import { UserV2, EventV2, EventDynamo, UserDynamo } from "./model/Types";
 
-const documentClient = new AWS.DynamoDB.DocumentClient()
-const userTableName: string = process.env.USERS_TABLE_NAME!
-const eventsTableName: string = process.env.GEOFENCE_EVENTS_TABLE_NAME!
+const userTable = process.env.USERS_TABLE_NAME!
+const eventsTable = process.env.GEOFENCE_EVENTS_TABLE_NAME!
+const userTableV2 = process.env.USERS_TABLE_V2
 
 export class DynamoDbRepository implements Repository {
-    documentClient: AWS.DynamoDB.DocumentClient
-    userTableName: string
-    eventsTableName: string
+    private documentClient: AWS.DynamoDB.DocumentClient
 
-    constructor(documentClient: AWS.DynamoDB.DocumentClient, userTableName: string, eventsTableName: string) {
+    constructor(documentClient: AWS.DynamoDB.DocumentClient = new AWS.DynamoDB.DocumentClient()) {
         this.documentClient = documentClient
-        this.userTableName = userTableName
-        this.eventsTableName = eventsTableName
     }
 
-    async createEvent(userId: string, eventType: EventType, userLocation: Location): Promise<EventFull> {
+    async createEventV2(event: EventV2) {
         //Get most recent event and see if it is alternating event type, otherwise ignore.
-        const latestEvent = await this.getLatestEventForUser(userId)
-        if (latestEvent && latestEvent.eventType === eventType) {
+        const latestEvent = await this.getLatestEventForUser(event.userId)
+        if (latestEvent && latestEvent.eventType === event.eventType) {
             return latestEvent
         }
         const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
-            TableName: eventsTableName,
-            Item: {
-                id: uuid(),
-                timestamp: Date.now(),
-                eventType: eventType.toString(),
-                userLocationLat: userLocation.lat,
-                userLocationLng: userLocation.lng,
-                userId: userId
-            }
-        }
-        await documentClient.put(params).promise()
-        return this.convertItemToEvent(params.Item)
-    }
-
-    async updateUserScore(userId: string, score: number) {
-        const userParams: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
-            TableName: userTableName,
-            Key: { id: userId },
-            UpdateExpression: 'set #score = :score',
-            ExpressionAttributeNames: {
-                '#score': 'score'
+            TableName: userTableV2,
+            Item: <EventDynamo>{
+                PK: `USER#${event.userId}`,
+                SK: `EVENT#${event.timestamp}`,
+                type: `Event`,
+                eventType: event.eventType,
+                timestamp: event.timestamp,
+                userId: event.userId
             },
-            ExpressionAttributeValues: {
-                ':score': score
+            ConditionExpression: "attribute_not_exists(#PK)",
+            ExpressionAttributeNames: {
+                "#PK": "PK"
             }
         }
-        await documentClient.update(userParams).promise()
+        return await this.documentClient.put(params).promise()
     }
 
-    async getEventsFromStartTime(userId: string, startTimestamp: number): Promise<Event[]> {
+    async createUserV2(user: UserV2) {
+        const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
+            TableName: userTableV2,
+            Item: <UserDynamo>{
+                PK: `USER#${user.userId}`,
+                SK: `EVENT#9999`,
+                type: `User`,
+                userId: user.userId,
+                username: user.username,
+                usernameLowercase: user.username.toLowerCase(),
+                followerCount: 0,
+                followingCount: 0
+            },
+            ConditionExpression: "attribute_not_exists(#PK)",
+            ExpressionAttributeNames: {
+                "#PK": "PK"
+            }
+        }
+        return await this.documentClient.put(params).promise()
+    }
+
+    async getUserAndEventsFromStartTime(userId: string, startTimestamp: string): Promise<GetUserAndEventsResult> {
         const eventParams: AWS.DynamoDB.DocumentClient.QueryInput = {
-            TableName: eventsTableName,
-            IndexName: "time-index",
-            KeyConditionExpression: '#userId = :userId AND #timestamp >= :startTimestamp',
+            TableName: userTableV2,
+            KeyConditionExpression: '#PK = :PK AND #SK >= :SK',
             ExpressionAttributeNames: {
-                '#userId': "userId",
-                '#timestamp': "timestamp"
+                '#PK': "PK",
+                '#SK': "SK"
             },
             ExpressionAttributeValues: {
-                ':userId': userId,
-                ':startTimestamp': startTimestamp
+                ':PK': `USER#${userId}`,
+                ':SK': `EVENT#${startTimestamp}`
+            },
+            ScanIndexForward: false
+        }
+        const result = await this.documentClient.query(eventParams).promise()
+        if (!result.Items) {
+            return <GetUserAndEventsResult>{
+                user: undefined,
+                events: []
             }
         }
 
-        const result = await documentClient.query(eventParams).promise()
-        if (!result.Items) {
-            return []
+        const userAttrs = result.Items.shift() as UserDynamo
+        const user: UserV2 = {
+            userId: userAttrs.userId,
+            followerCount: userAttrs.followerCount,
+            followingCount: userAttrs.followingCount,
+            username: userAttrs.username
         }
-        return result.Items.map((item: any) => {
-            return this.convertItemToEvent(item)
+
+        const events = result.Items.map((item: EventDynamo) => {
+            return <EventV2>{
+                eventType: item.eventType,
+                timestamp: item.timestamp,
+                userId: item.userId
+            }
         })
+        return <GetUserAndEventsResult>{
+            user: user,
+            events: events
+        }
     }
 
     async getLatestEventForUser(userId: string): Promise<EventFull | undefined> {
         const params: AWS.DynamoDB.DocumentClient.QueryInput = {
-            TableName: eventsTableName,
+            TableName: eventsTable,
             IndexName: "time-index",
             KeyConditionExpression: '#userId = :userId',
             ExpressionAttributeNames: {
@@ -97,7 +120,7 @@ export class DynamoDbRepository implements Repository {
             ScanIndexForward: false
         }
 
-        const result = await documentClient.query(params).promise()
+        const result = await this.documentClient.query(params).promise()
         if (!result.Items || result.Items.length == 0) {
             return undefined
         }
@@ -107,7 +130,7 @@ export class DynamoDbRepository implements Repository {
 
     async updateUsername(userId: string, username: string) {
         const params = {
-            TableName: userTableName,
+            TableName: userTable,
             Key: { id: userId },
             UpdateExpression: 'SET #username = :username',
             ExpressionAttributeNames: {
@@ -117,15 +140,15 @@ export class DynamoDbRepository implements Repository {
                 ':username': username
             }
         }
-        await documentClient.update(params).promise()
+        await this.documentClient.update(params).promise()
     }
 
     async getCurrentUser(userId: string): Promise<User | undefined> {
         const params: AWS.DynamoDB.DocumentClient.GetItemInput = {
-            TableName: userTableName,
+            TableName: userTable,
             Key: { id: userId }
         }
-        const result = await documentClient.get(params).promise()
+        const result = await this.documentClient.get(params).promise()
         if (!result.Item) {
             return undefined
         }
@@ -152,8 +175,11 @@ export class DynamoDbRepository implements Repository {
     }
 }
 
-export default new DynamoDbRepository(
-    new AWS.DynamoDB.DocumentClient(),
-    process.env.USERS_TABLE_NAME!,
-    process.env.GEOFENCE_EVENTS_TABLE_NAME!
-)
+
+
+export interface GetUserAndEventsResult {
+    readonly user?: UserV2,
+    readonly events: EventV2[]
+}
+
+export const dynamoDbRepository = new DynamoDbRepository()

@@ -74,14 +74,6 @@ functions:
 custom:
   secrets: ${file(environment.json)}
   accountId: { Ref: AWS::AccountId }
-  dynamodb:
-    start:
-      port: 8000
-      inMemory: true
-      migrate: true
-      seed: false
-    stages:
-      - dev
   stage: ${opt:stage, self:provider.stage}
   geofenceEventsTableName: ${self:custom.stage}-GeofenceEvents
   usersTableName: ${self:custom.stage}-UsersTable
@@ -91,6 +83,19 @@ custom:
     webpackConfig: 'webpack.config.js'
     packager: 'npm'
     includeModules: true
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+      seed: true
+    seed:
+      domain: #name of seed
+        sources:
+          - table: ${self:custom.usersV2TableName}
+            sources: [./test/seed/usersV2.json]
 
 resources:
   Resources:
@@ -157,14 +162,14 @@ resources:
       Properties:
         TableName: ${self:custom.usersV2TableName}
         KeySchema:
-          - AttributeName: pk
+          - AttributeName: PK
             KeyType: HASH
-          - AttributeName: sk
+          - AttributeName: SK
             KeyType: RANGE
         AttributeDefinitions:
-          - AttributeName: pk
+          - AttributeName: PK
             AttributeType: S
-          - AttributeName: sk
+          - AttributeName: SK
             AttributeType: S
         ProvisionedThroughput:
           ReadCapacityUnits: 1

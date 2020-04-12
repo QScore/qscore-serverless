@@ -1,5 +1,5 @@
 import { gql } from 'apollo-server-lambda'
-import dynamoDbRepository from '../../data/DynamoDbRepository'
+import { dynamoDbRepository } from '../../data/DynamoDbRepository'
 
 export const typeDef = gql`
 type GeofenceEvent {
@@ -55,10 +55,9 @@ export const resolvers = {
             }
             console.log("userLocation: " + JSON.stringify(userLocation))
             const event = await dynamoDbRepository.createEvent(userId, eventType, userLocation)
-            const result =  {
+            const result = {
                 "geofenceEvent": event
             }
-            console.log(">>RESULT: " + JSON.stringify(result))
             return result
         }
     }

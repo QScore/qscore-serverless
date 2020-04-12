@@ -6,7 +6,7 @@ import { Event, EventType, EventFull } from '../../src/data/model/Event';
 
 let clock: sinon.SinonFakeTimers
 
-beforeEach(async function () {
+beforeEach(function () {
     clock = sinon.useFakeTimers({
         now: 24 * 60 * 60 * 1000
     });
@@ -25,7 +25,7 @@ describe('updateScore', function () {
         ]
 
 
-        repository.getEventsFromStartTime.resolves(events)
+        repository.getUserAndEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
@@ -40,7 +40,7 @@ describe('updateScore', function () {
         ]
 
 
-        repository.getEventsFromStartTime.resolves(events)
+        repository.getUserAndEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
@@ -54,7 +54,7 @@ describe('updateScore', function () {
         ]
 
 
-        repository.getEventsFromStartTime.resolves(events)
+        repository.getUserAndEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
@@ -68,7 +68,7 @@ describe('updateScore', function () {
         ]
 
 
-        repository.getEventsFromStartTime.resolves(events)
+        repository.getUserAndEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
@@ -82,7 +82,7 @@ describe('updateScore', function () {
         ]
 
 
-        repository.getEventsFromStartTime.resolves(events)
+        repository.getUserAndEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
@@ -106,7 +106,7 @@ describe('updateScore', function () {
                 }
             },
         ]
-        repository.getEventsFromStartTime.resolves([] as EventFull[])
+        repository.getUserAndEventsFromStartTime.resolves([] as EventFull[])
         repository.getLatestEventForUser.resolves(events[0])
 
         const userId = "1234"
@@ -132,7 +132,7 @@ describe('updateScore', function () {
                 }
             },
         ]
-        repository.getEventsFromStartTime.resolves([] as EventFull[])
+        repository.getUserAndEventsFromStartTime.resolves([] as EventFull[])
         repository.getLatestEventForUser.resolves(events[0])
 
         const userId = "1234"
@@ -154,7 +154,7 @@ describe('updateScore', function () {
         ]
 
 
-        repository.getEventsFromStartTime.resolves(events)
+        repository.getUserAndEventsFromStartTime.resolves(events)
 
         const userId = "1234"
         const score = await calculateScore(userId, repository)
