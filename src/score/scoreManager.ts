@@ -1,14 +1,8 @@
-import { EventType, Event } from '../data/model/Event'
-import { Repository } from '../data/Repository'
+import { Event } from '../data/model/Types'
 
-export async function calculateScore(userId: string, repository: Repository): Promise<number> {
+export function calculateScore(events: Event[]): number {
     const oneDayMillis = 24 * 60 * 60 * 1000
     const yesterdayMillis = Date.now() - oneDayMillis
-
-    let start = Date.now()
-    const events = await repository.getUserAndEventsFromStartTime(userId, yesterdayMillis)
-    let elapsed = Date.now() - start
-    console.log(">>Fetching events took: " + elapsed)
 
     //Filter out duplicate atHome status events
     const filteredEvents = events.filter((event, index) => {
@@ -18,24 +12,14 @@ export async function calculateScore(userId: string, repository: Repository): Pr
 
     const last24HoursEvents = filteredEvents
 
-    //Handle error case where no events in last 24 hours.
-    if (last24HoursEvents.length == 0) {
-        //Find last known event for user
-        const event = await repository.getLatestEventForUser(userId)
-        if (event.eventType === EventType.HOME) {
-            return 100
-        } else {
-            return 0
-        }
-    }
-
     //Handle edge case where first event in last 24 hours is AWAY.
     //That means user was home for part of the beginning of 24 hr period.
     //We can assume a fake home event 24 hours ago if they were away
-    if (last24HoursEvents && last24HoursEvents[0].eventType == EventType.AWAY) {
+    if (last24HoursEvents && last24HoursEvents[0].eventType === "AWAY") {
         const fakeEvent: Event = {
-            timestamp: yesterdayMillis,
-            eventType: EventType.HOME
+            userId: "fake",
+            timestamp: new Date(yesterdayMillis).toISOString(),
+            eventType: "HOME"
         }
         last24HoursEvents.unshift(fakeEvent)
     }
@@ -43,10 +27,11 @@ export async function calculateScore(userId: string, repository: Repository): Pr
     //Handle edge case where last event in last 24 hours is HOME.
     //That means user was home for the remaining part of 24 hr period.
     //We can assume a fake home event 24 hours ago if they were away
-    if (last24HoursEvents && last24HoursEvents[last24HoursEvents.length - 1].eventType == EventType.HOME) {
+    if (last24HoursEvents && last24HoursEvents[last24HoursEvents.length - 1].eventType === "HOME") {
         const fakeEvent: Event = {
-            timestamp: new Date().getTime(),
-            eventType: EventType.AWAY
+            userId: "fake",
+            timestamp: new Date().toISOString(),
+            eventType: "AWAY"
         }
         last24HoursEvents.push(fakeEvent)
     }
@@ -55,12 +40,21 @@ export async function calculateScore(userId: string, repository: Repository): Pr
     var timeAtHome = 0
     last24HoursEvents.forEach((event, index) => {
         const previousEvent = last24HoursEvents[index - 1]
-        if (previousEvent && event.eventType == EventType.AWAY && previousEvent.eventType == EventType.HOME) {
-            timeAtHome += event.timestamp - previousEvent.timestamp
+        if (previousEvent && event.eventType == "AWAY" && previousEvent.eventType == "HOME") {
+            timeAtHome += new Date(event.timestamp).getTime() - new Date(previousEvent.timestamp).getTime()
         }
     })
 
     //Create score:
     const finalScore = Math.min(timeAtHome / oneDayMillis * 100, 100)
     return finalScore
+}
+
+//Find last known event for user
+export function calculateScoreIfNoEventsIn24Hours(event: Event): number {
+    if (event.eventType === "HOME") {
+        return 100
+    } else {
+        return 0
+    }
 }

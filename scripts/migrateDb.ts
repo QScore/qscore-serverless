@@ -6,7 +6,7 @@ dotenv.config()
 
 import * as AWS from "aws-sdk"
 import { DynamoDbRepository } from "../src/data/DynamoDbRepository"
-import { UserV2, EventV2 } from "../src/data/model/Types"
+import { User, Event } from "../src/data/model/Types"
 
 AWS.config.getCredentials(function (err) {
     if (err) console.log(err.stack);
@@ -35,7 +35,7 @@ async function migrateUsersTable() {
         console.log("Scanning complete, num items: " + results.Items.length)
         results.Items.forEach(async item => {
             //Create user in V2 table
-            const user: UserV2 = {
+            const user: User = {
                 username: item.username,
                 userId: item.id,
                 followerCount: 0,
@@ -43,7 +43,7 @@ async function migrateUsersTable() {
             }
 
             try {
-                await dynamoDbRepositoryLocal.createUserV2(user)
+                await dynamoDbRepositoryLocal.createUser(user)
             } catch (error) {
                 console.log("ERROR: " + error)
             }
@@ -72,7 +72,7 @@ async function migrateEventsTable() {
         console.log("Scanning complete, num items: " + results.Items.length)
         results.Items.forEach(async item => {
             //Create event in v2 table
-            const event: EventV2 = {
+            const event: Event = {
                 eventType: item.eventType,
                 userId: item.userId,
                 timestamp: new Date(item.timestamp).toISOString()

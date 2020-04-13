@@ -1,5 +1,5 @@
 import { gql, ApolloError } from 'apollo-server-lambda'
-import { calculateScore } from '../../score/scoreManager'
+import * as scoreManager from '../../score/scoreManager'
 import { dynamoDbRepository } from '../../data/DynamoDbRepository'
 
 export const typeDef = gql`
@@ -46,24 +46,11 @@ type Query {
 `
 
 export const resolvers = {
-    User: {
-        score: async (_parent: any, _args: any, context: any, _info: any) => {
-            const userId = getUserIdFromContext(context)
-            const score = await calculateScore(userId, dynamoDbRepository)
-            if (score == -1) {
-                //Use existing score
-                return _parent.score || 0
-            }
-            await dynamoDbRepository.updateUserScore(userId, score)
-            return score
-        }
-    },
-
     Mutation: {
         updateUserInfo: async (_parent: any, args: any, context: any, _info: any) => {
             const userId = getUserIdFromContext(context)
             const username = args.input.username
-            await dynamoDbRepository.updateUsername(userId, username)
+            await dynamoDbRepository.updateUsername(userId, username) //TODO:
             return {
                 "id": userId,
                 "username": username
@@ -74,17 +61,29 @@ export const resolvers = {
     Query: {
         currentUser: async (_parent: any, _args: any, context: any, _info: any) => {
             const id = getUserIdFromContext(context)
-            const user = await dynamoDbRepository.getCurrentUser(id)
-            if (!user) {
+            const oneDayMillis = 24 * 60 * 60 * 1000
+            const yesterdayMillis = Date.now() - oneDayMillis
+            const startTime = new Date(yesterdayMillis).toISOString()
+            const { user, events } = await dynamoDbRepository.getUserAndEventsFromStartTime(id, startTime)
+            if (!user || !events) {
                 throw new ApolloError("Current user could not be resolved")
             }
 
+            let score = 0
+            if (events.length == 0) {
+                //No events in the last 24 hours, get latest event to calculate score
+                const event = await dynamoDbRepository.getLatestEventForUser(id)
+                score = scoreManager.calculateScoreIfNoEventsIn24Hours(event)
+            } else {
+                score = scoreManager.calculateScore(events)
+            }
             return {
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "score": user.score
-                    //score will get calculated separately
+                user: {
+                    id: user.userId,
+                    username: user.username,
+                    followingCount: user.followingCount,
+                    followerCount: user.followerCount,
+                    score: score
                 }
             }
         },

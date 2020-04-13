@@ -2,13 +2,13 @@ export type EventType = "HOME" | "AWAY"
 
 export type DynamoType = "Event" | "User"
 
-export interface EventV2 {
+export interface Event {
     readonly userId: string
     readonly eventType: EventType
     readonly timestamp: string
 }
 
-export interface UserV2 {
+export interface User {
     readonly userId: string,
     readonly followerCount: number,
     readonly followingCount: number,
