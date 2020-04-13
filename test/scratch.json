@@ -1,0 +1,32 @@
+{
+    "Items": [
+        {
+            "usernameLowercase": "alanna_bogan",
+            "SK": "EVENT#9999",
+            "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
+            "type": "User",
+            "userId": "764f64a6-f37f-4c48-9d65-416320cca025",
+            "followerCount": 8976,
+            "followingCount": 3463,
+            "username": "Alanna_Bogan"
+        },
+        {
+            "SK": "EVENT#1970-01-02T09:08:01.702Z",
+            "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
+            "eventType": "HOME",
+            "type": "Event",
+            "userId": "764f64a6-f37f-4c48-9d65-416320cca025",
+            "timestamp": "1970-01-02T09:08:01.702Z"
+        },
+        {
+            "SK": "EVENT#1970-01-02T07:49:01.372Z",
+            "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
+            "eventType": "AWAY",
+            "type": "Event",
+            "userId": "764f64a6-f37f-4c48-9d65-416320cca025",
+            "timestamp": "1970-01-02T07:49:01.372Z"
+        }
+    ],
+    "Count": 3,
+    "ScannedCount": 3
+}

@@ -17,7 +17,7 @@ export class DynamoDbRepository implements Repository {
         this.documentClient = documentClient
     }
 
-    async createEventV2(event: EventV2) {
+    async createEvent(event: EventV2): Promise<EventV2> {
         //Get most recent event and see if it is alternating event type, otherwise ignore.
         const latestEvent = await this.getLatestEventForUser(event.userId)
         if (latestEvent && latestEvent.eventType === event.eventType) {
@@ -38,7 +38,8 @@ export class DynamoDbRepository implements Repository {
                 "#PK": "PK"
             }
         }
-        return await this.documentClient.put(params).promise()
+        await this.documentClient.put(params).promise()
+        return event
     }
 
     async createUserV2(user: UserV2) {
@@ -65,19 +66,20 @@ export class DynamoDbRepository implements Repository {
     async getUserAndEventsFromStartTime(userId: string, startTimestamp: string): Promise<GetUserAndEventsResult> {
         const eventParams: AWS.DynamoDB.DocumentClient.QueryInput = {
             TableName: userTableV2,
-            KeyConditionExpression: '#PK = :PK AND #SK >= :SK',
+            KeyConditionExpression: '#PK = :PK And #SK BETWEEN :SK and :END',
             ExpressionAttributeNames: {
                 '#PK': "PK",
                 '#SK': "SK"
             },
             ExpressionAttributeValues: {
                 ':PK': `USER#${userId}`,
-                ':SK': `EVENT#${startTimestamp}`
+                ':SK': `EVENT#${startTimestamp}`,
+                ':END': `EVENT#9999`
             },
             ScanIndexForward: false
         }
         const result = await this.documentClient.query(eventParams).promise()
-        if (!result.Items) {
+        if (result.Items.length == 0) {
             return <GetUserAndEventsResult>{
                 user: undefined,
                 events: []
@@ -105,16 +107,17 @@ export class DynamoDbRepository implements Repository {
         }
     }
 
-    async getLatestEventForUser(userId: string): Promise<EventFull | undefined> {
+    async getLatestEventForUser(userId: string): Promise<EventV2 | undefined> {
         const params: AWS.DynamoDB.DocumentClient.QueryInput = {
-            TableName: eventsTable,
-            IndexName: "time-index",
-            KeyConditionExpression: '#userId = :userId',
+            TableName: userTableV2,
+            KeyConditionExpression: '#PK = :PK AND #SK < :SK',
             ExpressionAttributeNames: {
-                '#userId': "userId"
+                '#PK': "PK",
+                '#SK': "SK"
             },
             ExpressionAttributeValues: {
-                ':userId': userId
+                ':PK': `USER#${userId}`,
+                ':SK': 'EVENT#9999'
             },
             Limit: 1,
             ScanIndexForward: false
@@ -125,7 +128,11 @@ export class DynamoDbRepository implements Repository {
             return undefined
         }
         const item = result.Items[0]
-        return this.convertItemToEvent(item)
+        return <EventV2>{
+            eventType: item.eventType,
+            timestamp: item.timestamp,
+            userId: item.userId
+        }
     }
 
     async updateUsername(userId: string, username: string) {
