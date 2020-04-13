@@ -79,7 +79,7 @@ async function migrateEventsTable() {
             }
 
             try {
-                await dynamoDbRepositoryLocal.createEventV2(event)
+                await dynamoDbRepositoryLocal.createEvent(event)
             } catch (error) {
                 console.log("ERROR: " + error)
             }

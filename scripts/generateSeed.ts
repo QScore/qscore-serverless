@@ -30,7 +30,7 @@ for (let i = 0; i < numUsers; i++) {
     })
 
     //Add events for each user
-    const oneDay = 24 * 60 * 60 * 1000
+    const twoDays = 2 * 24 * 60 * 60 * 1000
     const maxEvents = faker.random.number(maxEventsPerUser)
     for (let i = 0; i < maxEvents; i++) {
         let atHome: EventType
@@ -39,7 +39,7 @@ for (let i = 0; i < numUsers; i++) {
         } else {
             atHome = "AWAY"
         }
-        const timestampUnix = faker.random.number(oneDay)
+        const timestampUnix = faker.random.number(twoDays)
         const timestampIso = new Date(timestampUnix).toISOString()
         events.push({
             PK: `USER#${userId}`,
