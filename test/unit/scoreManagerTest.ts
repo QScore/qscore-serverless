@@ -124,7 +124,7 @@ describe('updateScore', function () {
         });
         const events: Event[] = [
             {
-                timestamp: new Date(100000).toISOString(),
+                timestamp: new Date(0).toISOString(),
                 eventType: "AWAY",
                 userId: "na"
             },

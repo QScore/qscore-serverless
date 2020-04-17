@@ -1,12 +1,11 @@
 import { gql } from 'apollo-server-lambda'
 import { dynamoDbRepository } from '../../data/DynamoDbRepository'
+import { Event } from '../../data/model/Types'
 
 export const typeDef = gql`
 type GeofenceEvent {
-    id: ID!
     timestamp: String!
     eventType: GeofenceEventType!
-    userLocation: Location!
     userId: String!
 }
 
@@ -31,8 +30,6 @@ type Mutation {
 
 input CreateGeofenceEventInput {
     eventType: GeofenceEventType!
-    userLocationLat: String!
-    userLocationLng: String!
 }
 
 type CreateGeofenceEventPayload {
@@ -49,12 +46,12 @@ export const resolvers = {
         createGeofenceEvent: async (_parent: any, args: any, context: any, _info: any) => {
             const userId = context.event.requestContext.authorizer.userId
             const eventType = args.input.eventType
-            const userLocation = {
-                lat: args.input.userLocationLat,
-                lng: args.input.userLocationLng
+            const input = <Event>{
+                eventType: eventType,
+                timestamp: new Date().toISOString(),
+                userId: userId
             }
-            console.log("userLocation: " + JSON.stringify(userLocation))
-            const event = await dynamoDbRepository.createEvent(userId, eventType, userLocation)
+            const event = await dynamoDbRepository.createEvent(input)
             const result = {
                 "geofenceEvent": event
             }
