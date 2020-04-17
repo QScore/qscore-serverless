@@ -99,64 +99,6 @@ custom:
 
 resources:
   Resources:
-    GeofenceEventsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:custom.geofenceEventsTableName}
-        StreamSpecification:
-          StreamViewType: NEW_AND_OLD_IMAGES
-        KeySchema:
-          - AttributeName: id
-            KeyType: HASH
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-          - AttributeName: timestamp
-            AttributeType: N
-          - AttributeName: userId
-            AttributeType: S
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1 
-        GlobalSecondaryIndexes:
-          - IndexName: time-index
-            KeySchema:
-              - AttributeName: userId
-                KeyType: HASH
-              - AttributeName: timestamp
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
-    UsersTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:custom.usersTableName}
-        KeySchema:
-          - AttributeName: id
-            KeyType: HASH
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-          - AttributeName: username
-            AttributeType: S
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        GlobalSecondaryIndexes:
-          - IndexName: username-index
-            KeySchema:
-              - AttributeName: username
-                KeyType: HASH
-              - AttributeName: id
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
     UsersTableV2:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -171,6 +113,22 @@ resources:
             AttributeType: S
           - AttributeName: SK
             AttributeType: S
+          - AttributeName: GS1PK
+            AttributeType: S
+          - AttributeName: GS1SK
+            AttributeType: S
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - IndexName: GS1
+            KeySchema:
+              - AttributeName: GS1PK
+                KeyType: HASH
+              - AttributeName: GS1SK
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1

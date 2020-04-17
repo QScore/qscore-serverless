@@ -10,8 +10,8 @@ export interface Event {
 
 export interface User {
     readonly userId: string,
-    readonly followerCount: number,
-    readonly followingCount: number,
+    readonly followerCount?: number,
+    readonly followingCount?: number,
     readonly username: string
 }
 
@@ -28,11 +28,12 @@ export interface Follower {
 export interface UserDynamo {
     readonly PK: string,
     readonly SK: string,
+    readonly GS1PK: string,
+    readonly GS1SK: string,
     readonly userId: string,
-    readonly followerCount: number,
-    readonly followingCount: number,
+    readonly followerCount?: number,
+    readonly followingCount?: number,
     readonly username: string,
-    readonly usernameLowercase: string
     readonly type: DynamoType
 }
 

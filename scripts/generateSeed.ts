@@ -7,6 +7,7 @@ import * as faker from 'faker'
 import { v4 as uuid } from 'uuid'
 import * as fs from 'fs';
 
+faker.seed(123);
 const numUsers = 8
 const maxEventsPerUser = 5
 
@@ -15,16 +16,17 @@ let events: EventDynamo[] = []
 let userIds: string[] = []
 for (let i = 0; i < numUsers; i++) {
     //Add users
-    const userId = uuid()
+    const userId = faker.random.uuid()
     userIds.push(userId)
     const username = faker.internet.userName(faker.name.firstName(i), faker.name.lastName(i))
-    users.push({
+    users.push(<UserDynamo>{
         PK: `USER#${userId}`,
         SK: `EVENT#9999`,
+        GS1PK: `SEARCH#USER`,
+        GS1SK: username.toLowerCase(),
         type: `User`,
         userId: userId,
         username: username,
-        usernameLowercase: username.toLowerCase(),
         followerCount: faker.random.number(10000),
         followingCount: faker.random.number(10000)
     })
@@ -92,8 +94,8 @@ users.forEach((user) => {
 const allItems = []
 allItems.push(users)
 allItems.push(events)
-allItems.push(following)
-allItems.push(followers)
+// allItems.push(following)
+// allItems.push(followers)
 const result = [].concat.apply([], allItems)
 const fileName = 'test/seed/usersV2.json'
 fs.writeFileSync(fileName, JSON.stringify(result))

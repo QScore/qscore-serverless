@@ -1,32 +1,38 @@
-{
-    "Items": [
-        {
-            "usernameLowercase": "alanna_bogan",
-            "SK": "EVENT#9999",
-            "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
-            "type": "User",
-            "userId": "764f64a6-f37f-4c48-9d65-416320cca025",
-            "followerCount": 8976,
-            "followingCount": 3463,
-            "username": "Alanna_Bogan"
-        },
-        {
-            "SK": "EVENT#1970-01-02T09:08:01.702Z",
-            "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
-            "eventType": "HOME",
-            "type": "Event",
-            "userId": "764f64a6-f37f-4c48-9d65-416320cca025",
-            "timestamp": "1970-01-02T09:08:01.702Z"
-        },
-        {
-            "SK": "EVENT#1970-01-02T07:49:01.372Z",
-            "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
-            "eventType": "AWAY",
-            "type": "Event",
-            "userId": "764f64a6-f37f-4c48-9d65-416320cca025",
-            "timestamp": "1970-01-02T07:49:01.372Z"
-        }
-    ],
-    "Count": 3,
-    "ScannedCount": 3
-}
+[
+    {
+        "userId": "5d33bd8d-6c02-4e9a-ae47-f592eea4f55b",
+        "username": "Hallie.Paucek",
+        "followerCount": 1399,
+        "followingCount": 3921
+    },
+    {
+        "userId": "b579a039-6fbf-49e4-8f48-79bc93cb3a44",
+        "username": "Hallie.Paucek",
+        "followerCount": 1399,
+        "followingCount": 3921
+    },
+    {
+        "userId": "a002dd32-0762-413e-a54b-216abb82c5c3",
+        "username": "Herminia88",
+        "followerCount": 4263,
+        "followingCount": 7504
+    },
+    {
+        "userId": "f97b986d-32ee-4bba-a557-864340fae5a1",
+        "username": "Herminia88",
+        "followerCount": 4263,
+        "followingCount": 7504
+    },
+    {
+        "userId": "b979f66e-63f9-46b1-a095-1089e524c11a",
+        "username": "Hettie84",
+        "followerCount": 4921,
+        "followingCount": 7245
+    },
+    {
+        "userId": "8674034e-cda5-48d6-8e4d-ad9ed3de4ae6",
+        "username": "Hettie84",
+        "followerCount": 4921,
+        "followingCount": 7245
+    }
+]

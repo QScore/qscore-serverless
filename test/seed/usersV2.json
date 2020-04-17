@@ -1,393 +1,306 @@
 [
     {
-        "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
+        "PK": "USER#bb463b8b-b76c-4f6a-9726-65ab5730b69b",
         "SK": "EVENT#9999",
+        "GS1PK": "SEARCH#USER",
+        "GS1SK": "lonnie.deckow",
         "type": "User",
-        "userId": "764f64a6-f37f-4c48-9d65-416320cca025",
-        "username": "Alanna_Bogan",
-        "usernameLowercase": "alanna_bogan",
-        "followerCount": 8976,
-        "followingCount": 3463
+        "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b",
+        "username": "Lonnie.Deckow",
+        "followerCount": 837,
+        "followingCount": 5316
     },
     {
-        "PK": "USER#77aa3617-d111-4c2a-bf26-702080eaf5d2",
+        "PK": "USER#95b65a55-334f-4ac1-8606-272614e6cebf",
         "SK": "EVENT#9999",
+        "GS1PK": "SEARCH#USER",
+        "GS1SK": "johnpaul_kutch",
         "type": "User",
-        "userId": "77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "username": "Lolita_Murazik",
-        "usernameLowercase": "lolita_murazik",
-        "followerCount": 5361,
-        "followingCount": 976
+        "userId": "95b65a55-334f-4ac1-8606-272614e6cebf",
+        "username": "Johnpaul_Kutch",
+        "followerCount": 5684,
+        "followingCount": 1156
     },
     {
-        "PK": "USER#a7afa07d-148c-4c45-bd15-111c2fd497da",
+        "PK": "USER#6ade4177-f386-49c1-bdc9-48650456bade",
         "SK": "EVENT#9999",
+        "GS1PK": "SEARCH#USER",
+        "GS1SK": "domenic_lang",
         "type": "User",
-        "userId": "a7afa07d-148c-4c45-bd15-111c2fd497da",
-        "username": "Zachariah_Larkin73",
-        "usernameLowercase": "zachariah_larkin73",
-        "followerCount": 4271,
-        "followingCount": 3623
+        "userId": "6ade4177-f386-49c1-bdc9-48650456bade",
+        "username": "Domenic_Lang",
+        "followerCount": 2683,
+        "followingCount": 5859
     },
     {
-        "PK": "USER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
+        "PK": "USER#32379318-e2ae-4bf0-b948-8242cb158be8",
         "SK": "EVENT#9999",
+        "GS1PK": "SEARCH#USER",
+        "GS1SK": "cyrus_howell",
         "type": "User",
-        "userId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "username": "Ludwig_Mills85",
-        "usernameLowercase": "ludwig_mills85",
-        "followerCount": 9574,
-        "followingCount": 2111
+        "userId": "32379318-e2ae-4bf0-b948-8242cb158be8",
+        "username": "Cyrus_Howell",
+        "followerCount": 8550,
+        "followingCount": 8417
     },
     {
-        "PK": "USER#c91588bd-9555-475e-ac63-c5a6e48f8d4b",
+        "PK": "USER#b8f05ac0-90be-4246-8355-d80a8132e57a",
         "SK": "EVENT#9999",
+        "GS1PK": "SEARCH#USER",
+        "GS1SK": "clemens55",
         "type": "User",
-        "userId": "c91588bd-9555-475e-ac63-c5a6e48f8d4b",
-        "username": "Retha37",
-        "usernameLowercase": "retha37",
-        "followerCount": 5362,
-        "followingCount": 275
+        "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a",
+        "username": "Clemens55",
+        "followerCount": 8180,
+        "followingCount": 8545
     },
     {
-        "PK": "USER#63f855cb-3a0a-4487-8842-e4830b4d6b06",
+        "PK": "USER#26d05788-9984-40ef-ae53-84784e4f94b9",
         "SK": "EVENT#9999",
+        "GS1PK": "SEARCH#USER",
+        "GS1SK": "joseph.schoen",
         "type": "User",
-        "userId": "63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "username": "Lila_Kertzmann20",
-        "usernameLowercase": "lila_kertzmann20",
-        "followerCount": 1329,
-        "followingCount": 8372
+        "userId": "26d05788-9984-40ef-ae53-84784e4f94b9",
+        "username": "Joseph.Schoen",
+        "followerCount": 6328,
+        "followingCount": 7311
     },
     {
-        "PK": "USER#c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
+        "PK": "USER#603e7e83-104d-4e39-871c-7b806b4d62cc",
         "SK": "EVENT#9999",
+        "GS1PK": "SEARCH#USER",
+        "GS1SK": "ramona.graham99",
         "type": "User",
-        "userId": "c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
-        "username": "Elsa60",
-        "usernameLowercase": "elsa60",
-        "followerCount": 2275,
-        "followingCount": 5667
+        "userId": "603e7e83-104d-4e39-871c-7b806b4d62cc",
+        "username": "Ramona.Graham99",
+        "followerCount": 6653,
+        "followingCount": 4052
     },
     {
-        "PK": "USER#afdf20e8-87d2-4083-b028-6b5347dabb85",
+        "PK": "USER#3a7e8b67-270c-4994-9e99-d752e0c295c7",
         "SK": "EVENT#9999",
+        "GS1PK": "SEARCH#USER",
+        "GS1SK": "arjun.paucek82",
         "type": "User",
-        "userId": "afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "username": "Caden.Greenfelder45",
-        "usernameLowercase": "caden.greenfelder45",
-        "followerCount": 2119,
-        "followingCount": 6378
+        "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7",
+        "username": "Arjun.Paucek82",
+        "followerCount": 6164,
+        "followingCount": 9099
     },
     {
-        "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
-        "SK": "EVENT#1970-01-02T09:08:01.702Z",
-        "eventType": "HOME",
-        "timestamp": "1970-01-02T09:08:01.702Z",
-        "type": "Event",
-        "userId": "764f64a6-f37f-4c48-9d65-416320cca025"
-    },
-    {
-        "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
-        "SK": "EVENT#1970-01-02T07:49:01.372Z",
+        "PK": "USER#bb463b8b-b76c-4f6a-9726-65ab5730b69b",
+        "SK": "EVENT#1970-01-01T20:32:14.811Z",
         "eventType": "AWAY",
-        "timestamp": "1970-01-02T07:49:01.372Z",
+        "timestamp": "1970-01-01T20:32:14.811Z",
         "type": "Event",
-        "userId": "764f64a6-f37f-4c48-9d65-416320cca025"
+        "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b"
     },
     {
-        "PK": "USER#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "SK": "EVENT#1970-01-02T19:50:59.559Z",
-        "eventType": "HOME",
-        "timestamp": "1970-01-02T19:50:59.559Z",
-        "type": "Event",
-        "userId": "77aa3617-d111-4c2a-bf26-702080eaf5d2"
-    },
-    {
-        "PK": "USER#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "SK": "EVENT#1970-01-01T15:30:32.924Z",
-        "eventType": "HOME",
-        "timestamp": "1970-01-01T15:30:32.924Z",
-        "type": "Event",
-        "userId": "77aa3617-d111-4c2a-bf26-702080eaf5d2"
-    },
-    {
-        "PK": "USER#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "SK": "EVENT#1970-01-02T00:44:49.152Z",
+        "PK": "USER#bb463b8b-b76c-4f6a-9726-65ab5730b69b",
+        "SK": "EVENT#1970-01-01T14:17:36.470Z",
         "eventType": "AWAY",
-        "timestamp": "1970-01-02T00:44:49.152Z",
+        "timestamp": "1970-01-01T14:17:36.470Z",
         "type": "Event",
-        "userId": "77aa3617-d111-4c2a-bf26-702080eaf5d2"
+        "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b"
     },
     {
-        "PK": "USER#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "SK": "EVENT#1970-01-02T13:32:57.654Z",
+        "PK": "USER#bb463b8b-b76c-4f6a-9726-65ab5730b69b",
+        "SK": "EVENT#1970-01-01T23:37:12.249Z",
         "eventType": "AWAY",
-        "timestamp": "1970-01-02T13:32:57.654Z",
+        "timestamp": "1970-01-01T23:37:12.249Z",
         "type": "Event",
-        "userId": "77aa3617-d111-4c2a-bf26-702080eaf5d2"
+        "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b"
     },
     {
-        "PK": "USER#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "SK": "EVENT#1970-01-01T22:50:11.848Z",
-        "eventType": "HOME",
-        "timestamp": "1970-01-01T22:50:11.848Z",
-        "type": "Event",
-        "userId": "77aa3617-d111-4c2a-bf26-702080eaf5d2"
-    },
-    {
-        "PK": "USER#a7afa07d-148c-4c45-bd15-111c2fd497da",
-        "SK": "EVENT#1970-01-01T00:05:34.750Z",
+        "PK": "USER#bb463b8b-b76c-4f6a-9726-65ab5730b69b",
+        "SK": "EVENT#1970-01-02T11:32:03.216Z",
         "eventType": "AWAY",
-        "timestamp": "1970-01-01T00:05:34.750Z",
+        "timestamp": "1970-01-02T11:32:03.216Z",
         "type": "Event",
-        "userId": "a7afa07d-148c-4c45-bd15-111c2fd497da"
+        "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b"
     },
     {
-        "PK": "USER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "SK": "EVENT#1970-01-01T15:27:20.759Z",
+        "PK": "USER#95b65a55-334f-4ac1-8606-272614e6cebf",
+        "SK": "EVENT#1970-01-01T23:52:14.959Z",
         "eventType": "HOME",
-        "timestamp": "1970-01-01T15:27:20.759Z",
+        "timestamp": "1970-01-01T23:52:14.959Z",
         "type": "Event",
-        "userId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d"
+        "userId": "95b65a55-334f-4ac1-8606-272614e6cebf"
     },
     {
-        "PK": "USER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "SK": "EVENT#1970-01-01T01:22:01.609Z",
+        "PK": "USER#6ade4177-f386-49c1-bdc9-48650456bade",
+        "SK": "EVENT#1970-01-01T12:59:04.934Z",
         "eventType": "AWAY",
-        "timestamp": "1970-01-01T01:22:01.609Z",
+        "timestamp": "1970-01-01T12:59:04.934Z",
         "type": "Event",
-        "userId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d"
+        "userId": "6ade4177-f386-49c1-bdc9-48650456bade"
     },
     {
-        "PK": "USER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "SK": "EVENT#1970-01-02T11:48:56.203Z",
-        "eventType": "HOME",
-        "timestamp": "1970-01-02T11:48:56.203Z",
-        "type": "Event",
-        "userId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d"
-    },
-    {
-        "PK": "USER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "SK": "EVENT#1970-01-02T11:42:36.758Z",
-        "eventType": "HOME",
-        "timestamp": "1970-01-02T11:42:36.758Z",
-        "type": "Event",
-        "userId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d"
-    },
-    {
-        "PK": "USER#c91588bd-9555-475e-ac63-c5a6e48f8d4b",
-        "SK": "EVENT#1970-01-02T06:41:28.969Z",
-        "eventType": "HOME",
-        "timestamp": "1970-01-02T06:41:28.969Z",
-        "type": "Event",
-        "userId": "c91588bd-9555-475e-ac63-c5a6e48f8d4b"
-    },
-    {
-        "PK": "USER#c91588bd-9555-475e-ac63-c5a6e48f8d4b",
-        "SK": "EVENT#1970-01-02T18:03:47.636Z",
-        "eventType": "HOME",
-        "timestamp": "1970-01-02T18:03:47.636Z",
-        "type": "Event",
-        "userId": "c91588bd-9555-475e-ac63-c5a6e48f8d4b"
-    },
-    {
-        "PK": "USER#63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "SK": "EVENT#1970-01-01T22:20:43.841Z",
-        "eventType": "HOME",
-        "timestamp": "1970-01-01T22:20:43.841Z",
-        "type": "Event",
-        "userId": "63f855cb-3a0a-4487-8842-e4830b4d6b06"
-    },
-    {
-        "PK": "USER#afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "SK": "EVENT#1970-01-02T08:40:52.128Z",
+        "PK": "USER#6ade4177-f386-49c1-bdc9-48650456bade",
+        "SK": "EVENT#1970-01-02T01:26:34.716Z",
         "eventType": "AWAY",
-        "timestamp": "1970-01-02T08:40:52.128Z",
+        "timestamp": "1970-01-02T01:26:34.716Z",
         "type": "Event",
-        "userId": "afdf20e8-87d2-4083-b028-6b5347dabb85"
+        "userId": "6ade4177-f386-49c1-bdc9-48650456bade"
     },
     {
-        "PK": "USER#afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "SK": "EVENT#1970-01-01T23:43:25.429Z",
+        "PK": "USER#6ade4177-f386-49c1-bdc9-48650456bade",
+        "SK": "EVENT#1970-01-01T08:25:04.396Z",
         "eventType": "AWAY",
-        "timestamp": "1970-01-01T23:43:25.429Z",
+        "timestamp": "1970-01-01T08:25:04.396Z",
         "type": "Event",
-        "userId": "afdf20e8-87d2-4083-b028-6b5347dabb85"
+        "userId": "6ade4177-f386-49c1-bdc9-48650456bade"
     },
     {
-        "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
-        "SK": "FOLLOWING#a7afa07d-148c-4c45-bd15-111c2fd497da",
-        "type": "Following",
-        "followingUserId": "a7afa07d-148c-4c45-bd15-111c2fd497da",
-        "userId": "764f64a6-f37f-4c48-9d65-416320cca025"
+        "PK": "USER#6ade4177-f386-49c1-bdc9-48650456bade",
+        "SK": "EVENT#1970-01-01T15:07:06.201Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T15:07:06.201Z",
+        "type": "Event",
+        "userId": "6ade4177-f386-49c1-bdc9-48650456bade"
     },
     {
-        "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
-        "SK": "FOLLOWING#afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "type": "Following",
-        "followingUserId": "afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "userId": "764f64a6-f37f-4c48-9d65-416320cca025"
+        "PK": "USER#6ade4177-f386-49c1-bdc9-48650456bade",
+        "SK": "EVENT#1970-01-02T18:46:23.653Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-02T18:46:23.653Z",
+        "type": "Event",
+        "userId": "6ade4177-f386-49c1-bdc9-48650456bade"
     },
     {
-        "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
-        "SK": "FOLLOWING#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "type": "Following",
-        "followingUserId": "77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "userId": "764f64a6-f37f-4c48-9d65-416320cca025"
+        "PK": "USER#32379318-e2ae-4bf0-b948-8242cb158be8",
+        "SK": "EVENT#1970-01-01T18:51:40.794Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T18:51:40.794Z",
+        "type": "Event",
+        "userId": "32379318-e2ae-4bf0-b948-8242cb158be8"
     },
     {
-        "PK": "USER#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "SK": "FOLLOWING#afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "type": "Following",
-        "followingUserId": "afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "userId": "77aa3617-d111-4c2a-bf26-702080eaf5d2"
+        "PK": "USER#32379318-e2ae-4bf0-b948-8242cb158be8",
+        "SK": "EVENT#1970-01-01T11:06:08.897Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T11:06:08.897Z",
+        "type": "Event",
+        "userId": "32379318-e2ae-4bf0-b948-8242cb158be8"
     },
     {
-        "PK": "USER#a7afa07d-148c-4c45-bd15-111c2fd497da",
-        "SK": "FOLLOWING#63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "type": "Following",
-        "followingUserId": "63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "userId": "a7afa07d-148c-4c45-bd15-111c2fd497da"
+        "PK": "USER#32379318-e2ae-4bf0-b948-8242cb158be8",
+        "SK": "EVENT#1970-01-01T18:14:54.190Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T18:14:54.190Z",
+        "type": "Event",
+        "userId": "32379318-e2ae-4bf0-b948-8242cb158be8"
     },
     {
-        "PK": "USER#a7afa07d-148c-4c45-bd15-111c2fd497da",
-        "SK": "FOLLOWING#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "type": "Following",
-        "followingUserId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "userId": "a7afa07d-148c-4c45-bd15-111c2fd497da"
+        "PK": "USER#32379318-e2ae-4bf0-b948-8242cb158be8",
+        "SK": "EVENT#1970-01-02T02:21:35.211Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-02T02:21:35.211Z",
+        "type": "Event",
+        "userId": "32379318-e2ae-4bf0-b948-8242cb158be8"
     },
     {
-        "PK": "USER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "SK": "FOLLOWING#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "type": "Following",
-        "followingUserId": "77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "userId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d"
+        "PK": "USER#b8f05ac0-90be-4246-8355-d80a8132e57a",
+        "SK": "EVENT#1970-01-02T08:32:25.518Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-02T08:32:25.518Z",
+        "type": "Event",
+        "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a"
     },
     {
-        "PK": "USER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "SK": "FOLLOWING#afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "type": "Following",
-        "followingUserId": "afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "userId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d"
+        "PK": "USER#b8f05ac0-90be-4246-8355-d80a8132e57a",
+        "SK": "EVENT#1970-01-02T14:50:17.090Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-02T14:50:17.090Z",
+        "type": "Event",
+        "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a"
     },
     {
-        "PK": "USER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "SK": "FOLLOWING#63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "type": "Following",
-        "followingUserId": "63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "userId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d"
+        "PK": "USER#b8f05ac0-90be-4246-8355-d80a8132e57a",
+        "SK": "EVENT#1970-01-02T17:41:29.269Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-02T17:41:29.269Z",
+        "type": "Event",
+        "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a"
     },
     {
-        "PK": "USER#c91588bd-9555-475e-ac63-c5a6e48f8d4b",
-        "SK": "FOLLOWING#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "type": "Following",
-        "followingUserId": "77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "userId": "c91588bd-9555-475e-ac63-c5a6e48f8d4b"
+        "PK": "USER#26d05788-9984-40ef-ae53-84784e4f94b9",
+        "SK": "EVENT#1970-01-01T08:03:31.123Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T08:03:31.123Z",
+        "type": "Event",
+        "userId": "26d05788-9984-40ef-ae53-84784e4f94b9"
     },
     {
-        "PK": "USER#c91588bd-9555-475e-ac63-c5a6e48f8d4b",
-        "SK": "FOLLOWING#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "type": "Following",
-        "followingUserId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "userId": "c91588bd-9555-475e-ac63-c5a6e48f8d4b"
+        "PK": "USER#26d05788-9984-40ef-ae53-84784e4f94b9",
+        "SK": "EVENT#1970-01-02T23:23:56.254Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-02T23:23:56.254Z",
+        "type": "Event",
+        "userId": "26d05788-9984-40ef-ae53-84784e4f94b9"
     },
     {
-        "PK": "USER#63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "SK": "FOLLOWING#c91588bd-9555-475e-ac63-c5a6e48f8d4b",
-        "type": "Following",
-        "followingUserId": "c91588bd-9555-475e-ac63-c5a6e48f8d4b",
-        "userId": "63f855cb-3a0a-4487-8842-e4830b4d6b06"
+        "PK": "USER#26d05788-9984-40ef-ae53-84784e4f94b9",
+        "SK": "EVENT#1970-01-01T16:46:18.899Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-01T16:46:18.899Z",
+        "type": "Event",
+        "userId": "26d05788-9984-40ef-ae53-84784e4f94b9"
     },
     {
-        "PK": "USER#63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "SK": "FOLLOWING#764f64a6-f37f-4c48-9d65-416320cca025",
-        "type": "Following",
-        "followingUserId": "764f64a6-f37f-4c48-9d65-416320cca025",
-        "userId": "63f855cb-3a0a-4487-8842-e4830b4d6b06"
+        "PK": "USER#26d05788-9984-40ef-ae53-84784e4f94b9",
+        "SK": "EVENT#1970-01-02T15:39:28.247Z",
+        "eventType": "AWAY",
+        "timestamp": "1970-01-02T15:39:28.247Z",
+        "type": "Event",
+        "userId": "26d05788-9984-40ef-ae53-84784e4f94b9"
     },
     {
-        "PK": "USER#764f64a6-f37f-4c48-9d65-416320cca025",
-        "SK": "FOLLOWER#c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
-        "type": "Follower",
-        "followerUserId": "c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
-        "userId": "764f64a6-f37f-4c48-9d65-416320cca025"
+        "PK": "USER#26d05788-9984-40ef-ae53-84784e4f94b9",
+        "SK": "EVENT#1970-01-01T03:08:31.754Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T03:08:31.754Z",
+        "type": "Event",
+        "userId": "26d05788-9984-40ef-ae53-84784e4f94b9"
     },
     {
-        "PK": "USER#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "SK": "FOLLOWER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "type": "Follower",
-        "followerUserId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "userId": "77aa3617-d111-4c2a-bf26-702080eaf5d2"
+        "PK": "USER#3a7e8b67-270c-4994-9e99-d752e0c295c7",
+        "SK": "EVENT#1970-01-01T03:49:19.762Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T03:49:19.762Z",
+        "type": "Event",
+        "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7"
     },
     {
-        "PK": "USER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "SK": "FOLLOWER#63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "type": "Follower",
-        "followerUserId": "63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "userId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d"
+        "PK": "USER#3a7e8b67-270c-4994-9e99-d752e0c295c7",
+        "SK": "EVENT#1970-01-01T23:17:56.572Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T23:17:56.572Z",
+        "type": "Event",
+        "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7"
     },
     {
-        "PK": "USER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "SK": "FOLLOWER#afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "type": "Follower",
-        "followerUserId": "afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "userId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d"
+        "PK": "USER#3a7e8b67-270c-4994-9e99-d752e0c295c7",
+        "SK": "EVENT#1970-01-02T09:31:51.796Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-02T09:31:51.796Z",
+        "type": "Event",
+        "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7"
     },
     {
-        "PK": "USER#cb1905ef-13ba-4446-a79c-bd9ef3a3f90d",
-        "SK": "FOLLOWER#764f64a6-f37f-4c48-9d65-416320cca025",
-        "type": "Follower",
-        "followerUserId": "764f64a6-f37f-4c48-9d65-416320cca025",
-        "userId": "cb1905ef-13ba-4446-a79c-bd9ef3a3f90d"
+        "PK": "USER#3a7e8b67-270c-4994-9e99-d752e0c295c7",
+        "SK": "EVENT#1970-01-01T03:54:55.033Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-01T03:54:55.033Z",
+        "type": "Event",
+        "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7"
     },
     {
-        "PK": "USER#c91588bd-9555-475e-ac63-c5a6e48f8d4b",
-        "SK": "FOLLOWER#c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
-        "type": "Follower",
-        "followerUserId": "c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
-        "userId": "c91588bd-9555-475e-ac63-c5a6e48f8d4b"
-    },
-    {
-        "PK": "USER#63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "SK": "FOLLOWER#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "type": "Follower",
-        "followerUserId": "77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "userId": "63f855cb-3a0a-4487-8842-e4830b4d6b06"
-    },
-    {
-        "PK": "USER#63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "SK": "FOLLOWER#c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
-        "type": "Follower",
-        "followerUserId": "c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
-        "userId": "63f855cb-3a0a-4487-8842-e4830b4d6b06"
-    },
-    {
-        "PK": "USER#c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
-        "SK": "FOLLOWER#afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "type": "Follower",
-        "followerUserId": "afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "userId": "c78bf9d2-2d89-43d0-9cee-fca48f435cc7"
-    },
-    {
-        "PK": "USER#c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
-        "SK": "FOLLOWER#63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "type": "Follower",
-        "followerUserId": "63f855cb-3a0a-4487-8842-e4830b4d6b06",
-        "userId": "c78bf9d2-2d89-43d0-9cee-fca48f435cc7"
-    },
-    {
-        "PK": "USER#afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "SK": "FOLLOWER#c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
-        "type": "Follower",
-        "followerUserId": "c78bf9d2-2d89-43d0-9cee-fca48f435cc7",
-        "userId": "afdf20e8-87d2-4083-b028-6b5347dabb85"
-    },
-    {
-        "PK": "USER#afdf20e8-87d2-4083-b028-6b5347dabb85",
-        "SK": "FOLLOWER#77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "type": "Follower",
-        "followerUserId": "77aa3617-d111-4c2a-bf26-702080eaf5d2",
-        "userId": "afdf20e8-87d2-4083-b028-6b5347dabb85"
+        "PK": "USER#3a7e8b67-270c-4994-9e99-d752e0c295c7",
+        "SK": "EVENT#1970-01-02T17:43:00.889Z",
+        "eventType": "HOME",
+        "timestamp": "1970-01-02T17:43:00.889Z",
+        "type": "Event",
+        "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7"
     }
 ]
