@@ -2,7 +2,7 @@
  * USAGE: npx ts-node ./scripts/generateSeed.ts
  */
 
-import { UserDynamo, EventDynamo, EventType, FollowingDynamo, FollowerDynamo } from "../src/data/model/Types"
+import { UserDynamo, EventDynamo, EventType, FollowDynamo } from "../src/data/model/Types"
 import * as faker from 'faker'
 import { v4 as uuid } from 'uuid'
 import * as fs from 'fs';
@@ -55,8 +55,7 @@ for (let i = 0; i < numUsers; i++) {
 }
 
 //Add followers / following for each user
-let following: FollowingDynamo[] = []
-let followers: FollowerDynamo[] = []
+let follows: FollowDynamo[] = []
 users.forEach((user) => {
     const numFollowing = faker.random.number(5)
     const numFollowers = faker.random.number(5)
@@ -66,29 +65,16 @@ users.forEach((user) => {
         const randomUserIdToFollow = userIds[faker.random.number(userIds.length - 1)]
         if (!followingUserIds.includes(randomUserIdToFollow)) {
             followingUserIds.push(randomUserIdToFollow)
-            const followingItem: FollowingDynamo = {
+            const followingItem: FollowDynamo = {
                 PK: `USER#${user.userId}`,
                 SK: `FOLLOWING#${randomUserIdToFollow}`,
-                itemType: 'Following',
+                GS1PK: `USER#${randomUserIdToFollow}`,
+                GS1SK: `FOLLOWER#${user.userId}`,
+                itemType: 'Follow',
                 followingUserId: randomUserIdToFollow,
                 userId: user.userId
             }
-            following.push(followingItem)
-        }
-    }
-
-    for (let i = 0; i < numFollowers; i++) {
-        const randomUserIdFollower = userIds[faker.random.number(userIds.length - 1)]
-        if (!followerUserIds.includes(randomUserIdFollower)) {
-            followerUserIds.push(randomUserIdFollower)
-            const followerItem: FollowerDynamo = {
-                PK: `USER#${user.userId}`,
-                SK: `FOLLOWER#${randomUserIdFollower}`,
-                itemType: 'Follower',
-                followerUserId: randomUserIdFollower,
-                userId: user.userId
-            }
-            followers.push(followerItem)
+            follows.push(followingItem)
         }
     }
 })
@@ -96,8 +82,7 @@ users.forEach((user) => {
 const allItems = []
 allItems.push(users)
 allItems.push(events)
-// allItems.push(following)
-// allItems.push(followers)
+// allItems.push(follows)
 const result = [].concat.apply([], allItems)
 const fileName = 'test/seed/usersV2.json'
 fs.writeFileSync(fileName, JSON.stringify(result))
