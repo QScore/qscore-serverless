@@ -13,8 +13,10 @@ schema {
 type User {
     id: ID!
     username: String!
-    score: Float,
+    score: Float
     isCurrentUserFollowing: Boolean
+    followingCount: Int
+    followerCount: Int
 }
 
 input UpdateUserInfoInput {
@@ -48,11 +50,33 @@ type Query {
 }
 `
 
+export interface UserGql {
+    readonly id: string,
+    readonly username: string,
+    readonly score?: number,
+    readonly isCurrentUserFollowing?: boolean,
+    readonly followingCount?: number,
+    readonly followerCount?: number
+}
+
+export interface SearchUsersPayloadGql {
+    readonly users: UserGql[]
+}
+
+export interface CurrentUserPayloadGql {
+    readonly user: UserGql
+}
+
+export interface UpdateUserInfoPayloadGql {
+    readonly id: string,
+    readonly username: string
+}
+
 const userResolver = new UserResolver(dynamoDbRepository)
 
 export const resolvers = {
     Mutation: {
-        updateUserInfo: async (_parent: any, args: any, context: any, _info: any) => {
+        updateUserInfo: async (_parent: any, args: any, context: any, _info: any): Promise<UpdateUserInfoPayloadGql> => {
             const userId = getUserIdFromContext(context)
             const username = args.input.username
             return userResolver.updateUserInfo(userId, username)
@@ -60,12 +84,12 @@ export const resolvers = {
     },
 
     Query: {
-        currentUser: async (parent: any, args: any, context: any, info: any) => {
+        currentUser: async (parent: any, args: any, context: any, info: any): Promise<CurrentUserPayloadGql> => {
             const userId = getUserIdFromContext(context)
             return userResolver.getCurrentUser(userId)
         },
 
-        searchUsers: async (parent: any, args: any, context: any, info: any) => {
+        searchUsers: async (parent: any, args: any, context: any, info: any): Promise<SearchUsersPayloadGql> => {
             const userId = getUserIdFromContext(context)
             const searchQuery = args.input.searchQuery
             return userResolver.searchUsers(userId, searchQuery)

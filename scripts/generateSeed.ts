@@ -79,7 +79,7 @@ users.forEach((user) => {
     }
 })
 
-const allItems = []
+const allItems: any[] = []
 allItems.push(users)
 allItems.push(events)
 // allItems.push(follows)

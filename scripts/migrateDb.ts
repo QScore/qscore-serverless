@@ -32,6 +32,10 @@ async function migrateUsersTable() {
             params.ExclusiveStartKey = lastEvaluated
         }
         const results = await documentClient.scan(params).promise()
+        if (!results.Items) {
+            throw Error("No items found in users table")
+        }
+
         console.log("Scanning complete, num items: " + results.Items.length)
         results.Items.forEach(async item => {
             //Create user in V2 table
@@ -69,6 +73,10 @@ async function migrateEventsTable() {
             params.ExclusiveStartKey = lastEvaluated
         }
         const results = await documentClient.scan(params).promise()
+        if (!results.Items) {
+            throw Error("No results found for events table")
+        }
+
         console.log("Scanning complete, num items: " + results.Items.length)
         results.Items.forEach(async item => {
             //Create event in v2 table

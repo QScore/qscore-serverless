@@ -2,7 +2,7 @@ import * as AWS from "aws-sdk"
 import { Repository } from "./Repository";
 import { User, Event, EventDynamo, UserDynamo, FollowDynamo, Follow } from './model/Types';
 
-const userTableV2 = process.env.USERS_TABLE_V2
+const mainTable = process.env.MAIN_TABLE as string
 
 export class DynamoDbRepository implements Repository {
     private documentClient: AWS.DynamoDB.DocumentClient
@@ -21,20 +21,20 @@ export class DynamoDbRepository implements Repository {
 
         const batchGetParams: AWS.DynamoDB.DocumentClient.BatchGetItemInput = {
             RequestItems: {
-                [userTableV2]: {
+                [mainTable]: {
                     Keys: keys
                 }
             }
         }
         const results = await this.documentClient.batchGet(batchGetParams).promise()
-        return results.Responses[userTableV2].map((user: FollowDynamo) => {
+        return results.Responses?.[mainTable].map((user: FollowDynamo) => {
             return user.followingUserId
-        })
+        }) ?? []
     }
 
     async searchUsers(searchQuery: string): Promise<User[]> {
         const eventParams: AWS.DynamoDB.DocumentClient.QueryInput = {
-            TableName: userTableV2,
+            TableName: mainTable,
             IndexName: 'GS1',
             KeyConditionExpression: '#GS1PK = :GS1PK And begins_with(#GS1SK, :GS1SK)',
             ExpressionAttributeNames: {
@@ -47,6 +47,9 @@ export class DynamoDbRepository implements Repository {
             }
         }
         const queryResult = await this.documentClient.query(eventParams).promise()
+        if (!queryResult.Items) {
+            return []
+        }
         const users = queryResult.Items.map(item => {
             const user: User = {
                 userId: item.userId,
@@ -64,7 +67,7 @@ export class DynamoDbRepository implements Repository {
             TransactItems: [
                 {
                     Delete: {
-                        TableName: userTableV2,
+                        TableName: mainTable,
                         Key: {
                             PK: `USER#${currentUserId}`,
                             SK: `FOLLOWING#${targetUserId}`,
@@ -73,7 +76,7 @@ export class DynamoDbRepository implements Repository {
                 },
                 {
                     Update: {
-                        TableName: userTableV2,
+                        TableName: mainTable,
                         Key: {
                             PK: `USER#${currentUserId}`,
                             SK: `EVENT#9999`
@@ -89,7 +92,7 @@ export class DynamoDbRepository implements Repository {
                 },
                 {
                     Update: {
-                        TableName: userTableV2,
+                        TableName: mainTable,
                         Key: {
                             PK: `USER#${targetUserId}`,
                             SK: `EVENT#9999`
@@ -123,13 +126,13 @@ export class DynamoDbRepository implements Repository {
             TransactItems: [
                 {
                     Put: {
-                        TableName: userTableV2,
+                        TableName: mainTable,
                         Item: followingItem
                     }
                 },
                 {
                     Update: {
-                        TableName: userTableV2,
+                        TableName: mainTable,
                         Key: {
                             PK: `USER#${currentUserId}`,
                             SK: `EVENT#9999`
@@ -145,7 +148,7 @@ export class DynamoDbRepository implements Repository {
                 },
                 {
                     Update: {
-                        TableName: userTableV2,
+                        TableName: mainTable,
                         Key: {
                             PK: `USER#${targetUserId}`,
                             SK: `EVENT#9999`
@@ -167,7 +170,7 @@ export class DynamoDbRepository implements Repository {
     async getFollowedUsers(currentUserId: string): Promise<User[]> {
         //Run the query
         const queryParams: AWS.DynamoDB.DocumentClient.QueryInput = {
-            TableName: userTableV2,
+            TableName: mainTable,
             KeyConditionExpression: '#PK = :PK And begins_with(#SK, :SK)',
             ExpressionAttributeNames: {
                 '#PK': "PK",
@@ -180,12 +183,12 @@ export class DynamoDbRepository implements Repository {
             ScanIndexForward: false
         }
         const queryResult = await this.documentClient.query(queryParams).promise()
-        const users: Follow[] = queryResult.Items.map(item => {
+        const users: Follow[] = queryResult.Items?.map(item => {
             return {
                 userId: item.userId,
                 followingUserId: item.followingUserId
             }
-        })
+        }) ?? []
         if (users.length == 0) {
             return []
         }
@@ -200,26 +203,26 @@ export class DynamoDbRepository implements Repository {
 
         const batchGetParams: AWS.DynamoDB.DocumentClient.BatchGetItemInput = {
             RequestItems: {
-                [userTableV2]: {
+                [mainTable]: {
                     Keys: keys
                 }
             }
         }
         const results = await this.documentClient.batchGet(batchGetParams).promise()
-        return results.Responses[userTableV2].map((user: UserDynamo) => {
+        return results.Responses?.[mainTable].map((user: UserDynamo) => {
             return {
                 userId: user.userId,
                 username: user.username,
                 followerCount: user.followerCount,
                 followingCount: user.followingCount
             }
-        })
+        }) ?? []
     }
 
     async getFollowers(userId: string): Promise<User[]> {
         //Run the query
         const queryParams: AWS.DynamoDB.DocumentClient.QueryInput = {
-            TableName: userTableV2,
+            TableName: mainTable,
             IndexName: 'GS1',
             KeyConditionExpression: '#GS1PK = :GS1PK And begins_with(#GS1SK, :GS1SK)',
             ExpressionAttributeNames: {
@@ -233,12 +236,12 @@ export class DynamoDbRepository implements Repository {
             ScanIndexForward: false
         }
         const queryResult = await this.documentClient.query(queryParams).promise()
-        const followerUsers: Follow[] = queryResult.Items.map(item => {
+        const followerUsers: Follow[] = queryResult.Items?.map(item => {
             return {
                 userId: item.userId,
                 followingUserId: item.followingUserId
             }
-        })
+        }) ?? []
 
         if (followerUsers.length == 0) {
             return []
@@ -254,20 +257,20 @@ export class DynamoDbRepository implements Repository {
 
         const batchGetParams: AWS.DynamoDB.DocumentClient.BatchGetItemInput = {
             RequestItems: {
-                [userTableV2]: {
+                [mainTable]: {
                     Keys: keys
                 }
             }
         }
         const results = await this.documentClient.batchGet(batchGetParams).promise()
-        return results.Responses[userTableV2].map((user: UserDynamo) => {
+        return results.Responses?.[mainTable].map((user: UserDynamo) => {
             return {
                 userId: user.userId,
                 username: user.username,
                 followerCount: user.followerCount,
                 followingCount: user.followingCount
             }
-        })
+        }) ?? []
     }
 
     async createEvent(event: Event): Promise<Event> {
@@ -287,7 +290,7 @@ export class DynamoDbRepository implements Repository {
         }
 
         const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
-            TableName: userTableV2,
+            TableName: mainTable,
             Item: inputItem,
             ConditionExpression: "attribute_not_exists(#PK)",
             ExpressionAttributeNames: {
@@ -300,7 +303,7 @@ export class DynamoDbRepository implements Repository {
 
     async updateUser(user: User): Promise<void> {
         const params: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
-            TableName: userTableV2,
+            TableName: mainTable,
             Key: {
                 "PK": `USER#${user.userId}`,
                 "SK": `EVENT#9999`
@@ -333,7 +336,7 @@ export class DynamoDbRepository implements Repository {
         }
 
         const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
-            TableName: userTableV2,
+            TableName: mainTable,
             Item: inputItem,
             ConditionExpression: "attribute_not_exists(#PK)",
             ExpressionAttributeNames: {
@@ -346,7 +349,7 @@ export class DynamoDbRepository implements Repository {
     async getUserAndEventsFromStartTime(userId: string, startTimestamp: string): Promise<GetUserAndEventsResult> {
         //Run the query
         const eventParams: AWS.DynamoDB.DocumentClient.QueryInput = {
-            TableName: userTableV2,
+            TableName: mainTable,
             KeyConditionExpression: '#PK = :PK And #SK BETWEEN :SK and :END',
             ExpressionAttributeNames: {
                 '#PK': "PK",
@@ -362,7 +365,15 @@ export class DynamoDbRepository implements Repository {
         const queryResult = await this.documentClient.query(eventParams).promise()
 
         //Handle empty case
-        if (queryResult.Items.length == 0) {
+        if (!queryResult.Items?.length) {
+            return {
+                user: undefined,
+                events: []
+            }
+        }
+
+        const userResult = queryResult.Items.shift()
+        if (!userResult) {
             return {
                 user: undefined,
                 events: []
@@ -370,7 +381,6 @@ export class DynamoDbRepository implements Repository {
         }
 
         //Return results
-        const userResult = queryResult.Items.shift()
         const user: User = {
             userId: userResult.userId,
             username: userResult.username,
@@ -386,7 +396,7 @@ export class DynamoDbRepository implements Repository {
 
     async getLatestEventForUser(userId: string): Promise<Event | undefined> {
         const params: AWS.DynamoDB.DocumentClient.QueryInput = {
-            TableName: userTableV2,
+            TableName: mainTable,
             KeyConditionExpression: '#PK = :PK AND #SK < :SK',
             ExpressionAttributeNames: {
                 '#PK': "PK",
@@ -414,7 +424,7 @@ export class DynamoDbRepository implements Repository {
 
     async getUser(userId: string): Promise<User | undefined> {
         const params: AWS.DynamoDB.DocumentClient.GetItemInput = {
-            TableName: userTableV2,
+            TableName: mainTable,
             Key: {
                 PK: `USER#${userId}`,
                 SK: 'EVENT#9999'

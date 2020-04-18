@@ -14,11 +14,6 @@ enum GeofenceEventType {
     AWAY
 }
 
-type Location {
-    latitude: String!
-    longitude: String!
-}
-
 schema {
     mutation: Mutation
     query: Query
@@ -41,9 +36,19 @@ type Query {
 }
 `
 
+export interface GeofenceEventGql {
+    readonly timestamp: string,
+    readonly userId: string,
+    readonly eventType: "HOME" | "AWAY"
+}
+
+export interface CreateGeofenceEventPayloadGql {
+    readonly geofenceEvent: GeofenceEventGql
+}
+
 export const resolvers = {
     Mutation: {
-        createGeofenceEvent: async (_parent: any, args: any, context: any, _info: any) => {
+        createGeofenceEvent: async (_parent: any, args: any, context: any, _info: any): Promise<CreateGeofenceEventPayloadGql> => {
             const userId = context.event.requestContext.authorizer.userId
             const eventType = args.input.eventType
             const input: Event = {
@@ -52,10 +57,13 @@ export const resolvers = {
                 userId: userId
             }
             const event = await dynamoDbRepository.createEvent(input)
-            const result = {
-                "geofenceEvent": event
+            return {
+                geofenceEvent: {
+                    userId: event.userId,
+                    eventType: event.eventType,
+                    timestamp: event.timestamp
+                }
             }
-            return result
         }
     }
 }

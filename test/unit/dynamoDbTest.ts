@@ -29,15 +29,15 @@ describe("DynamoDb New Format Tests", () => {
         assert.ok(!hasFollowedUser, "Currently is following user, should not be")
 
         //Follow user
-        const followedUserPrevious = await repository.getUser(userIdToFollow)
-        const currentUserPrevious = await repository.getUser(userId)
+        const followedUserPrevious = await repository.getUser(userIdToFollow) ?? assert.fail("No followed previous user found")
+        const currentUserPrevious = await repository.getUser(userId) ?? assert.fail("No current user previous found")
         await repository.followUser(userId, userIdToFollow)
-        const currentUser = await repository.getUser(userId)
-        const followedUser = await repository.getUser(userIdToFollow)
+        const currentUser = await repository.getUser(userId) ?? assert.fail("No current user found")
+        const followedUser = await repository.getUser(userIdToFollow) ?? assert.fail("No followed user found")
 
         //Verify that the follower and following counts were updated
-        assert.equal(currentUser.followingCount, currentUserPrevious.followingCount + 1)
-        assert.equal(followedUser.followerCount, followedUserPrevious.followerCount + 1)
+        assert.equal(currentUser.followingCount, currentUserPrevious.followingCount ?? 0 + 1)
+        assert.equal(followedUser.followerCount, followedUserPrevious.followerCount ?? 0 + 1)
 
         //Verify that getFollowedUsers returns our newly followed user
         const followedUsers = await repository.getFollowedUsers(userId)
@@ -69,15 +69,15 @@ describe("DynamoDb New Format Tests", () => {
         assert.ok(hasFollowedUser, "Does not have followed user!")
 
         //Unfollow user
-        const followedUserPrevious = await repository.getUser(userIdToUnfollow)
-        const currentUserPrevious = await repository.getUser(userId)
+        const followedUserPrevious = await repository.getUser(userIdToUnfollow) ?? assert.fail("No followed previous user found")
+        const currentUserPrevious = await repository.getUser(userId) ?? assert.fail("No current user previous found")
         await repository.unfollowUser(userId, userIdToUnfollow)
-        const currentUser = await repository.getUser(userId)
-        const followedUser = await repository.getUser(userIdToUnfollow)
+        const currentUser = await repository.getUser(userId) ?? assert.fail("No current user found")
+        const followedUser = await repository.getUser(userIdToUnfollow) ?? assert.fail("No followed user found")
 
         //Verify that the follower and following counts were decreased
-        assert.equal(currentUser.followingCount, currentUserPrevious.followingCount - 1)
-        assert.equal(followedUser.followerCount, followedUserPrevious.followerCount - 1)
+        assert.equal(currentUser.followingCount, currentUserPrevious.followingCount ?? 0 - 1)
+        assert.equal(followedUser.followerCount, followedUserPrevious.followerCount ?? 0 - 1)
 
         //Verify that getFollowedUsers does not retturn our newly followed user
         const hasFollowedUserAfter = followedUsersPrevious.filter(user => {
@@ -94,12 +94,15 @@ describe("DynamoDb New Format Tests", () => {
     it('Should find user and events after start time', async () => {
         const oneDay = 24 * 60 * 60 * 1000
         const startTime = new Date(oneDay).toISOString()
-        const result = await repository.getUserAndEventsFromStartTime(userId, startTime)
+        const { user, events } = await repository.getUserAndEventsFromStartTime(userId, startTime)
+        if (!user) {
+            assert.fail("User not found")
+        }
 
-        assert.equal(result.user.userId, expectedUser.userId)
-        assert.equal(result.user.username, expectedUser.username)
+        assert.equal(user.userId, expectedUser.userId)
+        assert.equal(user.username, expectedUser.username)
 
-        result.events.forEach((event) => {
+        events.forEach((event) => {
             assert(event.userId == userId)
             assert(event.eventType === "HOME" || event.eventType === "AWAY")
             assert(event.timestamp >= startTime)
@@ -107,7 +110,7 @@ describe("DynamoDb New Format Tests", () => {
     });
 
     it('Should not create event if same event type as previous ', async () => {
-        const latestEvent = await repository.getLatestEventForUser(userId)
+        const latestEvent = await repository.getLatestEventForUser(userId) ?? assert.fail("No latest event found")
         const testEvent: Event = {
             eventType: latestEvent.eventType,
             timestamp: new Date(Date.now()).toISOString(),
@@ -118,7 +121,7 @@ describe("DynamoDb New Format Tests", () => {
     })
 
     it('Should create event if not same event type as previous ', async () => {
-        const latestEvent = await repository.getLatestEventForUser(userId)
+        const latestEvent = await repository.getLatestEventForUser(userId) ?? assert.fail("No latest event found")
         const eventType = latestEvent.eventType == "HOME" ? "AWAY" : "HOME"
         //Last event for this user is HOME
         const testEvent: Event = {
@@ -161,7 +164,7 @@ describe("DynamoDb New Format Tests", () => {
     });
 
     it('Should get user by id', async () => {
-        const user = await repository.getUser(userId)
+        const user = await repository.getUser(userId) ?? assert.fail("No user found")
         assert.equal(user.userId, expectedUser.userId)
         assert.equal(user.username, expectedUser.username)
     });

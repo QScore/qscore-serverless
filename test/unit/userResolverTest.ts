@@ -57,7 +57,7 @@ describe('User Resolver Unit Tests', function () {
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
         const result = await testResolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score
+        const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0.11574074074074073), "Scores do not match!")
     })
 
@@ -81,7 +81,7 @@ describe('User Resolver Unit Tests', function () {
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
         const result = await testResolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score
+        const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(99.88426208496094), "Scores do not match!")
     })
 
@@ -100,7 +100,7 @@ describe('User Resolver Unit Tests', function () {
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
         const result = await testResolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score
+        const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0.11574074074074073), "Scores do not match!")
     })
 
@@ -118,7 +118,7 @@ describe('User Resolver Unit Tests', function () {
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
         const result = await testResolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score
+        const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
     })
 
@@ -137,7 +137,7 @@ describe('User Resolver Unit Tests', function () {
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
         const result = await testResolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score
+        const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(100), "Scores do not match!")
     })
 
@@ -160,7 +160,7 @@ describe('User Resolver Unit Tests', function () {
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
         const result = await testResolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score
+        const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(99.88426208496094), "Scores do not match!")
     })
 
@@ -183,7 +183,7 @@ describe('User Resolver Unit Tests', function () {
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
         const result = await testResolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score
+        const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
     })
 
@@ -237,7 +237,7 @@ describe('User Resolver Unit Tests', function () {
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
         const result = await testResolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score
+        const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0.4629629629629629), "Scores do not match!")
     })
 
@@ -259,7 +259,7 @@ describe('User Resolver Unit Tests', function () {
         }
         testRepository.getLatestEventForUser.resolves(latestEventResult)
         const result = await testResolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score
+        const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(100), "Scores do not match!")
     })
 
@@ -281,7 +281,19 @@ describe('User Resolver Unit Tests', function () {
         }
         testRepository.getLatestEventForUser.resolves(latestEventResult)
         const result = await testResolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score
+        const score = result.user.score ?? assert.fail("No score found")
+        assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
+    })
+
+    it('should calculate score with no events at all', async () => {
+        const mockResult: GetUserAndEventsResult = {
+            events: [],
+            user: fakeUser
+        }
+        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
+        testRepository.getLatestEventForUser.resolves(undefined)
+        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
     })
 
@@ -307,11 +319,15 @@ describe('User Resolver Unit Tests', function () {
             users: [{
                 id: 'user1',
                 username: 'gertrude',
-                isCurrentUserFollowing: true
+                isCurrentUserFollowing: true,
+                followingCount: undefined,
+                followerCount: undefined
             }, {
                 id: 'user2',
                 username: 'gerbert',
-                isCurrentUserFollowing: false
+                isCurrentUserFollowing: false,
+                followingCount: undefined,
+                followerCount: undefined
             }]
         }
 
