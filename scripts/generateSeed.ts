@@ -24,7 +24,7 @@ for (let i = 0; i < numUsers; i++) {
         SK: `EVENT#9999`,
         GS1PK: `SEARCH#USER`,
         GS1SK: username.toLowerCase(),
-        type: `User`,
+        itemType: `User`,
         userId: userId,
         username: username,
         followerCount: faker.random.number(10000),
@@ -48,7 +48,7 @@ for (let i = 0; i < numUsers; i++) {
             SK: `EVENT#${timestampIso}`,
             eventType: atHome,
             timestamp: timestampIso,
-            type: 'Event',
+            itemType: 'Event',
             userId: userId
         })
     }
@@ -66,13 +66,14 @@ users.forEach((user) => {
         const randomUserIdToFollow = userIds[faker.random.number(userIds.length - 1)]
         if (!followingUserIds.includes(randomUserIdToFollow)) {
             followingUserIds.push(randomUserIdToFollow)
-            following.push({
+            const followingItem: FollowingDynamo = {
                 PK: `USER#${user.userId}`,
                 SK: `FOLLOWING#${randomUserIdToFollow}`,
-                type: 'Following',
+                itemType: 'Following',
                 followingUserId: randomUserIdToFollow,
                 userId: user.userId
-            })
+            }
+            following.push(followingItem)
         }
     }
 
@@ -80,13 +81,14 @@ users.forEach((user) => {
         const randomUserIdFollower = userIds[faker.random.number(userIds.length - 1)]
         if (!followerUserIds.includes(randomUserIdFollower)) {
             followerUserIds.push(randomUserIdFollower)
-            followers.push({
+            const followerItem: FollowerDynamo = {
                 PK: `USER#${user.userId}`,
                 SK: `FOLLOWER#${randomUserIdFollower}`,
-                type: 'Follower',
+                itemType: 'Follower',
                 followerUserId: randomUserIdFollower,
                 userId: user.userId
-            })
+            }
+            followers.push(followerItem)
         }
     }
 })
