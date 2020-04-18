@@ -12,6 +12,7 @@ export interface Repository {
     getFollowers(currentUserId: string): Promise<User[]>
     createEvent(event: Event): Promise<Event>
     getLatestEventForUser(userId: string): Promise<Event | undefined>
+    getWhichUsersAreFollowed(currentUserId: string, userIdsToCheck: string[]): Promise<string[]>
 }
 
 

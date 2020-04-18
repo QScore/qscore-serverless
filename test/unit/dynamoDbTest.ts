@@ -46,13 +46,16 @@ describe("DynamoDb New Format Tests", () => {
         })[0]
         assert.deepStrictEqual(followedUserFromResult, followedUser)
 
-
         //Verify that getFollowers on target user returns our user
         const followingUsers = await repository.getFollowers(userIdToFollow)
         const followingUsersFromResult = followingUsers.filter(user => {
             return user.userId === userId
         })[0]
         assert.deepStrictEqual(followingUsersFromResult, currentUser)
+
+        const userIds = await repository.getWhichUsersAreFollowed(userId, [userIdToFollow, 'b8f05ac0-90be-4246-8355-d80a8132e57a'])
+        assert.equal(userIds.length, 1)
+        assert.equal(userIds[0], userIdToFollow)
     })
 
     it('Should unfollow user', async () => {
@@ -129,8 +132,8 @@ describe("DynamoDb New Format Tests", () => {
 
     it('Should create new user ', async () => {
         const user: User = {
-            userId: faker.random.uuid(),
-            username: faker.random.uuid(),
+            userId: 'zzzz' + faker.random.uuid(),
+            username: 'zzzz' + faker.random.uuid(),
             followerCount: 1337,
             followingCount: 1
         }
@@ -157,13 +160,30 @@ describe("DynamoDb New Format Tests", () => {
         }
     });
 
-    it('Should not create user with same username', async () => {
-        //TODO: need GSI on username
-    });
-
     it('Should get user by id', async () => {
         const user = await repository.getUser(userId)
         assert.equal(user.userId, expectedUser.userId)
         assert.equal(user.username, expectedUser.username)
+    });
+
+    it('Should update user', async () => {
+        //First create a new user
+        const user: User = {
+            userId: 'zzzz' + faker.random.uuid(),
+            username: 'zzzz' + faker.random.uuid()
+        }
+        await repository.createUser(user)
+
+        //First create a new user
+        const updatedUser: User = {
+            userId: user.userId,
+            username: user.username + 'zzz',
+            followerCount: undefined,
+            followingCount: undefined
+        }
+        //Then update the user
+        const result = await repository.updateUser(updatedUser)
+        const userResult = await repository.getUser(user.userId)
+        assert.deepStrictEqual(userResult, updatedUser)
     });
 })
