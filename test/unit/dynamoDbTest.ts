@@ -36,8 +36,8 @@ describe("DynamoDb New Format Tests", () => {
         const followedUser = await repository.getUser(userIdToFollow) ?? assert.fail("No followed user found")
 
         //Verify that the follower and following counts were updated
-        assert.equal(currentUser.followingCount, currentUserPrevious.followingCount ?? 0 + 1)
-        assert.equal(followedUser.followerCount, followedUserPrevious.followerCount ?? 0 + 1)
+        assert.equal(currentUser.followingCount, (currentUserPrevious.followingCount ?? 0) + 1)
+        assert.equal(followedUser.followerCount, (followedUserPrevious.followerCount ?? 0) + 1)
 
         //Verify that getFollowedUsers returns our newly followed user
         const followedUsers = await repository.getFollowedUsers(userId)
@@ -76,8 +76,8 @@ describe("DynamoDb New Format Tests", () => {
         const followedUser = await repository.getUser(userIdToUnfollow) ?? assert.fail("No followed user found")
 
         //Verify that the follower and following counts were decreased
-        assert.equal(currentUser.followingCount, currentUserPrevious.followingCount ?? 0 - 1)
-        assert.equal(followedUser.followerCount, followedUserPrevious.followerCount ?? 0 - 1)
+        assert.equal(currentUser.followingCount, (currentUserPrevious.followingCount ?? 0) - 1)
+        assert.equal(followedUser.followerCount, (followedUserPrevious.followerCount ?? 0) - 1)
 
         //Verify that getFollowedUsers does not retturn our newly followed user
         const hasFollowedUserAfter = followedUsersPrevious.filter(user => {
