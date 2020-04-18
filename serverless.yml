@@ -39,7 +39,7 @@ provider:
   environment:
     GEOFENCE_EVENTS_TABLE_NAME: ${self:custom.geofenceEventsTableName}
     USERS_TABLE_NAME: ${self:custom.usersTableName}
-    USERS_TABLE_V2: ${self:custom.usersV2TableName}
+    MAIN_TABLE: ${self:custom.mainTableName}
     FIREBASE_DATABASE_URL: ${self:custom.secrets.FIREBASE_DATABASE_URL}
 
 functions:
@@ -77,7 +77,7 @@ custom:
   stage: ${opt:stage, self:provider.stage}
   geofenceEventsTableName: ${self:custom.stage}-GeofenceEvents
   usersTableName: ${self:custom.stage}-UsersTable
-  usersV2TableName: ${self:custom.stage}-Users-v2
+  mainTableName: ${self:custom.stage}-MainTable
   webpackIncludeModules: true
   webpack:
     webpackConfig: 'webpack.config.js'
@@ -94,15 +94,16 @@ custom:
     seed:
       domain: #name of seed
         sources:
-          - table: ${self:custom.usersV2TableName}
+          - table: ${self:custom.mainTableName}
             sources: [./test/seed/usersV2.json]
 
 resources:
   Resources:
-    UsersTableV2:
+    MainTable:
       Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
       Properties:
-        TableName: ${self:custom.usersV2TableName}
+        TableName: ${self:custom.mainTableName}
         KeySchema:
           - AttributeName: PK
             KeyType: HASH
