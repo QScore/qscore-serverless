@@ -1,7 +1,5 @@
 export type EventType = "HOME" | "AWAY"
 
-export type DynamoType = "Event" | "User" | "Follower" | "Following"
-
 export interface Event {
     readonly userId: string
     readonly eventType: EventType
@@ -15,15 +13,12 @@ export interface User {
     readonly username: string
 }
 
-export interface Following {
+export interface Follow {
     readonly userId: string,
     readonly followingUserId: string
 }
 
-export interface Follower {
-    readonly userId: string,
-    readonly followerUserId: string
-}
+export type DynamoType = "Event" | "User" | "Follow"
 
 export interface UserDynamo {
     readonly PK: string,
@@ -46,18 +41,12 @@ export interface EventDynamo {
     readonly userId: string
 }
 
-export interface FollowerDynamo {
+export interface FollowDynamo {
     readonly PK: string,
     readonly SK: string,
-    readonly itemType: string,
-    readonly userId: string,
-    readonly followerUserId: string
-}
-
-export interface FollowingDynamo {
-    readonly PK: string,
-    readonly SK: string,
-    readonly itemType: string,
+    readonly GS1PK: string,
+    readonly GS1SK: string,
+    readonly itemType: DynamoType,
     readonly userId: string,
     readonly followingUserId: string
 }

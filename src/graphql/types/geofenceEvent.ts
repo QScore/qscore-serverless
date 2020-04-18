@@ -46,7 +46,7 @@ export const resolvers = {
         createGeofenceEvent: async (_parent: any, args: any, context: any, _info: any) => {
             const userId = context.event.requestContext.authorizer.userId
             const eventType = args.input.eventType
-            const input = <Event>{
+            const input: Event = {
                 eventType: eventType,
                 timestamp: new Date().toISOString(),
                 userId: userId

@@ -4,7 +4,7 @@
         "SK": "EVENT#9999",
         "GS1PK": "SEARCH#USER",
         "GS1SK": "lonnie.deckow",
-        "type": "User",
+        "itemType": "User",
         "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b",
         "username": "Lonnie.Deckow",
         "followerCount": 837,
@@ -15,7 +15,7 @@
         "SK": "EVENT#9999",
         "GS1PK": "SEARCH#USER",
         "GS1SK": "johnpaul_kutch",
-        "type": "User",
+        "itemType": "User",
         "userId": "95b65a55-334f-4ac1-8606-272614e6cebf",
         "username": "Johnpaul_Kutch",
         "followerCount": 5684,
@@ -26,7 +26,7 @@
         "SK": "EVENT#9999",
         "GS1PK": "SEARCH#USER",
         "GS1SK": "domenic_lang",
-        "type": "User",
+        "itemType": "User",
         "userId": "6ade4177-f386-49c1-bdc9-48650456bade",
         "username": "Domenic_Lang",
         "followerCount": 2683,
@@ -37,7 +37,7 @@
         "SK": "EVENT#9999",
         "GS1PK": "SEARCH#USER",
         "GS1SK": "cyrus_howell",
-        "type": "User",
+        "itemType": "User",
         "userId": "32379318-e2ae-4bf0-b948-8242cb158be8",
         "username": "Cyrus_Howell",
         "followerCount": 8550,
@@ -48,7 +48,7 @@
         "SK": "EVENT#9999",
         "GS1PK": "SEARCH#USER",
         "GS1SK": "clemens55",
-        "type": "User",
+        "itemType": "User",
         "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a",
         "username": "Clemens55",
         "followerCount": 8180,
@@ -59,7 +59,7 @@
         "SK": "EVENT#9999",
         "GS1PK": "SEARCH#USER",
         "GS1SK": "joseph.schoen",
-        "type": "User",
+        "itemType": "User",
         "userId": "26d05788-9984-40ef-ae53-84784e4f94b9",
         "username": "Joseph.Schoen",
         "followerCount": 6328,
@@ -70,7 +70,7 @@
         "SK": "EVENT#9999",
         "GS1PK": "SEARCH#USER",
         "GS1SK": "ramona.graham99",
-        "type": "User",
+        "itemType": "User",
         "userId": "603e7e83-104d-4e39-871c-7b806b4d62cc",
         "username": "Ramona.Graham99",
         "followerCount": 6653,
@@ -81,7 +81,7 @@
         "SK": "EVENT#9999",
         "GS1PK": "SEARCH#USER",
         "GS1SK": "arjun.paucek82",
-        "type": "User",
+        "itemType": "User",
         "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7",
         "username": "Arjun.Paucek82",
         "followerCount": 6164,
@@ -92,7 +92,7 @@
         "SK": "EVENT#1970-01-01T20:32:14.811Z",
         "eventType": "AWAY",
         "timestamp": "1970-01-01T20:32:14.811Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b"
     },
     {
@@ -100,7 +100,7 @@
         "SK": "EVENT#1970-01-01T14:17:36.470Z",
         "eventType": "AWAY",
         "timestamp": "1970-01-01T14:17:36.470Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b"
     },
     {
@@ -108,7 +108,7 @@
         "SK": "EVENT#1970-01-01T23:37:12.249Z",
         "eventType": "AWAY",
         "timestamp": "1970-01-01T23:37:12.249Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b"
     },
     {
@@ -116,7 +116,7 @@
         "SK": "EVENT#1970-01-02T11:32:03.216Z",
         "eventType": "AWAY",
         "timestamp": "1970-01-02T11:32:03.216Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b"
     },
     {
@@ -124,7 +124,7 @@
         "SK": "EVENT#1970-01-01T23:52:14.959Z",
         "eventType": "HOME",
         "timestamp": "1970-01-01T23:52:14.959Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "95b65a55-334f-4ac1-8606-272614e6cebf"
     },
     {
@@ -132,7 +132,7 @@
         "SK": "EVENT#1970-01-01T12:59:04.934Z",
         "eventType": "AWAY",
         "timestamp": "1970-01-01T12:59:04.934Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "6ade4177-f386-49c1-bdc9-48650456bade"
     },
     {
@@ -140,7 +140,7 @@
         "SK": "EVENT#1970-01-02T01:26:34.716Z",
         "eventType": "AWAY",
         "timestamp": "1970-01-02T01:26:34.716Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "6ade4177-f386-49c1-bdc9-48650456bade"
     },
     {
@@ -148,7 +148,7 @@
         "SK": "EVENT#1970-01-01T08:25:04.396Z",
         "eventType": "AWAY",
         "timestamp": "1970-01-01T08:25:04.396Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "6ade4177-f386-49c1-bdc9-48650456bade"
     },
     {
@@ -156,7 +156,7 @@
         "SK": "EVENT#1970-01-01T15:07:06.201Z",
         "eventType": "HOME",
         "timestamp": "1970-01-01T15:07:06.201Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "6ade4177-f386-49c1-bdc9-48650456bade"
     },
     {
@@ -164,7 +164,7 @@
         "SK": "EVENT#1970-01-02T18:46:23.653Z",
         "eventType": "AWAY",
         "timestamp": "1970-01-02T18:46:23.653Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "6ade4177-f386-49c1-bdc9-48650456bade"
     },
     {
@@ -172,7 +172,7 @@
         "SK": "EVENT#1970-01-01T18:51:40.794Z",
         "eventType": "HOME",
         "timestamp": "1970-01-01T18:51:40.794Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "32379318-e2ae-4bf0-b948-8242cb158be8"
     },
     {
@@ -180,7 +180,7 @@
         "SK": "EVENT#1970-01-01T11:06:08.897Z",
         "eventType": "HOME",
         "timestamp": "1970-01-01T11:06:08.897Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "32379318-e2ae-4bf0-b948-8242cb158be8"
     },
     {
@@ -188,7 +188,7 @@
         "SK": "EVENT#1970-01-01T18:14:54.190Z",
         "eventType": "HOME",
         "timestamp": "1970-01-01T18:14:54.190Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "32379318-e2ae-4bf0-b948-8242cb158be8"
     },
     {
@@ -196,7 +196,7 @@
         "SK": "EVENT#1970-01-02T02:21:35.211Z",
         "eventType": "HOME",
         "timestamp": "1970-01-02T02:21:35.211Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "32379318-e2ae-4bf0-b948-8242cb158be8"
     },
     {
@@ -204,7 +204,7 @@
         "SK": "EVENT#1970-01-02T08:32:25.518Z",
         "eventType": "HOME",
         "timestamp": "1970-01-02T08:32:25.518Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a"
     },
     {
@@ -212,7 +212,7 @@
         "SK": "EVENT#1970-01-02T14:50:17.090Z",
         "eventType": "HOME",
         "timestamp": "1970-01-02T14:50:17.090Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a"
     },
     {
@@ -220,7 +220,7 @@
         "SK": "EVENT#1970-01-02T17:41:29.269Z",
         "eventType": "HOME",
         "timestamp": "1970-01-02T17:41:29.269Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a"
     },
     {
@@ -228,7 +228,7 @@
         "SK": "EVENT#1970-01-01T08:03:31.123Z",
         "eventType": "HOME",
         "timestamp": "1970-01-01T08:03:31.123Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "26d05788-9984-40ef-ae53-84784e4f94b9"
     },
     {
@@ -236,7 +236,7 @@
         "SK": "EVENT#1970-01-02T23:23:56.254Z",
         "eventType": "AWAY",
         "timestamp": "1970-01-02T23:23:56.254Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "26d05788-9984-40ef-ae53-84784e4f94b9"
     },
     {
@@ -244,7 +244,7 @@
         "SK": "EVENT#1970-01-01T16:46:18.899Z",
         "eventType": "AWAY",
         "timestamp": "1970-01-01T16:46:18.899Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "26d05788-9984-40ef-ae53-84784e4f94b9"
     },
     {
@@ -252,7 +252,7 @@
         "SK": "EVENT#1970-01-02T15:39:28.247Z",
         "eventType": "AWAY",
         "timestamp": "1970-01-02T15:39:28.247Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "26d05788-9984-40ef-ae53-84784e4f94b9"
     },
     {
@@ -260,7 +260,7 @@
         "SK": "EVENT#1970-01-01T03:08:31.754Z",
         "eventType": "HOME",
         "timestamp": "1970-01-01T03:08:31.754Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "26d05788-9984-40ef-ae53-84784e4f94b9"
     },
     {
@@ -268,7 +268,7 @@
         "SK": "EVENT#1970-01-01T03:49:19.762Z",
         "eventType": "HOME",
         "timestamp": "1970-01-01T03:49:19.762Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7"
     },
     {
@@ -276,7 +276,7 @@
         "SK": "EVENT#1970-01-01T23:17:56.572Z",
         "eventType": "HOME",
         "timestamp": "1970-01-01T23:17:56.572Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7"
     },
     {
@@ -284,7 +284,7 @@
         "SK": "EVENT#1970-01-02T09:31:51.796Z",
         "eventType": "HOME",
         "timestamp": "1970-01-02T09:31:51.796Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7"
     },
     {
@@ -292,7 +292,7 @@
         "SK": "EVENT#1970-01-01T03:54:55.033Z",
         "eventType": "HOME",
         "timestamp": "1970-01-01T03:54:55.033Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7"
     },
     {
@@ -300,7 +300,7 @@
         "SK": "EVENT#1970-01-02T17:43:00.889Z",
         "eventType": "HOME",
         "timestamp": "1970-01-02T17:43:00.889Z",
-        "type": "Event",
+        "itemType": "Event",
         "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7"
     }
 ]
