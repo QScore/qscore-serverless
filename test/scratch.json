@@ -1,15 +1,14 @@
-{
-    "Items": [
-        {
-            "GS1SK": "FOLLOWER#bb463b8b-b76c-4f6a-9726-65ab5730b69b",
-            "itemType": "Follow",
-            "followingUserId": "95b65a55-334f-4ac1-8606-272614e6cebf",
-            "SK": "FOLLOWING#95b65a55-334f-4ac1-8606-272614e6cebf",
-            "PK": "USER#bb463b8b-b76c-4f6a-9726-65ab5730b69b",
-            "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b",
-            "GS1PK": "USER#95b65a55-334f-4ac1-8606-272614e6cebf"
-        }
-    ],
-    "Count": 1,
-    "ScannedCount": 1
-}
+[
+    {
+        "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a",
+        "username": "Clemens55"
+    },
+    {
+        "userId": "32379318-e2ae-4bf0-b948-8242cb158be8",
+        "username": "Cyrus_Howell"
+    },
+    {
+        "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b",
+        "username": "Lonnie.Deckow"
+    }
+]

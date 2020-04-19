@@ -1,8 +1,8 @@
 import { gql, ApolloError } from 'apollo-server-lambda'
-import { dynamoDbRepository } from '../../data/DynamoDbRepository'
 import { User, Event } from '../../data/model/Types';
-import { Repository } from '../../data/Repository';
-import { UserResolver } from '../resolvers/UserResolver';
+import { Repository } from '../../data/repository';
+import { UserResolver } from '../resolvers/userResolver';
+import { dynamoDbRepository } from '../../data/injector';
 
 export const typeDef = gql`
 schema {

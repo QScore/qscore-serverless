@@ -1,6 +1,6 @@
 import { gql } from 'apollo-server-lambda'
-import { dynamoDbRepository } from '../../data/DynamoDbRepository'
 import { Event } from '../../data/model/Types'
+import { dynamoDbRepository } from '../../data/injector'
 
 export const typeDef = gql`
 type GeofenceEvent {

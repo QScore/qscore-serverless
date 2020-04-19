@@ -1,14 +1,95 @@
 import * as AWS from "aws-sdk"
-import { Repository } from "./Repository";
-import { User, Event, EventDynamo, UserDynamo, FollowDynamo, Follow } from './model/Types';
+import { Repository } from "./repository";
+import { User, Event, EventDynamo, UserDynamo, FollowDynamo, Follow, LeaderboardScore } from './model/Types';
+import { Redis as RedisInterface } from "ioredis";
 
 const mainTable = process.env.MAIN_TABLE as string
+const leaderboard24Key = "leaderboard24"
 
 export class DynamoDbRepository implements Repository {
     private documentClient: AWS.DynamoDB.DocumentClient
+    private redis: RedisInterface
 
-    constructor(documentClient: AWS.DynamoDB.DocumentClient = new AWS.DynamoDB.DocumentClient()) {
+    constructor(
+        documentClient: AWS.DynamoDB.DocumentClient,
+        redis: RedisInterface
+    ) {
         this.documentClient = documentClient
+        this.redis = redis
+    }
+    getLeaderboardRank(userId: string): Promise<number> {
+        throw new Error("Method not implemented.");
+    }
+
+    getLeaderboardScoreRange(min: number, max: number, limit: number): Promise<LeaderboardScore[]> {
+        throw new Error("Method not implemented.");
+    }
+
+    async getTopLeaderboardScores(limit: number): Promise<LeaderboardScore[]> {
+        //Get scores from redis
+        const result = await this.redis.zrevrange(leaderboard24Key, 0, limit - 1, 'WITHSCORES')
+
+        //Separate user ids and scores
+        const userIds = result
+            .filter((_, index) => { return index % 2 === 0; })
+            .map((key) => { return key.split(":")[1] })
+        const scores = result
+            .filter((_, index) => { return index % 2 != 0; })
+
+        //Create maps of userId -> score, and userId -> ranking
+        const scoreMap = new Map<string, number>()
+        const rankMap = new Map<string, number>()
+        for (let i = 0; i < userIds.length; i++) {
+            const score = parseInt(scores[i])
+            const rank = i
+            scoreMap.set(userIds[i], score)
+            rankMap.set(userIds[i], rank)
+        }
+
+        //Batch get all user ids from previous
+        const keys = userIds.map(userId => {
+            return {
+                PK: `USER#${userId}`,
+                SK: `EVENT#9999`
+            }
+        })
+        const batchGetParams: AWS.DynamoDB.DocumentClient.BatchGetItemInput = {
+            RequestItems: {
+                [mainTable]: {
+                    Keys: keys,
+                    ProjectionExpression: "username, userId"
+                }
+            }
+        }
+        const batchGetResults = await this.documentClient.batchGet(batchGetParams).promise()
+
+        //Convert to LeaderboardScores and sort
+        return batchGetResults.Responses?.[mainTable].map((item, index) => {
+            const score: number = scoreMap.get(item.userId) ?? 0
+            const rank: number = rankMap.get(item.userId) ?? 0
+            return {
+                userId: item.userId,
+                username: item.username,
+                score: score,
+                rank: rank + 1
+            }
+        }).sort((a, b) => (a.score < b.score) ? 1 : -1) ?? []
+    }
+
+    async save24HourScore(userId: string, score: number): Promise<void> {
+        await this.redis.zadd(leaderboard24Key, score.toString(), `USER:${userId}`)
+        const params: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
+            TableName: mainTable,
+            Key: {
+                "PK": `USER#${userId}`,
+                "SK": `EVENT#9999`
+            },
+            UpdateExpression: "set score24 = :score24",
+            ExpressionAttributeValues: {
+                ":score24": score
+            }
+        }
+        await this.documentClient.update(params).promise()
     }
 
     async getWhichUsersAreFollowed(currentUserId: string, userIdsToCheck: string[]): Promise<string[]> {
@@ -449,5 +530,3 @@ export interface GetUserAndEventsResult {
     readonly user?: User,
     readonly events: Event[]
 }
-
-export const dynamoDbRepository = new DynamoDbRepository()

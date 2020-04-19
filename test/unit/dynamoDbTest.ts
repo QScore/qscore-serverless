@@ -1,22 +1,30 @@
 import * as AWS from "aws-sdk"
 import * as assert from 'assert'
-import { DynamoDbRepository } from "../../src/data/DynamoDbRepository";
-import { User, Event } from "../../src/data/model/Types";
+import { DynamoDbRepository } from "../../src/data/dynamoDbRepository";
+import { User, Event, LeaderboardScore } from '../../src/data/model/Types';
 import * as faker from 'faker'
-
-const documentClient = new AWS.DynamoDB.DocumentClient({
-    region: 'localhost',
-    endpoint: 'http://localhost:8000'
-})
-const repository = new DynamoDbRepository(documentClient)
-
-const expectedUser = {
-    userId: 'bb463b8b-b76c-4f6a-9726-65ab5730b69b',
-    username: 'Lonnie.Deckow'
-}
-const userId = expectedUser.userId
+import * as Redis from 'ioredis-mock';
 
 describe("DynamoDb New Format Tests", () => {
+    const redis = new Redis()
+    const documentClient = new AWS.DynamoDB.DocumentClient({
+        region: 'localhost',
+        endpoint: 'http://localhost:8000'
+    })
+    const repository = new DynamoDbRepository(documentClient, redis)
+    const expectedUser = {
+        userId: 'bb463b8b-b76c-4f6a-9726-65ab5730b69b',
+        username: 'Lonnie.Deckow'
+    }
+    const userId = expectedUser.userId
+
+    before('Flush redis', async () => {
+        redis.flushall()
+    })
+
+    after('Close down redis', async () => {
+        redis.quit()
+    })
 
     it('Should follow user', async () => {
         const userIdToFollow = '95b65a55-334f-4ac1-8606-272614e6cebf'
@@ -188,5 +196,40 @@ describe("DynamoDb New Format Tests", () => {
         const result = await repository.updateUser(updatedUser)
         const userResult = await repository.getUser(user.userId)
         assert.deepStrictEqual(userResult, updatedUser)
+    });
+
+    it('Should update leaderboards', async () => {
+        const results = await repository.searchUsers('c')
+        const user1 = results[0]
+        const user2 = results[1]
+        await repository.save24HourScore(user1.userId, 300)
+        await repository.save24HourScore(userId, 900)
+        await repository.save24HourScore(user2.userId, 500)
+        const scores = await repository.getTopLeaderboardScores(3)
+        console.log(JSON.stringify(scores))
+        assert.equal(scores.length, 3, "Scores has wrong length!")
+        const expected1: LeaderboardScore = {
+            userId: userId,
+            username: expectedUser.username,
+            score: 900,
+            rank: 1
+        }
+
+        const expected2: LeaderboardScore = {
+            userId: user2.userId,
+            username: user2.username,
+            score: 500,
+            rank: 2
+        }
+
+        const expected3: LeaderboardScore = {
+            userId: user1.userId,
+            username: user1.username,
+            score: 300,
+            rank: 3
+        }
+        assert.deepStrictEqual(scores[0], expected1)
+        assert.deepStrictEqual(scores[1], expected2)
+        assert.deepStrictEqual(scores[2], expected3)
     });
 })
