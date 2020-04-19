@@ -41,6 +41,8 @@ provider:
     USERS_TABLE_NAME: ${self:custom.usersTableName}
     MAIN_TABLE: ${self:custom.mainTableName}
     FIREBASE_DATABASE_URL: ${self:custom.secrets.FIREBASE_DATABASE_URL}
+    REDIS_HOST: 
+      "Fn::GetAtt": [ElasticacheCluster, RedisEndpoint.Address]
 
 functions:
   graphql:
@@ -56,6 +58,11 @@ functions:
         path: graphql
         method: get
         cors: true
+    vpc:
+      securityGroupIds:
+        - "Fn::GetAtt": SecurityGroup.GroupId
+      subnetIds:
+        - Ref: PrivateSubnetA
         
   firebaseAuthorizer:
     handler: src/auth/firebaseAuthorizer.handler
@@ -133,3 +140,54 @@ resources:
             ProvisionedThroughput:
               ReadCapacityUnits: 1
               WriteCapacityUnits: 1
+    VPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: "10.0.0.0/16"
+    PrivateSubnetA:
+      DependsOn: VPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: VPC
+        AvailabilityZone: ${self:provider.region}a
+        CidrBlock: "10.0.1.0/24"
+    ElasticacheSubnetGroup:
+      Type: AWS::ElastiCache::SubnetGroup
+      Properties:
+        Description: "Cache Subnet Group"
+        SubnetIds:
+        - Ref: PrivateSubnetA
+    SecurityGroup:
+      DependsOn: VPC
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: SecurityGroup for Serverless Functions
+        VpcId:
+          Ref: VPC
+    StorageSecurityGroup:
+      DependsOn: VPC
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Ingress for Redis Cluster
+        VpcId:
+          Ref: VPC
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '6379'
+          ToPort: '6379'
+          SourceSecurityGroupId: 
+            Ref: SecurityGroup
+    ElasticacheCluster:
+      DependsOn: StorageSecurityGroup
+      Type: AWS::ElastiCache::CacheCluster
+      Properties:
+        AutoMinorVersionUpgrade: true
+        Engine: redis
+        CacheNodeType: cache.t2.micro
+        NumCacheNodes: 1
+        VpcSecurityGroupIds:
+        - "Fn::GetAtt": StorageSecurityGroup.GroupId
+        CacheSubnetGroupName:
+          Ref: ElasticacheSubnetGroup
+  
