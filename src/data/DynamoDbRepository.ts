@@ -360,7 +360,7 @@ export class DynamoDbRepository implements Repository {
                 ':SK': `EVENT#${startTimestamp}`,
                 ':END': `EVENT#9999`
             },
-            ScanIndexForward: false
+            ScanIndexForward: true
         }
         const queryResult = await this.documentClient.query(eventParams).promise()
 
@@ -372,7 +372,7 @@ export class DynamoDbRepository implements Repository {
             }
         }
 
-        const userResult = queryResult.Items.shift()
+        const userResult = queryResult.Items.pop()
         if (!userResult) {
             return {
                 user: undefined,
