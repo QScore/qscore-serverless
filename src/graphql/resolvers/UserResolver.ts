@@ -76,7 +76,7 @@ export class UserResolver {
             return !previousEvent || previousEvent.eventType != event.eventType
         })
 
-        const last24HoursEvents = filteredEvents
+        const last24HoursEvents = filteredEvents.sort((a, b) => a.timestamp.localeCompare(b.timestamp))
 
         //Handle edge case where first event in last 24 hours is AWAY.
         //That means user was home for part of the beginning of 24 hr period.
