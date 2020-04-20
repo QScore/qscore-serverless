@@ -6,6 +6,7 @@
         "removeComments": true,
         "moduleResolution": "node",
         "noUnusedLocals": false,
+        "allowSyntheticDefaultImports": true,
         "noUnusedParameters": false,
         "sourceMap": true,
         "target": "es2019",

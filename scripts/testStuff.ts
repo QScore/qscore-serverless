@@ -5,17 +5,19 @@ import * as dotenv from 'dotenv'
 dotenv.config()
 
 import * as AWS from "aws-sdk"
-import { DynamoDbRepository } from '../src/data/DynamoDbRepository';
+import { DynamoDbRepository } from '../src/data/dynamoDbRepository';
 import { User, Event } from "../src/data/model/Types"
-import { UserResolver } from '../src/graphql/resolvers/UserResolver';
+import { UserResolver } from '../src/graphql/resolvers/userResolver';
+import Redis from "ioredis";
 
 AWS.config.getCredentials(function (err) {
     if (err) console.log(err.stack);
     else { console.log("Credentials loaded, region:", AWS.config.region) }
 });
 
+const redis = new Redis()
 const documentClient = new AWS.DynamoDB.DocumentClient(AWS.config)
-const dynamoDbRepository = new DynamoDbRepository(documentClient)
+const dynamoDbRepository = new DynamoDbRepository(documentClient, redis)
 const userResolver = new UserResolver(dynamoDbRepository)
 
 async function testUserScore() {
@@ -28,4 +30,24 @@ async function testUserScore() {
     }
 }
 
-testUserScore()
+async function testStuff() {
+    const redis = new Redis()
+    await redis.set("foo", "bar"); // returns promise which resolves to string, "OK"
+    redis.del("foo");
+
+    // Arguments to commands are flattened, so the following are the same:
+    redis.sadd("set", 1, 3, 5, 7);
+    redis.sadd("set", [1, 3, 5, 7]);
+    redis.spop("set"); // Promise resolves to "5" or another item in the set
+
+    // Most responses are strings, or arrays of strings
+    redis.zadd("sortedSet", "1", "one", "2", "dos", "4", "quatro", "3", "three");
+    redis.zrange("sortedSet", 0, 2, "WITHSCORES").then((res) => console.log(res)); // Promise resolves to ["one", "1", "dos", "2", "three", "3"] as if the command was ` redis> ZRANGE sortedSet 0 2 WITHSCORES `
+
+    // Some responses have transformers to JS values
+    redis.hset("myhash", "field1", "Hello");
+    redis.hgetall("myhash").then((res) => console.log(res)); // Promise resolves to Object {field1: "Hello"} rather than a string, or array of strings
+
+    // All arguments are passed directly to the redis server:
+    redis.set("key", 100, "EX", 10); // set's key to value 100 and expires it after 10 seconds
+}

@@ -1,22 +1,30 @@
 import * as AWS from "aws-sdk"
 import * as assert from 'assert'
-import { DynamoDbRepository } from "../../src/data/DynamoDbRepository";
-import { User, Event } from "../../src/data/model/Types";
+import { DynamoDbRepository } from "../../src/data/dynamoDbRepository";
+import { User, Event, LeaderboardScore } from '../../src/data/model/Types';
 import * as faker from 'faker'
-
-const documentClient = new AWS.DynamoDB.DocumentClient({
-    region: 'localhost',
-    endpoint: 'http://localhost:8000'
-})
-const repository = new DynamoDbRepository(documentClient)
-
-const expectedUser = {
-    userId: 'bb463b8b-b76c-4f6a-9726-65ab5730b69b',
-    username: 'Lonnie.Deckow'
-}
-const userId = expectedUser.userId
+import * as Redis from 'ioredis-mock';
 
 describe("DynamoDb New Format Tests", () => {
+    const redis = new Redis()
+    const documentClient = new AWS.DynamoDB.DocumentClient({
+        region: 'localhost',
+        endpoint: 'http://localhost:8000'
+    })
+    const repository = new DynamoDbRepository(documentClient, redis)
+    const expectedUser = {
+        userId: 'bb463b8b-b76c-4f6a-9726-65ab5730b69b',
+        username: 'Lonnie.Deckow'
+    }
+    const userId = expectedUser.userId
+
+    before('Flush redis', async () => {
+        redis.flushall()
+    })
+
+    after('Close down redis', async () => {
+        redis.quit()
+    })
 
     it('Should follow user', async () => {
         const userIdToFollow = '95b65a55-334f-4ac1-8606-272614e6cebf'
@@ -188,5 +196,72 @@ describe("DynamoDb New Format Tests", () => {
         const result = await repository.updateUser(updatedUser)
         const userResult = await repository.getUser(user.userId)
         assert.deepStrictEqual(userResult, updatedUser)
+    });
+
+    it('Should update leaderboards', async () => {
+        const results = await repository.searchUsers('c')
+        const results2 = await repository.searchUsers('j')
+        const results3 = await repository.searchUsers('d')
+        const user1 = results[0]
+        const user2 = results[1]
+        const user3 = results2[0]
+        const user4 = results2[1]
+        const user5 = results3[0]
+        await repository.save24HourScore(userId, 500)
+        await repository.save24HourScore(user1.userId, 500)
+        await repository.save24HourScore(user2.userId, 900)
+        await repository.save24HourScore(user3.userId, 300)
+        await repository.save24HourScore(user4.userId, 300)
+        await repository.save24HourScore(user5.userId, 200)
+
+        //Fake user ids should not actually be possible
+        const scores = await repository.getTopLeaderboardScores(10)
+        assert.equal(scores.length, 6, "Scores has wrong length!")
+        const expected1: LeaderboardScore = {
+            userId: user2.userId,
+            username: user2.username,
+            score: 900,
+            rank: 1
+        }
+
+        const expected2: LeaderboardScore = {
+            userId: userId,
+            username: expectedUser.username,
+            score: 500,
+            rank: 2
+        }
+
+        const expected3: LeaderboardScore = {
+            userId: user1.userId,
+            username: user1.username,
+            score: 500,
+            rank: 2
+        }
+
+        const expected4: LeaderboardScore = {
+            userId: user3.userId,
+            username: user3.username,
+            score: 300,
+            rank: 3
+        }
+
+        const expected5: LeaderboardScore = {
+            userId: user4.userId,
+            username: user4.username,
+            score: 300,
+            rank: 3
+        }
+        const expected6: LeaderboardScore = {
+            userId: user5.userId,
+            username: user5.username,
+            score: 200,
+            rank: 4
+        }
+        assert.deepStrictEqual(scores[0], expected1, "First user is incorrect")
+        assert.deepStrictEqual(scores[1], expected2, "Second user is incorrect")
+        assert.deepStrictEqual(scores[2], expected3, "Third user is incorrect")
+        assert.deepStrictEqual(scores[3], expected4, "Fourth user is incorrect")
+        assert.deepStrictEqual(scores[4], expected5, "Fifth user is incorrect")
+        assert.deepStrictEqual(scores[5], expected6, "Sixth user is incorrect")
     });
 })

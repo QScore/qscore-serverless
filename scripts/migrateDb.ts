@@ -5,8 +5,9 @@ import * as dotenv from 'dotenv'
 dotenv.config()
 
 import * as AWS from "aws-sdk"
-import { DynamoDbRepository } from "../src/data/DynamoDbRepository"
+import { DynamoDbRepository } from "../src/data/dynamoDbRepository"
 import { User, Event } from "../src/data/model/Types"
+import * as Redis from 'ioredis-mock';
 
 AWS.config.getCredentials(function (err) {
     if (err) console.log(err.stack);
@@ -18,7 +19,7 @@ const documentClientLocal = new AWS.DynamoDB.DocumentClient({
     endpoint: 'http://localhost:8000'
 })
 const documentClient = new AWS.DynamoDB.DocumentClient(AWS.config)
-const dynamoDbRepositoryLocal = new DynamoDbRepository(documentClientLocal)
+const dynamoDbRepositoryLocal = new DynamoDbRepository(documentClientLocal, new Redis())
 
 async function migrateUsersTable() {
     console.log("Migrating users table...")
