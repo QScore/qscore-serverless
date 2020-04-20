@@ -18,6 +18,13 @@ export interface Follow {
     readonly followingUserId: string
 }
 
+export interface LeaderboardScore {
+    readonly rank: number,
+    readonly userId: string,
+    readonly username: string,
+    readonly score: number
+}
+
 export type DynamoType = "Event" | "User" | "Follow"
 
 export interface UserDynamo {

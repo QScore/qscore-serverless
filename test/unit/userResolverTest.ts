@@ -1,10 +1,10 @@
 import sinon, { stubInterface } from "ts-sinon";
 import * as assert from 'assert'
 import { Event, User } from '../../src/data/model/Types';
-import { UserResolver } from '../../src/graphql/resolvers/UserResolver';
-import { DynamoDbRepository, GetUserAndEventsResult } from '../../src/data/DynamoDbRepository';
+import { UserResolver } from '../../src/graphql/resolvers/userResolver';
+import { DynamoDbRepository, GetUserAndEventsResult } from '../../src/data/dynamoDbRepository';
 import * as AWS from "aws-sdk";
-import { Repository } from '../../src/data/Repository';
+import { Repository } from '../../src/data/repository';
 import * as faker from 'faker';
 
 let clock: sinon.SinonFakeTimers
@@ -15,16 +15,6 @@ const fakeUser: User = {
     username: faker.random.uuid(),
     followerCount: 1337,
     followingCount: 1
-}
-
-const documentClient = new AWS.DynamoDB.DocumentClient({
-    region: 'localhost',
-    endpoint: 'http://localhost:8000'
-})
-const actualResolver = new UserResolver(new DynamoDbRepository(documentClient))
-const actualUser = {
-    userId: 'bb463b8b-b76c-4f6a-9726-65ab5730b69b',
-    username: 'Lonnie.Deckow'
 }
 
 describe('User Resolver Unit Tests', function () {

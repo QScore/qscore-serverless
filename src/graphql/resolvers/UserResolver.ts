@@ -1,4 +1,5 @@
-import { Repository } from "../../data/Repository"
+import { Repository } from "../../data/repository"
+import { promisify } from 'util'
 import { User, Event } from "../../data/model/Types"
 import { ApolloError } from "apollo-server-lambda";
 import { UpdateUserInfoPayloadGql, SearchUsersPayloadGql, CurrentUserPayloadGql, UserGql } from '../types/user';
@@ -49,10 +50,16 @@ export class UserResolver {
         if (!user || !events) {
             throw new ApolloError("Current user could not be resolved")
         }
+
+        //Add score to redis 24 hour leaderboard
+        const score = await this.calculateScore(userId, events)
+        this.repository.save24HourScore(userId, score)
+
+        //Return gql user info
         const userGql: UserGql = {
             id: user.userId,
             username: user.username,
-            score: await this.calculateScore(userId, events)
+            score: score
         }
         return {
             user: userGql

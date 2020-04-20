@@ -112,3 +112,9 @@ dist
 
 #build
 .build
+
+#redis
+dump.rdb
+
+#test json
+test/scratch.json
