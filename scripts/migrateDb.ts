@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv'
 dotenv.config()
 
 import * as AWS from "aws-sdk"
-import { DynamoDbRepository } from "../src/data/dynamoDbRepository"
+import { MainRepository } from "../src/data/mainRepository"
 import { User, Event } from "../src/data/model/Types"
 import * as Redis from 'ioredis-mock';
 
@@ -19,7 +19,7 @@ const documentClientLocal = new AWS.DynamoDB.DocumentClient({
     endpoint: 'http://localhost:8000'
 })
 const documentClient = new AWS.DynamoDB.DocumentClient(AWS.config)
-const dynamoDbRepositoryLocal = new DynamoDbRepository(documentClientLocal, new Redis())
+const dynamoDbRepositoryLocal = new MainRepository(documentClientLocal, new Redis())
 
 async function migrateUsersTable() {
     console.log("Migrating users table...")
@@ -39,20 +39,12 @@ async function migrateUsersTable() {
 
         console.log("Scanning complete, num items: " + results.Items.length)
         results.Items.forEach(async item => {
-            //Create user in V2 table
-            const user: User = {
-                username: item.username,
-                userId: item.id,
-                followerCount: 0,
-                followingCount: 0
-            }
-
             try {
-                await dynamoDbRepositoryLocal.createUser(user)
+                const user = await dynamoDbRepositoryLocal.createUser(item.id, item.username)
+                console.log("Added user " + JSON.stringify(user))
             } catch (error) {
                 console.log("ERROR: " + error)
             }
-            console.log("Added user " + JSON.stringify(user))
         })
 
         if (!results.LastEvaluatedKey) {

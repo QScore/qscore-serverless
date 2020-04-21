@@ -27,7 +27,6 @@ export const facebookLoginHandler = async (event, context, callback) => {
             await setPassword(email, password)
         } else {
             const tempPassword = "L5oKeM0mmG1SIa"
-            console.log(">>Creating user")
             await createUser({
                 clientId: clientId,
                 username: email,
@@ -35,11 +34,8 @@ export const facebookLoginHandler = async (event, context, callback) => {
                 password: tempPassword,
                 avatar: avatar
             })
-            console.log(">>Setting password")
             await setPassword(email, password)
-            console.log(">>Adding user to group")
             await addUserToGroup("Facebook", email)
-            console.log(">>Confirmed")
         }
         const body = {
             username: email,

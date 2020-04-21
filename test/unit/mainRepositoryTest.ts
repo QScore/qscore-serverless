@@ -1,17 +1,19 @@
 import * as AWS from "aws-sdk"
 import * as assert from 'assert'
-import { DynamoDbRepository } from "../../src/data/dynamoDbRepository";
+import { MainRepository } from "../../src/data/mainRepository";
 import { User, Event, LeaderboardScore } from '../../src/data/model/Types';
 import * as faker from 'faker'
 import * as Redis from 'ioredis-mock';
+import { RedisCache } from "../../src/data/redisCache";
 
-describe("DynamoDb New Format Tests", () => {
+describe("Main repository tests", () => {
     const redis = new Redis()
+    const redisCache = new RedisCache(redis)
     const documentClient = new AWS.DynamoDB.DocumentClient({
         region: 'localhost',
         endpoint: 'http://localhost:8000'
     })
-    const repository = new DynamoDbRepository(documentClient, redis)
+    const repository = new MainRepository(documentClient, redisCache)
     const expectedUser = {
         userId: 'bb463b8b-b76c-4f6a-9726-65ab5730b69b',
         username: 'Lonnie.Deckow'
@@ -26,8 +28,12 @@ describe("DynamoDb New Format Tests", () => {
         redis.quit()
     })
 
+    beforeEach('Reset faker', async () => {
+        faker.seed(123)
+    })
+
     it('Should follow user', async () => {
-        const userIdToFollow = '95b65a55-334f-4ac1-8606-272614e6cebf'
+        const userIdToFollow = '5ce32379-318e-42ae-bf07-9488242cb158'
 
         //Verify that we are not currently following this user
         const followedUsersPrevious = await repository.getFollowedUsers(userId)
@@ -52,14 +58,14 @@ describe("DynamoDb New Format Tests", () => {
         const followedUserFromResult = followedUsers.filter(user => {
             return user.userId === userIdToFollow
         })[0]
-        assert.deepStrictEqual(followedUserFromResult, followedUser)
+        assert.deepStrictEqual(followedUserFromResult, followedUser, "Followed user does not match")
 
         //Verify that getFollowers on target user returns our user
         const followingUsers = await repository.getFollowers(userIdToFollow)
         const followingUsersFromResult = followingUsers.filter(user => {
             return user.userId === userId
         })[0]
-        assert.deepStrictEqual(followingUsersFromResult, currentUser)
+        assert.deepStrictEqual(followingUsersFromResult, currentUser, "Following user does not match")
 
         const userIds = await repository.getWhichUsersAreFollowed(userId, [userIdToFollow, 'b8f05ac0-90be-4246-8355-d80a8132e57a'])
         assert.equal(userIds.length, 1)
@@ -67,7 +73,7 @@ describe("DynamoDb New Format Tests", () => {
     })
 
     it('Should unfollow user', async () => {
-        const userIdToUnfollow = '95b65a55-334f-4ac1-8606-272614e6cebf'
+        const userIdToUnfollow = '5ce32379-318e-42ae-bf07-9488242cb158'
 
         //Verify that we are currently following this user
         const followedUsersPrevious = await repository.getFollowedUsers(userId)
@@ -95,8 +101,8 @@ describe("DynamoDb New Format Tests", () => {
     })
 
     it('Should search for users', async () => {
-        const results = await repository.searchUsers('c')
-        assert.equal(results.length, 2)
+        const results = await repository.searchUsers('clemens')
+        assert.equal(results.length, 1)
     })
 
     it('Should find user and events after start time', async () => {
@@ -111,9 +117,9 @@ describe("DynamoDb New Format Tests", () => {
         assert.equal(user.username, expectedUser.username)
 
         events.forEach((event) => {
-            assert(event.userId == userId)
-            assert(event.eventType === "HOME" || event.eventType === "AWAY")
-            assert(event.timestamp >= startTime)
+            assert(event.userId == userId, "UserIds do not match")
+            assert(event.eventType === "HOME" || event.eventType === "AWAY", "Event type is invalid")
+            assert(event.timestamp >= startTime, "Timestamp should be >= start time")
         })
     });
 
@@ -142,29 +148,23 @@ describe("DynamoDb New Format Tests", () => {
     });
 
     it('Should create new user ', async () => {
-        const user: User = {
-            userId: 'zzzz' + faker.random.uuid(),
-            username: 'zzzz' + faker.random.uuid(),
-            followerCount: 1337,
-            followingCount: 1
+        faker.seed(Math.random() * 10000)
+        const userId = faker.random.uuid()
+        const username = faker.random.uuid()
+        const result = await repository.createUser(userId, username)
+        const expected: User = {
+            userId: userId,
+            username: username,
+            allTimeScore: 0,
+            followerCount: 0,
+            followingCount: 0
         }
-        try {
-            await repository.createUser(user)
-            assert.ok("User created successfully")
-        } catch (error) {
-            assert.fail(error)
-        }
+        assert.deepStrictEqual(result, expected)
     });
 
     it('Should not create duplicate user ', async () => {
-        const user: User = {
-            userId: userId,
-            username: faker.random.uuid(),
-            followerCount: 1337,
-            followingCount: 1
-        }
         try {
-            await repository.createUser(user)
+            await repository.createUser(userId, faker.random.uuid())
             assert.fail("User should not have been created")
         } catch (error) {
             assert.ok("User was not created")
@@ -177,91 +177,89 @@ describe("DynamoDb New Format Tests", () => {
         assert.equal(user.username, expectedUser.username)
     });
 
-    it('Should update user', async () => {
-        //First create a new user
-        const user: User = {
-            userId: 'zzzz' + faker.random.uuid(),
-            username: 'zzzz' + faker.random.uuid()
-        }
-        await repository.createUser(user)
+    it('Should update username', async () => {
+        faker.seed(Math.random() * 10000)
+        const userId = faker.random.uuid()
+        const username = faker.random.uuid()
+        await repository.createUser(userId, username)
 
-        //First create a new user
-        const updatedUser: User = {
-            userId: user.userId,
-            username: user.username + 'zzz',
-            followerCount: undefined,
-            followingCount: undefined
-        }
         //Then update the user
-        const result = await repository.updateUser(updatedUser)
-        const userResult = await repository.getUser(user.userId)
-        assert.deepStrictEqual(userResult, updatedUser)
+        const result = await repository.updateUsername(userId, username + 'zzz')
+        const userResult = await repository.getUser(userId)
+        const expectedUser: User = {
+            userId: userId,
+            username: username + 'zzz',
+            allTimeScore: 0,
+            followerCount: 0,
+            followingCount: 0
+        }
+        assert.deepStrictEqual(userResult, expectedUser)
     });
 
     it('Should update leaderboards', async () => {
-        const results = await repository.searchUsers('c')
-        const results2 = await repository.searchUsers('j')
-        const results3 = await repository.searchUsers('d')
-        const user1 = results[0]
-        const user2 = results[1]
-        const user3 = results2[0]
-        const user4 = results2[1]
-        const user5 = results3[0]
-        await repository.save24HourScore(userId, 500)
-        await repository.save24HourScore(user1.userId, 500)
-        await repository.save24HourScore(user2.userId, 900)
-        await repository.save24HourScore(user3.userId, 300)
-        await repository.save24HourScore(user4.userId, 300)
-        await repository.save24HourScore(user5.userId, 200)
+        faker.seed(Math.random() * 10000)
+        const user1 = await repository.createUser("a" + faker.random.uuid(), faker.random.uuid())
+        const user2 = await repository.createUser("b" + faker.random.uuid(), faker.random.uuid())
+        const user3 = await repository.createUser("c" + faker.random.uuid(), faker.random.uuid())
+        const user4 = await repository.createUser("d" + faker.random.uuid(), faker.random.uuid())
+        const user5 = await repository.createUser("e" + faker.random.uuid(), faker.random.uuid())
+        const user6 = await repository.createUser("f" + faker.random.uuid(), faker.random.uuid())
+        await repository.save24HourScore(user1.userId, 900)
+        await repository.save24HourScore(user2.userId, 700)
+        await repository.save24HourScore(user3.userId, 700)
+        await repository.save24HourScore(user4.userId, 400)
+        await repository.save24HourScore(user5.userId, 400)
+        await repository.save24HourScore(user6.userId, 200)
 
         //Fake user ids should not actually be possible
         const scores = await repository.getTopLeaderboardScores(10)
         assert.equal(scores.length, 6, "Scores has wrong length!")
         const expected1: LeaderboardScore = {
-            userId: user2.userId,
-            username: user2.username,
+            userId: user1.userId,
+            username: user1.username,
             score: 900,
             rank: 1
         }
 
         const expected2: LeaderboardScore = {
-            userId: userId,
-            username: expectedUser.username,
-            score: 500,
+            userId: user2.userId,
+            username: user2.username,
+            score: 700,
             rank: 2
         }
 
         const expected3: LeaderboardScore = {
-            userId: user1.userId,
-            username: user1.username,
-            score: 500,
+            userId: user3.userId,
+            username: user3.username,
+            score: 700,
             rank: 2
         }
 
         const expected4: LeaderboardScore = {
-            userId: user3.userId,
-            username: user3.username,
-            score: 300,
+            userId: user4.userId,
+            username: user4.username,
+            score: 400,
             rank: 3
         }
 
         const expected5: LeaderboardScore = {
-            userId: user4.userId,
-            username: user4.username,
-            score: 300,
+            userId: user5.userId,
+            username: user5.username,
+            score: 400,
             rank: 3
         }
         const expected6: LeaderboardScore = {
-            userId: user5.userId,
-            username: user5.username,
+            userId: user6.userId,
+            username: user6.username,
             score: 200,
             rank: 4
         }
+
         assert.deepStrictEqual(scores[0], expected1, "First user is incorrect")
-        assert.deepStrictEqual(scores[1], expected2, "Second user is incorrect")
-        assert.deepStrictEqual(scores[2], expected3, "Third user is incorrect")
-        assert.deepStrictEqual(scores[3], expected4, "Fourth user is incorrect")
-        assert.deepStrictEqual(scores[4], expected5, "Fifth user is incorrect")
+        assert.deepStrictEqual(scores[1], expected3, "Second user is incorrect")
+        assert.deepStrictEqual(scores[2], expected2, "Third user is incorrect")
+        assert.deepStrictEqual(scores[3], expected5, "Fourth user is incorrect")
+        assert.deepStrictEqual(scores[4], expected4, "Fifth user is incorrect")
         assert.deepStrictEqual(scores[5], expected6, "Sixth user is incorrect")
     });
 })

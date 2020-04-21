@@ -8,9 +8,10 @@ export interface Event {
 
 export interface User {
     readonly userId: string,
-    readonly followerCount?: number,
-    readonly followingCount?: number,
-    readonly username: string
+    readonly followerCount: number,
+    readonly followingCount: number,
+    readonly username: string,
+    readonly allTimeScore: number
 }
 
 export interface Follow {
@@ -33,10 +34,11 @@ export interface UserDynamo {
     readonly GS1PK: string,
     readonly GS1SK: string,
     readonly userId: string,
-    readonly followerCount?: number,
-    readonly followingCount?: number,
+    readonly followerCount: number,
+    readonly followingCount: number,
     readonly username: string,
-    readonly itemType: DynamoType
+    readonly itemType: DynamoType,
+    readonly allTimeScore: number
 }
 
 export interface EventDynamo {

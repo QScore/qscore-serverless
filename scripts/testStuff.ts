@@ -5,10 +5,11 @@ import * as dotenv from 'dotenv'
 dotenv.config()
 
 import * as AWS from "aws-sdk"
-import { DynamoDbRepository } from '../src/data/dynamoDbRepository';
+import { MainRepository } from '../src/data/mainRepository';
 import { User, Event } from "../src/data/model/Types"
-import { UserResolver } from '../src/graphql/resolvers/userResolver';
+import { MainResolver } from '../src/graphql/resolvers/mainResolver';
 import Redis from "ioredis";
+import { RedisCache } from '../src/data/redisCache';
 
 AWS.config.getCredentials(function (err) {
     if (err) console.log(err.stack);
@@ -17,8 +18,9 @@ AWS.config.getCredentials(function (err) {
 
 const redis = new Redis()
 const documentClient = new AWS.DynamoDB.DocumentClient(AWS.config)
-const dynamoDbRepository = new DynamoDbRepository(documentClient, redis)
-const userResolver = new UserResolver(dynamoDbRepository)
+const redisCache = new RedisCache(redis)
+const dynamoDbRepository = new MainRepository(documentClient, redisCache)
+const userResolver = new MainResolver(dynamoDbRepository)
 
 async function testUserScore() {
     const userId = "2MSAXIAGtDgXMgn1W58BNu76BYp2"

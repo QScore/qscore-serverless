@@ -1,14 +1,37 @@
 import { Repository } from "../../data/repository"
 import { promisify } from 'util'
-import { User, Event } from "../../data/model/Types"
+import { User, Event, EventType } from '../../data/model/Types';
 import { ApolloError } from "apollo-server-lambda";
 import { UpdateUserInfoPayloadGql, SearchUsersPayloadGql, CurrentUserPayloadGql, UserGql } from '../types/user';
+import { CreateGeofenceEventPayloadGql } from "../types/geofenceEvent";
 
-export class UserResolver {
+export class MainResolver {
     private repository: Repository
 
     constructor(repository: Repository) {
         this.repository = repository
+    }
+
+    async createEvent(userId: string, eventType: EventType): Promise<CreateGeofenceEventPayloadGql> {
+        const input: Event = {
+            eventType: eventType,
+            timestamp: new Date().toISOString(),
+            userId: userId
+        }
+        const event = await this.repository.createEvent(input)
+
+        const latestEvent = await this.repository.getLatestEventForUser(userId)
+        if (latestEvent?.eventType == "AWAY") {
+            await this.updateAllTimeScore(userId, latestEvent)
+        }
+
+        return {
+            geofenceEvent: {
+                userId: event.userId,
+                eventType: event.eventType,
+                timestamp: event.timestamp
+            }
+        }
     }
 
     async searchUsers(currentUserId: string, searchQuery: string): Promise<SearchUsersPayloadGql> {
@@ -32,11 +55,7 @@ export class UserResolver {
     }
 
     async updateUserInfo(userId: string, username: string): Promise<UpdateUserInfoPayloadGql> {
-        const user: User = {
-            userId: userId,
-            username: username
-        }
-        await this.repository.updateUser(user)
+        await this.repository.updateUsername(userId, username)
         const result: UpdateUserInfoPayloadGql = {
             id: userId,
             username: username
@@ -51,9 +70,18 @@ export class UserResolver {
             throw new ApolloError("Current user could not be resolved")
         }
 
-        //Add score to redis 24 hour leaderboard
-        const score = await this.calculateScore(userId, events)
+        //Calculate 24 hour score and add to redis
+        const score = await this.calculate24HourScore(userId, events)
         this.repository.save24HourScore(userId, score)
+
+        //Calculate all time score
+        //Current time - last calc time
+        //Set last calc time to current time
+
+        const latestEvent = await this.repository.getLatestEventForUser(userId)
+        if (latestEvent?.eventType == "HOME") {
+            await this.updateAllTimeScore(userId, latestEvent)
+        }
 
         //Return gql user info
         const userGql: UserGql = {
@@ -66,7 +94,16 @@ export class UserResolver {
         }
     }
 
-    private async calculateScore(userId: string, events: Event[]): Promise<number> {
+    private async updateAllTimeScore(userId: string, latestEvent: Event): Promise<number> {
+        const currentTimeMillis = Date.now()
+        const extra = currentTimeMillis - new Date(latestEvent.timestamp).getTime()
+        const currentAllTimeScore = await this.repository.getAllTimeScore(userId)
+        const finalAllTimeScore = currentAllTimeScore + extra
+        await this.repository.saveAllTimeScore(userId, finalAllTimeScore)
+        return finalAllTimeScore
+    }
+
+    private async calculate24HourScore(userId: string, events: Event[]): Promise<number> {
         if (events.length == 0) {
             //No events in the last 24 hours, get latest event to calculate score
             const event = await this.repository.getLatestEventForUser(userId)

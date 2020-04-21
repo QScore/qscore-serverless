@@ -1,38 +1,23 @@
 [
     {
-        "userId": "32379318-e2ae-4bf0-b948-8242cb158be8",
-        "username": "Cyrus_Howell",
-        "score": 900,
-        "rank": 1
+        "userId": "c8a1db3bd-c198-48cb-bd8b-6246733aa2c5",
+        "username": "c0b27bcf-e0bf-477a-ac6f-3f6da87fb360",
+        "followerCount": 0,
+        "followingCount": 0,
+        "allTimeScore": 0
     },
     {
-        "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b",
-        "username": "Lonnie.Deckow",
-        "score": 500,
-        "rank": 2
+        "userId": "f142fbfff-f6a7-445d-bbd7-a0a7fe24a65e",
+        "username": "c2b39cd7-61d7-4c90-9648-93131fb5bce8",
+        "followerCount": 0,
+        "followingCount": 0,
+        "allTimeScore": 0
     },
     {
         "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a",
         "username": "Clemens55",
-        "score": 500,
-        "rank": 2
-    },
-    {
-        "userId": "95b65a55-334f-4ac1-8606-272614e6cebf",
-        "username": "Johnpaul_Kutch",
-        "score": 300,
-        "rank": 3
-    },
-    {
-        "userId": "26d05788-9984-40ef-ae53-84784e4f94b9",
-        "username": "Joseph.Schoen",
-        "score": 300,
-        "rank": 3
-    },
-    {
-        "userId": "6ade4177-f386-49c1-bdc9-48650456bade",
-        "username": "Domenic_Lang",
-        "score": 200,
-        "rank": 4
+        "followerCount": 8180,
+        "followingCount": 8545,
+        "allTimeScore": 55949
     }
 ]

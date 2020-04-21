@@ -1,23 +1,24 @@
 import sinon, { stubInterface } from "ts-sinon";
 import * as assert from 'assert'
 import { Event, User } from '../../src/data/model/Types';
-import { UserResolver } from '../../src/graphql/resolvers/userResolver';
-import { DynamoDbRepository, GetUserAndEventsResult } from '../../src/data/dynamoDbRepository';
+import { MainResolver } from '../../src/graphql/resolvers/mainResolver';
+import { MainRepository, GetUserAndEventsResult } from '../../src/data/mainRepository';
 import * as AWS from "aws-sdk";
 import { Repository } from '../../src/data/repository';
 import * as faker from 'faker';
 
 let clock: sinon.SinonFakeTimers
 const testRepository = stubInterface<Repository>()
-const testResolver = new UserResolver(testRepository)
+const testResolver = new MainResolver(testRepository)
 const fakeUser: User = {
     userId: faker.random.uuid(),
     username: faker.random.uuid(),
     followerCount: 1337,
-    followingCount: 1
+    followingCount: 1,
+    allTimeScore: 0
 }
 
-describe('User Resolver Unit Tests', function () {
+describe('Main Resolver Unit Tests', function () {
     beforeEach(function () {
         clock = sinon.useFakeTimers({
             now: 24 * 60 * 60 * 1000
@@ -293,10 +294,16 @@ describe('User Resolver Unit Tests', function () {
             {
                 userId: 'user1',
                 username: 'gertrude',
+                allTimeScore: 0,
+                followerCount: 0,
+                followingCount: 0
             },
             {
                 userId: 'user2',
                 username: 'gerbert',
+                allTimeScore: 0,
+                followerCount: 0,
+                followingCount: 0
             }
         ])
 
@@ -310,18 +317,18 @@ describe('User Resolver Unit Tests', function () {
                 id: 'user1',
                 username: 'gertrude',
                 isCurrentUserFollowing: true,
-                followingCount: undefined,
-                followerCount: undefined
+                followingCount: 0,
+                followerCount: 0
             }, {
                 id: 'user2',
                 username: 'gerbert',
                 isCurrentUserFollowing: false,
-                followingCount: undefined,
-                followerCount: undefined
+                followingCount: 0,
+                followerCount: 0
             }]
         }
 
-        assert.deepStrictEqual(result, expectedResult)
+        assert.deepStrictEqual(result, expectedResult, "Users do not match")
     })
 })
 
