@@ -89,7 +89,11 @@ custom:
   webpack:
     webpackConfig: 'webpack.config.js'
     packager: 'npm'
-    includeModules: true
+    includeModules:
+      forceExclude:
+        - aws-sdk
+  serverless-offline:
+     useChildProcesses: true
   dynamodb:
     stages:
       - dev

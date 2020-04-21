@@ -20,15 +20,15 @@ describe("Main repository tests", () => {
     }
     const userId = expectedUser.userId
 
-    before('Flush redis', async () => {
+    before('Flush redis', () => {
         redis.flushall()
     })
 
-    after('Close down redis', async () => {
+    after('Close down redis', () => {
         redis.quit()
     })
 
-    beforeEach('Reset faker', async () => {
+    beforeEach('Reset faker', () => {
         faker.seed(123)
     })
 
@@ -184,7 +184,7 @@ describe("Main repository tests", () => {
         await repository.createUser(userId, username)
 
         //Then update the user
-        const result = await repository.updateUsername(userId, username + 'zzz')
+        await repository.updateUsername(userId, username + 'zzz')
         const userResult = await repository.getUser(userId)
         const expectedUser: User = {
             userId: userId,
@@ -261,5 +261,18 @@ describe("Main repository tests", () => {
         assert.deepStrictEqual(scores[3], expected5, "Fourth user is incorrect")
         assert.deepStrictEqual(scores[4], expected4, "Fifth user is incorrect")
         assert.deepStrictEqual(scores[5], expected6, "Sixth user is incorrect")
+    });
+
+
+    it('Should save all time score', async () => {
+        faker.seed(Math.random() * 10000)
+        const userId = faker.random.uuid()
+        const username = faker.random.uuid()
+        await repository.createUser(userId, username)
+
+        repository.saveAllTimeScore(userId, 500)
+        const result = await repository.getAllTimeScore(userId)
+        console.log(">>RESULT SCORE: " + JSON.stringify(result))
+        assert.equal(result, 500, "All time score does not match")
     });
 })
