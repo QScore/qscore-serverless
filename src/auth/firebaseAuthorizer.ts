@@ -2,7 +2,7 @@ import * as admin from 'firebase-admin'
 import serviceAccount from './serviceAccountKey.json'
 import { Context } from 'aws-lambda';
 
-const initializeSdk = function () {
+const initializeSdk = function (): void {
     // Check if Firebase Admin SDK is already initialized, if not, then do it
     if (admin.apps.length == 0) {
         admin.initializeApp({
@@ -13,7 +13,8 @@ const initializeSdk = function () {
 }
 
 // Helper funtion for generating the response API Gateway requires to handle the token verification
-const generateIamPolicy = (effect: any, resource: any, data: any) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const generateIamPolicy = (effect: any, resource: any, data: any): any => {
     // Map values into context object passed into Lambda function, if data is present
     const authResponse = {
         principalId: data ? data.user_id : 'unavailable',
@@ -37,8 +38,17 @@ const generateIamPolicy = (effect: any, resource: any, data: any) => {
     return authResponse;
 }
 
-export const handler = async (event: any, context: Context) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const handler = async (event: any, context: Context): Promise<any> => {
     try {
+        const isOffline: boolean = process.env.SLS_OFFLINE == "true"
+        if (isOffline) {
+            return generateIamPolicy('Allow', event.methodArn, {
+                // eslint-disable-next-line @typescript-eslint/camelcase
+                user_id: "Tb1xh6O9StZFHGC3K8zf9iyaVH12",
+            });
+        }
+
         // Return from function if no authorizationToken present in header
         // context.fail('Unauthorized') will trigger API Gateway to return 401 response
         if (!event.authorizationToken) {
@@ -62,7 +72,7 @@ export const handler = async (event: any, context: Context) => {
         // Call the firebase-admin provided token verification function with
         // the token provided by the client
         // Generate Allow on successful validation, otherwise catch the error and Deny the request
-        let resp = await admin.auth().verifyIdToken(tokenValue);
+        const resp = await admin.auth().verifyIdToken(tokenValue);
 
         console.log("Allowing request")
         return generateIamPolicy('Allow', event.methodArn, resp);

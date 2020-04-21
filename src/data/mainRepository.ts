@@ -19,6 +19,7 @@ export class MainRepository implements Repository {
 
     async getAllTimeScore(userId: string): Promise<number> {
         const user = await this.getUser(userId)
+        console.log(">>USER: " + JSON.stringify(user))
         return user?.allTimeScore ?? -1
     }
 
@@ -42,7 +43,7 @@ export class MainRepository implements Repository {
         throw new Error("Method not implemented.");
     }
 
-    getLeaderboardScoreRange(min: number, max: number, limit: number): Promise<LeaderboardScore[]> {
+    async getLeaderboardScoreRange(min: number, max: number, limit: number): Promise<LeaderboardScore[]> {
         throw new Error("Method not implemented.");
     }
 
@@ -168,7 +169,7 @@ export class MainRepository implements Repository {
         return users
     }
 
-    async unfollowUser(currentUserId: string, targetUserId: string) {
+    async unfollowUser(currentUserId: string, targetUserId: string): Promise<void> {
         const params: AWS.DynamoDB.DocumentClient.TransactWriteItemsInput = {
             TransactItems: [
                 {
@@ -460,7 +461,7 @@ export class MainRepository implements Repository {
                 "#PK": "PK"
             }
         }
-        const result = await this.documentClient.put(params).promise()
+        await this.documentClient.put(params).promise()
         return {
             userId: userId,
             username: username,
@@ -574,6 +575,6 @@ export class MainRepository implements Repository {
 
 
 export interface GetUserAndEventsResult {
-    readonly user?: User,
+    readonly user?: User
     readonly events: Event[]
 }
