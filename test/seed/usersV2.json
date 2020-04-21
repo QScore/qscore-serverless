@@ -2,98 +2,146 @@
     {
         "PK": "USER#bb463b8b-b76c-4f6a-9726-65ab5730b69b",
         "SK": "EVENT#9999",
-        "GS1PK": "SEARCH#USER",
-        "GS1SK": "lonnie.deckow",
+        "GS1PK": "SCORE#ALL_TIME",
+        "GS1SK": "8372",
         "itemType": "User",
         "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b",
         "username": "Lonnie.Deckow",
-        "followerCount": 837,
-        "followingCount": 5316,
-        "allTimeScore": 71233
+        "followerCount": 5316,
+        "followingCount": 7124,
+        "allTimeScore": 8372
     },
     {
         "PK": "USER#b95b65a5-5334-4fac-9c60-6272614e6ceb",
         "SK": "EVENT#9999",
-        "GS1PK": "SEARCH#USER",
-        "GS1SK": "tyreek.langosh",
+        "GS1PK": "SCORE#ALL_TIME",
+        "GS1SK": "62395",
         "itemType": "User",
         "userId": "b95b65a5-5334-4fac-9c60-6272614e6ceb",
         "username": "Tyreek.Langosh",
-        "followerCount": 6240,
-        "followingCount": 5684,
-        "allTimeScore": 11561
+        "followerCount": 5684,
+        "followingCount": 1156,
+        "allTimeScore": 62395
     },
     {
         "PK": "USER#6ade4177-f386-49c1-bdc9-48650456bade",
         "SK": "EVENT#9999",
-        "GS1PK": "SEARCH#USER",
-        "GS1SK": "domenic_lang",
+        "GS1PK": "SCORE#ALL_TIME",
+        "GS1SK": "26828",
         "itemType": "User",
         "userId": "6ade4177-f386-49c1-bdc9-48650456bade",
         "username": "Domenic_Lang",
-        "followerCount": 2683,
-        "followingCount": 5859,
-        "allTimeScore": 83706
+        "followerCount": 5859,
+        "followingCount": 8371,
+        "allTimeScore": 26828
     },
     {
         "PK": "USER#5ce32379-318e-42ae-bf07-9488242cb158",
         "SK": "EVENT#9999",
-        "GS1PK": "SEARCH#USER",
-        "GS1SK": "mathew.vandervort",
+        "GS1PK": "SCORE#ALL_TIME",
+        "GS1SK": "38895",
         "itemType": "User",
         "userId": "5ce32379-318e-42ae-bf07-9488242cb158",
         "username": "Mathew.Vandervort",
-        "followerCount": 3889,
-        "followingCount": 3631,
-        "allTimeScore": 92514
+        "followerCount": 3631,
+        "followingCount": 9252,
+        "allTimeScore": 38895
     },
     {
         "PK": "USER#b8f05ac0-90be-4246-8355-d80a8132e57a",
         "SK": "EVENT#9999",
-        "GS1PK": "SEARCH#USER",
-        "GS1SK": "clemens55",
+        "GS1PK": "SCORE#ALL_TIME",
+        "GS1SK": "81793",
         "itemType": "User",
         "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a",
         "username": "Clemens55",
-        "followerCount": 8180,
-        "followingCount": 8545,
-        "allTimeScore": 55949
+        "followerCount": 8545,
+        "followingCount": 5595,
+        "allTimeScore": 81793
     },
     {
         "PK": "USER#d26d0578-8998-440e-bae5-384784e4f94b",
         "SK": "EVENT#9999",
-        "GS1PK": "SEARCH#USER",
-        "GS1SK": "kendra.larson39",
+        "GS1PK": "SCORE#ALL_TIME",
+        "GS1SK": "63278",
         "itemType": "User",
         "userId": "d26d0578-8998-440e-bae5-384784e4f94b",
         "username": "Kendra.Larson39",
-        "followerCount": 6328,
-        "followingCount": 7311,
-        "allTimeScore": 87312
+        "followerCount": 7311,
+        "followingCount": 8732,
+        "allTimeScore": 63278
     },
     {
         "PK": "USER#29fd5fd1-1603-4e7e-8310-4de39071c7b8",
         "SK": "EVENT#9999",
-        "GS1PK": "SEARCH#USER",
-        "GS1SK": "amanda.johns83",
+        "GS1PK": "SCORE#ALL_TIME",
+        "GS1SK": "38151",
         "itemType": "User",
         "userId": "29fd5fd1-1603-4e7e-8310-4de39071c7b8",
         "username": "Amanda.Johns83",
-        "followerCount": 3815,
-        "followingCount": 1659,
-        "allTimeScore": 80739
+        "followerCount": 1659,
+        "followingCount": 8074,
+        "allTimeScore": 38151
     },
     {
         "PK": "USER#3a7e8b67-270c-4994-9e99-d752e0c295c7",
         "SK": "EVENT#9999",
-        "GS1PK": "SEARCH#USER",
-        "GS1SK": "arjun.paucek82",
+        "GS1PK": "SCORE#ALL_TIME",
+        "GS1SK": "61643",
         "itemType": "User",
         "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7",
         "username": "Arjun.Paucek82",
-        "followerCount": 6164,
-        "followingCount": 9099,
-        "allTimeScore": 92448
+        "followerCount": 9099,
+        "followingCount": 9245,
+        "allTimeScore": 61643
+    },
+    {
+        "PK": "SEARCH",
+        "SK": "lonnie.deckow",
+        "username": "Lonnie.Deckow",
+        "userId": "bb463b8b-b76c-4f6a-9726-65ab5730b69b"
+    },
+    {
+        "PK": "SEARCH",
+        "SK": "tyreek.langosh",
+        "username": "Tyreek.Langosh",
+        "userId": "b95b65a5-5334-4fac-9c60-6272614e6ceb"
+    },
+    {
+        "PK": "SEARCH",
+        "SK": "domenic_lang",
+        "username": "Domenic_Lang",
+        "userId": "6ade4177-f386-49c1-bdc9-48650456bade"
+    },
+    {
+        "PK": "SEARCH",
+        "SK": "mathew.vandervort",
+        "username": "Mathew.Vandervort",
+        "userId": "5ce32379-318e-42ae-bf07-9488242cb158"
+    },
+    {
+        "PK": "SEARCH",
+        "SK": "clemens55",
+        "username": "Clemens55",
+        "userId": "b8f05ac0-90be-4246-8355-d80a8132e57a"
+    },
+    {
+        "PK": "SEARCH",
+        "SK": "kendra.larson39",
+        "username": "Kendra.Larson39",
+        "userId": "d26d0578-8998-440e-bae5-384784e4f94b"
+    },
+    {
+        "PK": "SEARCH",
+        "SK": "amanda.johns83",
+        "username": "Amanda.Johns83",
+        "userId": "29fd5fd1-1603-4e7e-8310-4de39071c7b8"
+    },
+    {
+        "PK": "SEARCH",
+        "SK": "arjun.paucek82",
+        "username": "Arjun.Paucek82",
+        "userId": "3a7e8b67-270c-4994-9e99-d752e0c295c7"
     },
     {
         "PK": "USER#bb463b8b-b76c-4f6a-9726-65ab5730b69b",

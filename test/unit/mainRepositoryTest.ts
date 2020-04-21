@@ -1,10 +1,10 @@
 import * as AWS from "aws-sdk"
-import * as assert from 'assert'
 import { MainRepository } from "../../src/data/mainRepository";
 import { User, Event, LeaderboardScore } from '../../src/data/model/Types';
 import * as faker from 'faker'
 import * as Redis from 'ioredis-mock';
 import { RedisCache } from "../../src/data/redisCache";
+import { assert } from "chai";
 
 describe("Main repository tests", () => {
     const redis = new Redis()
@@ -101,7 +101,7 @@ describe("Main repository tests", () => {
     })
 
     it('Should search for users', async () => {
-        const results = await repository.searchUsers('clemens')
+        const results = await repository.searchUsers('t')
         assert.equal(results.length, 1)
     })
 
@@ -204,15 +204,15 @@ describe("Main repository tests", () => {
         const user4 = await repository.createUser("d" + faker.random.uuid(), faker.random.uuid())
         const user5 = await repository.createUser("e" + faker.random.uuid(), faker.random.uuid())
         const user6 = await repository.createUser("f" + faker.random.uuid(), faker.random.uuid())
-        await repository.save24HourScore(user1.userId, 900)
-        await repository.save24HourScore(user2.userId, 700)
-        await repository.save24HourScore(user3.userId, 700)
-        await repository.save24HourScore(user4.userId, 400)
-        await repository.save24HourScore(user5.userId, 400)
-        await repository.save24HourScore(user6.userId, 200)
+        await repository.saveAllTimeScore(user1.userId, 900)
+        await repository.saveAllTimeScore(user2.userId, 700)
+        await repository.saveAllTimeScore(user3.userId, 700)
+        await repository.saveAllTimeScore(user4.userId, 400)
+        await repository.saveAllTimeScore(user5.userId, 400)
+        await repository.saveAllTimeScore(user6.userId, 200)
 
         //Fake user ids should not actually be possible
-        const scores = await repository.getTopLeaderboardScores(10)
+        const scores = await repository.getLeaderboardScoreRange(0, 10)
         assert.equal(scores.length, 6, "Scores has wrong length!")
         const expected1: LeaderboardScore = {
             userId: user1.userId,
@@ -263,16 +263,13 @@ describe("Main repository tests", () => {
         assert.deepStrictEqual(scores[5], expected6, "Sixth user is incorrect")
     });
 
-
     it('Should save all time score', async () => {
         faker.seed(Math.random() * 10000)
         const userId = faker.random.uuid()
         const username = faker.random.uuid()
         await repository.createUser(userId, username)
-
-        repository.saveAllTimeScore(userId, 500)
-        const result = await repository.getAllTimeScore(userId)
-        console.log(">>RESULT SCORE: " + JSON.stringify(result))
-        assert.equal(result, 500, "All time score does not match")
+        await repository.saveAllTimeScore(userId, 500)
+        const score = await repository.getAllTimeScore(userId)
+        assert.equal(score, 500)
     });
 })

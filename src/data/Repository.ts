@@ -3,13 +3,12 @@ import { Event, User, LeaderboardScore } from './model/Types';
 
 export interface Repository {
     getAllTimeScore(userId: string): Promise<number>
-    getLeaderboardRank(userId: string): Promise<number>
+    getAllTimeLeaderboardRank(userId: string): Promise<number>
     getLeaderboardScoreRange(min: number, max: number, limit: number): Promise<LeaderboardScore[]>
-    getTopLeaderboardScores(limit: number): Promise<LeaderboardScore[]>
     saveAllTimeScore(userId: string, score: number): Promise<void>
     save24HourScore(userId: string, score: number): Promise<void>
     getUser(userId: string): Promise<User | undefined>
-    updateUsername(userId: string, username: String): Promise<void>
+    updateUsername(userId: string, username: string): Promise<void>
     getUserAndEventsFromStartTime(userId: string, startTimestamp: string): Promise<GetUserAndEventsResult>
     searchUsers(searchQuery: string): Promise<User[]>
     followUser(currentUserId: string, userIdToFollow: string)
