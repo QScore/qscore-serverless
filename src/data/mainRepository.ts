@@ -1,6 +1,6 @@
 import * as AWS from "aws-sdk"
 import { Repository } from "./repository";
-import { User, Event, EventDynamo, UserDynamo, FollowDynamo, Follow, LeaderboardScore } from './model/Types';
+import { User, Event, EventDynamo, UserDynamo, FollowDynamo, Follow, LeaderboardScore, SearchDynamo } from './model/Types';
 import { RedisCache } from './redisCache';
 
 const mainTable = process.env.MAIN_TABLE as string
@@ -19,36 +19,40 @@ export class MainRepository implements Repository {
 
     async getAllTimeScore(userId: string): Promise<number> {
         const user = await this.getUser(userId)
-        console.log(">>USER: " + JSON.stringify(user))
         return user?.allTimeScore ?? -1
     }
 
     async saveAllTimeScore(userId: string, score: number): Promise<void> {
-        await this.redisCache.saveAllTimeScore(userId, score)
+        await this.redisCache.saveScoreToLeaderboard(userId, score)
         const params: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
             TableName: mainTable,
             Key: {
-                "PK": `USER#${userId}`,
-                "SK": `EVENT#9999`
+                PK: `USER#${userId}`,
+                SK: `EVENT#9999`
             },
-            UpdateExpression: "set allTimeScore = :allTimeScore",
+            UpdateExpression: `SET #allTimeScore = :allTimeScore, ` +
+                `#GS1PK = :GS1PK, ` +
+                `#GS1SK = :GS1SK`,
+            ExpressionAttributeNames: {
+                '#allTimeScore': 'allTimeScore',
+                '#GS1PK': 'GS1PK',
+                '#GS1SK': 'GS1SK'
+            },
             ExpressionAttributeValues: {
-                ":allTimeScore": score
+                ':allTimeScore': score,
+                ':GS1PK': 'SCORE#ALL_TIME',
+                ':GS1SK': score
             }
         }
         await this.documentClient.update(params).promise()
     }
 
-    async getLeaderboardRank(userId: string): Promise<number> {
-        throw new Error("Method not implemented.");
+    async getAllTimeLeaderboardRank(userId: string): Promise<number> {
+        return await this.redisCache.getLeaderboardRank(userId)
     }
 
-    async getLeaderboardScoreRange(min: number, max: number, limit: number): Promise<LeaderboardScore[]> {
-        throw new Error("Method not implemented.");
-    }
-
-    async getTopLeaderboardScores(limit: number): Promise<LeaderboardScore[]> {
-        const scores = await this.redisCache.getTopLeaderboardScores(limit)
+    async getLeaderboardScoreRange(min: number, max: number): Promise<LeaderboardScore[]> {
+        const scores = await this.redisCache.getLeaderboardScoreRange(min, max)
 
         const userIds = scores.map(score => {
             return score.userId
@@ -141,15 +145,14 @@ export class MainRepository implements Repository {
     async searchUsers(searchQuery: string): Promise<User[]> {
         const eventParams: AWS.DynamoDB.DocumentClient.QueryInput = {
             TableName: mainTable,
-            IndexName: 'GS1',
-            KeyConditionExpression: '#GS1PK = :GS1PK And begins_with(#GS1SK, :GS1SK)',
+            KeyConditionExpression: '#PK = :PK And begins_with(#SK, :SK)',
             ExpressionAttributeNames: {
-                '#GS1PK': "GS1PK",
-                '#GS1SK': "GS1SK"
+                '#PK': "PK",
+                '#SK': "SK"
             },
             ExpressionAttributeValues: {
-                ':GS1PK': `SEARCH#USER`,
-                ':GS1SK': searchQuery.toLowerCase(),
+                ':PK': `SEARCH`,
+                ':SK': searchQuery.toLowerCase(),
             }
         }
         const queryResult = await this.documentClient.query(eventParams).promise()
@@ -419,32 +422,55 @@ export class MainRepository implements Repository {
         //Check for existing user:
         const existingUser = await this.getUser(userId)
         if (existingUser) {
-            const params: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
-                TableName: mainTable,
-                Key: {
-                    "PK": `USER#${userId}`,
-                    "SK": `EVENT#9999`
-                },
-                UpdateExpression: "set GS1SK = :GS1SK, " +
-                    "username = :username",
-
-                ExpressionAttributeValues: {
-                    ":GS1SK": username.toLowerCase(),
-                    ":username": username,
-                }
+            const params: AWS.DynamoDB.DocumentClient.TransactWriteItemsInput = {
+                TransactItems: [
+                    {
+                        Update: {
+                            TableName: mainTable,
+                            Key: {
+                                "PK": `USER#${userId}`,
+                                "SK": `EVENT#9999`
+                            },
+                            UpdateExpression: "set username = :username",
+                            ExpressionAttributeValues: {
+                                ":username": username,
+                            }
+                        }
+                    },
+                    {
+                        Delete: {
+                            TableName: mainTable,
+                            Key: {
+                                "PK": `SEARCH`,
+                                "SK": existingUser.username.toLowerCase()
+                            }
+                        }
+                    },
+                    {
+                        Put: {
+                            TableName: mainTable,
+                            Item: {
+                                PK: `SEARCH`,
+                                SK: username.toLowerCase(),
+                                username: username,
+                                userId: userId
+                            }
+                        }
+                    }
+                ]
             }
-            await this.documentClient.update(params).promise()
+            await this.documentClient.transactWrite(params).promise()
         } else {
             await this.createUser(userId, username)
         }
     }
 
     async createUser(userId: string, username: string): Promise<User> {
-        const inputItem: UserDynamo = {
+        const userItem: UserDynamo = {
             PK: `USER#${userId}`,
             SK: `EVENT#9999`,
-            GS1PK: `SEARCH#USER`,
-            GS1SK: username.toLowerCase(),
+            GS1PK: `SCORE#ALL_TIME`,
+            GS1SK: "0",
             itemType: `User`,
             userId: userId,
             username: username,
@@ -453,15 +479,38 @@ export class MainRepository implements Repository {
             allTimeScore: 0
         }
 
-        const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
-            TableName: mainTable,
-            Item: inputItem,
-            ConditionExpression: "attribute_not_exists(#PK)",
-            ExpressionAttributeNames: {
-                "#PK": "PK"
-            }
+        const searchItem: SearchDynamo = {
+            PK: `SEARCH`,
+            SK: username.toLowerCase(),
+            username: username,
+            userId: userId
         }
-        await this.documentClient.put(params).promise()
+
+        const params: AWS.DynamoDB.DocumentClient.TransactWriteItemsInput = {
+            TransactItems: [
+                {
+                    Put: {
+                        TableName: mainTable,
+                        Item: userItem,
+                        ConditionExpression: "attribute_not_exists(#PK)",
+                        ExpressionAttributeNames: {
+                            "#PK": "PK"
+                        }
+                    }
+                },
+                {
+                    Put: {
+                        TableName: mainTable,
+                        Item: searchItem,
+                        ConditionExpression: "attribute_not_exists(#PK)",
+                        ExpressionAttributeNames: {
+                            "#PK": "PK"
+                        }
+                    }
+                }
+            ]
+        }
+        await this.documentClient.transactWrite(params).promise()
         return {
             userId: userId,
             username: username,
@@ -571,8 +620,6 @@ export class MainRepository implements Repository {
         }
     }
 }
-
-
 
 export interface GetUserAndEventsResult {
     readonly user?: User

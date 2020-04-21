@@ -5,15 +5,15 @@ const leaderboard24Key = "leaderboard24"
 const leaderboardAllTimeKey = "leaderboardAllTime"
 
 export interface LeaderboardScoreRedis {
-    userId: string,
-    score: number,
+    userId: string
+    score: number
     rank: number
 }
 
 export interface LatestEventRedis {
-    userId: string,
-    eventType: EventType,
-    timestamp: string, //ISO formatted
+    userId: string
+    eventType: EventType
+    timestamp: string //ISO formatted
     scoreUpdatedTs: string
 }
 
@@ -24,14 +24,17 @@ export class RedisCache {
         this.redis = redis
     }
 
-    async saveAllTimeScore(userId: string, score: number): Promise<void> {
-        await this.redis.set(`USER:${userId}:lastScoreCalc`, Date.now())
+    async getLeaderboardRank(userId: string): Promise<number> {
+        return await this.redis.zrevrank(leaderboardAllTimeKey, `USER:${userId}`) ?? -1
+    }
+
+    async saveScoreToLeaderboard(userId: string, score: number): Promise<void> {
         await this.redis.zadd(leaderboardAllTimeKey, score.toString(), `USER:${userId}`)
     }
 
-    async getTopLeaderboardScores(limit: number): Promise<LeaderboardScoreRedis[]> {
+    async getLeaderboardScoreRange(min: number, max: number): Promise<LeaderboardScoreRedis[]> {
         //Get scores from redis
-        const result = await this.redis.zrevrange(leaderboard24Key, 0, limit - 1, 'WITHSCORES')
+        const result = await this.redis.zrevrange(leaderboardAllTimeKey, min, max, 'WITHSCORES')
 
         //Separate user ids and scores
         const userIds = result
@@ -65,7 +68,7 @@ export class RedisCache {
         const [eventType, timestamp, scoreUpdatedTimestamp] = result.split(":")
         return {
             userId: userId,
-            eventType: <EventType>eventType,
+            eventType: eventType as EventType,
             timestamp: new Date(parseInt(timestamp)).toISOString(),
             scoreUpdatedTs: scoreUpdatedTimestamp
         }
@@ -75,14 +78,7 @@ export class RedisCache {
         await this.redis.zadd(leaderboard24Key, score.toString(), `USER:${userId}`)
     }
 
-    async getLastScoreCalcTs(userId: string): Promise<string | undefined> {
-        const latestEvent = await this.getLatestEvent(userId)
-        return latestEvent?.scoreUpdatedTs ?? undefined
-    }
-
-    private getLatestEventKey(userId: string) {
+    private getLatestEventKey(userId: string): string {
         return `USER:${userId}:latestEvent`
     }
-
-
 }
