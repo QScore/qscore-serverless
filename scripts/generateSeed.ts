@@ -19,7 +19,7 @@ for (let i = 0; i < numUsers; i++) {
     const userId = faker.random.uuid()
     userIds.push(userId)
     const username = faker.internet.userName(faker.name.firstName(i), faker.name.lastName(i))
-    users.push(<UserDynamo>{
+    const userDynamo: UserDynamo = {
         PK: `USER#${userId}`,
         SK: `EVENT#9999`,
         GS1PK: `SEARCH#USER`,
@@ -28,8 +28,10 @@ for (let i = 0; i < numUsers; i++) {
         userId: userId,
         username: username,
         followerCount: faker.random.number(10000),
-        followingCount: faker.random.number(10000)
-    })
+        followingCount: faker.random.number(10000),
+        allTimeScore: faker.random.number(100000)
+    }
+    users.push(userDynamo)
 
     //Add events for each user
     const twoDays = 2 * 24 * 60 * 60 * 1000

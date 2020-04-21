@@ -1,14 +1,15 @@
-import { GetUserAndEventsResult } from "./dynamoDbRepository";
+import { GetUserAndEventsResult } from "./mainRepository";
 import { Event, User, LeaderboardScore } from './model/Types';
 
 export interface Repository {
+    getAllTimeScore(userId: string): Promise<number>
     getLeaderboardRank(userId: string): Promise<number>
     getLeaderboardScoreRange(min: number, max: number, limit: number): Promise<LeaderboardScore[]>
     getTopLeaderboardScores(limit: number): Promise<LeaderboardScore[]>
     saveAllTimeScore(userId: string, score: number): Promise<void>
     save24HourScore(userId: string, score: number): Promise<void>
     getUser(userId: string): Promise<User | undefined>
-    updateUser(user: User): Promise<void>
+    updateUsername(userId: string, username: String): Promise<void>
     getUserAndEventsFromStartTime(userId: string, startTimestamp: string): Promise<GetUserAndEventsResult>
     searchUsers(searchQuery: string): Promise<User[]>
     followUser(currentUserId: string, userIdToFollow: string)

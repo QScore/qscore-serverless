@@ -1,8 +1,5 @@
-import { gql, ApolloError } from 'apollo-server-lambda'
-import { User, Event } from '../../data/model/Types';
-import { Repository } from '../../data/repository';
-import { UserResolver } from '../resolvers/userResolver';
-import { dynamoDbRepository } from '../../data/injector';
+import { gql } from 'apollo-server-lambda'
+import { mainResolver } from '../../data/injector';
 
 export const typeDef = gql`
 schema {
@@ -72,27 +69,25 @@ export interface UpdateUserInfoPayloadGql {
     readonly username: string
 }
 
-const userResolver = new UserResolver(dynamoDbRepository)
-
 export const resolvers = {
     Mutation: {
         updateUserInfo: async (_parent: any, args: any, context: any, _info: any): Promise<UpdateUserInfoPayloadGql> => {
             const userId = getUserIdFromContext(context)
             const username = args.input.username
-            return userResolver.updateUserInfo(userId, username)
+            return mainResolver.updateUserInfo(userId, username)
         }
     },
 
     Query: {
-        currentUser: async (parent: any, args: any, context: any, info: any): Promise<CurrentUserPayloadGql> => {
+        currentUser: async (parent: any, args: any, context: any): Promise<CurrentUserPayloadGql> => {
             const userId = getUserIdFromContext(context)
-            return userResolver.getCurrentUser(userId)
+            return mainResolver.getCurrentUser(userId)
         },
 
-        searchUsers: async (parent: any, args: any, context: any, info: any): Promise<SearchUsersPayloadGql> => {
+        searchUsers: async (parent: any, args: any, context: any): Promise<SearchUsersPayloadGql> => {
             const userId = getUserIdFromContext(context)
             const searchQuery = args.input.searchQuery
-            return userResolver.searchUsers(userId, searchQuery)
+            return mainResolver.searchUsers(userId, searchQuery)
         }
     }
 }
