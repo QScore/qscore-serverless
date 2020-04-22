@@ -2,13 +2,29 @@ import sinon, { stubInterface } from "ts-sinon";
 import * as assert from 'assert'
 import { Event, User } from '../../src/data/model/Types';
 import { MainResolver } from '../../src/graphql/resolvers/mainResolver';
-import { GetUserAndEventsResult } from '../../src/data/mainRepository';
+import { GetUserAndEventsResult, MainRepository } from '../../src/data/mainRepository';
 import { Repository } from '../../src/data/repository';
 import * as faker from 'faker';
+import { Redis as RedisInterface } from "ioredis";
+import * as Redis from 'ioredis-mock';
+import { v4 as uuid } from 'uuid';
+import { RedisCache } from "../../src/data/redisCache";
+import * as AWS from "aws-sdk"
 
 let clock: sinon.SinonFakeTimers
 const testRepository = stubInterface<Repository>()
 const testResolver = new MainResolver(testRepository)
+
+const redis: RedisInterface = new Redis()
+const redisCache = new RedisCache(redis)
+const documentClient = new AWS.DynamoDB.DocumentClient({
+    region: 'localhost',
+    endpoint: 'http://localhost:8000'
+})
+
+const repository = new MainRepository(documentClient, redisCache)
+const realResolver = new MainResolver(repository)
+
 const fakeUser: User = {
     userId: faker.random.uuid(),
     username: faker.random.uuid(),
@@ -330,10 +346,43 @@ describe('Main Resolver Unit Tests', function () {
         assert.deepStrictEqual(result, expectedResult, "Users do not match")
     })
 
-    it('should create event', async () => {
-        //TODO:
+    it('creating event should update all time score', async () => {
+        const user = await repository.createUser(uuid(), uuid())
+        clock = sinon.useFakeTimers({ now: 100 })
+        await realResolver.createEvent(user.userId, "HOME")
+        let result = await realResolver.getCurrentUser(user.userId)
+        assert.equal(result.user.allTimeScore, 0)
+
+        clock = sinon.useFakeTimers({ now: 200 });
+        await realResolver.createEvent(user.userId, "AWAY")
+        result = await realResolver.getCurrentUser(user.userId)
+        assert.equal(result.user.allTimeScore, 100)
+
+        clock = sinon.useFakeTimers({ now: 300 });
+        await realResolver.createEvent(user.userId, "HOME")
+        result = await realResolver.getCurrentUser(user.userId)
+        assert.equal(result.user.allTimeScore, 100)
+
+        clock = sinon.useFakeTimers({ now: 500 });
+        await realResolver.createEvent(user.userId, "AWAY")
+        result = await realResolver.getCurrentUser(user.userId)
+        assert.equal(result.user.allTimeScore, 300)
+
+        //Time elapses, score is the same because last event was AWAY
+        clock = sinon.useFakeTimers({ now: 1000 });
+        result = await realResolver.getCurrentUser(user.userId)
+        assert.equal(result.user.allTimeScore, 300)
+
+        //Now Home event comes in
+        clock = sinon.useFakeTimers({ now: 1500 });
+        await realResolver.createEvent(user.userId, "HOME")
+        result = await realResolver.getCurrentUser(user.userId)
+        assert.equal(result.user.allTimeScore, 300)
+
+        //Now recheck 500ms later
+        clock = sinon.useFakeTimers({ now: 2000 });
+        result = await realResolver.getCurrentUser(user.userId)
+        assert.equal(result.user.allTimeScore, 800)
     })
-
-
 })
 

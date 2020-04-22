@@ -1,6 +1,5 @@
 import { Repository } from "../../data/repository"
-import { promisify } from 'util'
-import { User, Event, EventType } from '../../data/model/Types';
+import { Event, EventType } from '../../data/model/Types';
 import { ApolloError } from "apollo-server-lambda";
 import { UpdateUserInfoPayloadGql, SearchUsersPayloadGql, CurrentUserPayloadGql, UserGql } from '../types/user';
 import { CreateGeofenceEventPayloadGql } from "../types/geofenceEvent";
@@ -18,12 +17,13 @@ export class MainResolver {
             timestamp: new Date().toISOString(),
             userId: userId
         }
-        const event = await this.repository.createEvent(input)
-        const latestEvent = await this.repository.getLatestEventForUser(userId)
-        if (latestEvent?.eventType == "AWAY") {
-            await this.updateAllTimeScore(userId, latestEvent)
-        }
 
+        const previousEvent = await this.repository.getLatestEventForUser(userId)
+        const event = await this.repository.createEvent(input)
+
+        if (previousEvent && event?.eventType == "AWAY") {
+            await this.updateAllTimeScore(userId, previousEvent)
+        }
         return {
             geofenceEvent: {
                 userId: event.userId,
@@ -69,27 +69,23 @@ export class MainResolver {
             throw new ApolloError("Current user could not be resolved")
         }
 
-        //Calculate 24 hour score and add to redis
-        const score = await this.calculate24HourScore(userId, events)
-        await this.repository.save24HourScore(userId, score)
-
-        //Calculate all time score
-        //Current time - last calc time
-        //Set last calc time to current time
-
         const latestEvent = await this.repository.getLatestEventForUser(userId)
+        const score24 = this.calculate24HourScore(events, latestEvent)
+
+        let allTimeScore = 0
         if (latestEvent?.eventType == "HOME") {
-            await this.updateAllTimeScore(userId, latestEvent)
+            allTimeScore = await this.updateAllTimeScore(userId, latestEvent)
+        } else {
+            allTimeScore = await this.repository.getAllTimeScore(userId)
         }
 
-        //Return gql user info
-        const userGql: UserGql = {
-            id: user.userId,
-            username: user.username,
-            score: score
-        }
         return {
-            user: userGql
+            user: {
+                id: user.userId,
+                username: user.username,
+                score: score24,
+                allTimeScore: allTimeScore
+            }
         }
     }
 
@@ -102,11 +98,10 @@ export class MainResolver {
         return finalAllTimeScore
     }
 
-    private async calculate24HourScore(userId: string, events: Event[]): Promise<number> {
+    private calculate24HourScore(events: Event[], latestEvent?: Event): number {
         if (events.length == 0) {
             //No events in the last 24 hours, get latest event to calculate score
-            const event = await this.repository.getLatestEventForUser(userId)
-            if (event?.eventType === "HOME") {
+            if (latestEvent?.eventType === "HOME") {
                 return 100
             } else {
                 return 0

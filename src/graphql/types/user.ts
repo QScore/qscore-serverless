@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { gql } from 'apollo-server-lambda'
 import { mainResolver } from '../../data/injector';
 
@@ -10,10 +11,11 @@ schema {
 type User {
     id: ID!
     username: String!
-    score: Float
-    isCurrentUserFollowing: Boolean
-    followingCount: Int
-    followerCount: Int
+    score?: Float
+    allTimeScore?: Float
+    isCurrentUserFollowing?: Boolean
+    followingCount?: Int
+    followerCount?: Int
 }
 
 input UpdateUserInfoInput {
@@ -48,12 +50,13 @@ type Query {
 `
 
 export interface UserGql {
-    readonly id: string,
-    readonly username: string,
-    readonly score?: number,
-    readonly isCurrentUserFollowing?: boolean,
-    readonly followingCount?: number,
+    readonly id: string
+    readonly username: string
+    readonly score?: number
+    readonly isCurrentUserFollowing?: boolean
+    readonly followingCount?: number
     readonly followerCount?: number
+    readonly allTimeScore?: number
 }
 
 export interface SearchUsersPayloadGql {
@@ -65,8 +68,12 @@ export interface CurrentUserPayloadGql {
 }
 
 export interface UpdateUserInfoPayloadGql {
-    readonly id: string,
+    readonly id: string
     readonly username: string
+}
+
+function getUserIdFromContext(context: any): string {
+    return context.event.requestContext.authorizer.userId
 }
 
 export const resolvers = {
@@ -90,8 +97,4 @@ export const resolvers = {
             return mainResolver.searchUsers(userId, searchQuery)
         }
     }
-}
-
-function getUserIdFromContext(context: any): string {
-    return context.event.requestContext.authorizer.userId
 }

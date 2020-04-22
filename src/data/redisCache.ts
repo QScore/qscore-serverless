@@ -1,7 +1,6 @@
 import { Redis as RedisInterface } from "ioredis";
 import { Event, EventType } from './model/Types';
 
-const leaderboard24Key = "leaderboard24"
 const leaderboardAllTimeKey = "leaderboardAllTime"
 
 export interface LeaderboardScoreRedis {
@@ -14,7 +13,6 @@ export interface LatestEventRedis {
     userId: string
     eventType: EventType
     timestamp: string //ISO formatted
-    scoreUpdatedTs: string
 }
 
 export class RedisCache {
@@ -22,6 +20,12 @@ export class RedisCache {
 
     constructor(redis: RedisInterface) {
         this.redis = redis
+    }
+
+
+    async getAllTimeScore(userId: string): Promise<number> {
+        const result = await this.redis.zscore(leaderboardAllTimeKey, `USER:${userId}`) ?? "0"
+        return parseInt(result)
     }
 
     async getLeaderboardRank(userId: string): Promise<number> {
@@ -59,23 +63,17 @@ export class RedisCache {
     }
 
     async getLatestEvent(userId: string): Promise<LatestEventRedis | null> {
-        //Example: HOME:100:-1
         const key = this.getLatestEventKey(userId)
         const result = await this.redis.get(key)
         if (!result) {
             return null
         }
-        const [eventType, timestamp, scoreUpdatedTimestamp] = result.split(":")
+        const [eventType, timestamp] = result.split(":")
         return {
             userId: userId,
             eventType: eventType as EventType,
             timestamp: new Date(parseInt(timestamp)).toISOString(),
-            scoreUpdatedTs: scoreUpdatedTimestamp
         }
-    }
-
-    async saveLeaderboard24Score(userId: string, score: number): Promise<void> {
-        await this.redis.zadd(leaderboard24Key, score.toString(), `USER:${userId}`)
     }
 
     private getLatestEventKey(userId: string): string {
