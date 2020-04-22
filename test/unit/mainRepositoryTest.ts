@@ -134,6 +134,13 @@ describe("Main repository tests", () => {
             assert(event.eventType === "HOME" || event.eventType === "AWAY", "Event type is invalid")
             assert(event.timestamp >= startTime, "Timestamp should be >= start time")
         })
+
+        //Test getting events for noexistent user
+        const emptyResult = await repository.getUserAndEventsFromStartTime(uuid(), startTime)
+        assert.deepEqual(emptyResult, {
+            user: undefined,
+            events: []
+        })
     });
 
     it('Should not create event if same event type as previous ', async () => {
@@ -158,6 +165,11 @@ describe("Main repository tests", () => {
         }
         const result = await repository.createEvent(testEvent)
         assert.deepStrictEqual(result, testEvent)
+    });
+
+    it('Should not get latest event for nonexistent user', async () => {
+        const latestEvent = await repository.getLatestEventForUser(uuid())
+        assert.notOk(latestEvent)
     });
 
     it('Should create new user ', async () => {
