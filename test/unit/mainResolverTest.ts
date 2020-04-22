@@ -329,5 +329,11 @@ describe('Main Resolver Unit Tests', function () {
 
         assert.deepStrictEqual(result, expectedResult, "Users do not match")
     })
+
+    it('should create event', async () => {
+        //TODO:
+    })
+
+
 })
 

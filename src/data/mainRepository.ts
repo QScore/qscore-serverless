@@ -89,7 +89,7 @@ export class MainRepository implements Repository {
                     score: scores[index].score,
                     rank: scores[index].rank
                 }
-            }).sort((a, b) => (a.rank > b.rank) ? 1 : -1) ?? []
+            }).sort((a, b) => (a.rank > b.rank) ? 1 : -1)
 
         //Handle duplicate scores
         sortedResults.forEach((item, index) => {
@@ -538,15 +538,7 @@ export class MainRepository implements Repository {
         }
         const queryResult = await this.documentClient.query(eventParams).promise()
 
-        //Handle empty case
-        if (!queryResult.Items?.length) {
-            return {
-                user: undefined,
-                events: []
-            }
-        }
-
-        const userResult = queryResult.Items.pop()
+        const userResult = queryResult.Items?.pop()
         if (!userResult) {
             return {
                 user: undefined,

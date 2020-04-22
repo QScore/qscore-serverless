@@ -19,7 +19,6 @@ export class MainResolver {
             userId: userId
         }
         const event = await this.repository.createEvent(input)
-
         const latestEvent = await this.repository.getLatestEventForUser(userId)
         if (latestEvent?.eventType == "AWAY") {
             await this.updateAllTimeScore(userId, latestEvent)
@@ -72,7 +71,7 @@ export class MainResolver {
 
         //Calculate 24 hour score and add to redis
         const score = await this.calculate24HourScore(userId, events)
-        this.repository.save24HourScore(userId, score)
+        await this.repository.save24HourScore(userId, score)
 
         //Calculate all time score
         //Current time - last calc time
@@ -147,7 +146,7 @@ export class MainResolver {
         }
 
         //Find time at home
-        var timeAtHome = 0
+        let timeAtHome = 0
         last24HoursEvents.forEach((event, index) => {
             const previousEvent = last24HoursEvents[index - 1]
             if (previousEvent && event.eventType == "AWAY" && previousEvent.eventType == "HOME") {
@@ -160,15 +159,15 @@ export class MainResolver {
         return finalScore
     }
 
-    private getOneDayMillis() {
+    private getOneDayMillis(): number {
         return 24 * 60 * 60 * 1000
     }
 
-    private getYesterdayMillis() {
+    private getYesterdayMillis(): number {
         return Date.now() - this.getOneDayMillis()
     }
 
-    private getYesterdayISOString() {
+    private getYesterdayISOString(): string {
         return new Date(this.getYesterdayMillis()).toISOString()
     }
 }
