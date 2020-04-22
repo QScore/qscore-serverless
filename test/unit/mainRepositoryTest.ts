@@ -144,24 +144,38 @@ describe("Main repository tests", () => {
     });
 
     it('Should not create event if same event type as previous ', async () => {
-        const latestEvent = await repository.getLatestEventForUser(lonnieUserId) ?? assert.fail("No latest event found")
+        const user = await createFakeUser()
+        await repository.createEvent({
+            eventType: "HOME",
+            timestamp: "100",
+            userId: user.userId
+        })
+
+        const latestEvent = await repository.getLatestEventForUser(user.userId) ?? assert.fail("No latest event found")
+
         const testEvent: Event = {
             eventType: latestEvent.eventType,
             timestamp: new Date(Date.now()).toISOString(),
-            userId: lonnieUserId
+            userId: user.userId
         }
         const result = await repository.createEvent(testEvent)
         assert.deepStrictEqual(result, latestEvent)
     })
 
     it('Should create event if not same event type as previous ', async () => {
-        const latestEvent = await repository.getLatestEventForUser(lonnieUserId) ?? assert.fail("No latest event found")
-        const eventType = latestEvent.eventType == "HOME" ? "AWAY" : "HOME"
-        //Last event for this user is HOME
+        const user = await createFakeUser()
+        await repository.createEvent({
+            eventType: "HOME",
+            timestamp: "100",
+            userId: user.userId
+        })
+
+        await repository.getLatestEventForUser(user.userId) ?? assert.fail("No latest event found")
+
         const testEvent: Event = {
-            eventType: eventType,
+            eventType: "AWAY",
             timestamp: new Date(Date.now()).toISOString(),
-            userId: lonnieUserId
+            userId: user.userId
         }
         const result = await repository.createEvent(testEvent)
         assert.deepStrictEqual(result, testEvent)
@@ -312,10 +326,5 @@ describe("Main repository tests", () => {
         assert.equal(4, await repository.getAllTimeLeaderboardRank(user5.userId))
         assert.equal(5, await repository.getAllTimeLeaderboardRank(user4.userId))
         assert.equal(6, await repository.getAllTimeLeaderboardRank(user6.userId))
-    });
-
-    it('Should save 24 hour score', async () => {
-        const user = await createFakeUser()
-        await repository.save24HourScore(user.userId, 200)
     });
 })

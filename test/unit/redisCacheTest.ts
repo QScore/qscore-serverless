@@ -29,7 +29,6 @@ describe("Redis cache tests", () => {
             userId: event.userId,
             eventType: event.eventType,
             timestamp: event.timestamp,
-            scoreUpdatedTs: "-1"
         }
         assert.deepStrictEqual(latest, expected)
     })
@@ -56,4 +55,10 @@ describe("Redis cache tests", () => {
         assert.equal(await redisCache.getLeaderboardRank(thirdUserId), 1)
         assert.equal(await redisCache.getLeaderboardRank(fourthUserId), 2)
     })
+
+    it('Should get current user with all time score', async () => {
+        const result = await redisCache.getLatestEvent(uuid())
+        assert.isNull(result)
+    })
+
 })
