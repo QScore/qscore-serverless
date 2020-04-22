@@ -89,6 +89,7 @@ users.forEach((user) => {
     }
 })
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const allItems: any = []
 allItems.push(users)
 allItems.push(searches)

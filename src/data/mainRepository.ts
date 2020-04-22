@@ -48,7 +48,7 @@ export class MainRepository implements Repository {
     }
 
     async getAllTimeLeaderboardRank(userId: string): Promise<number> {
-        return await this.redisCache.getLeaderboardRank(userId)
+        return await this.redisCache.getLeaderboardRank(userId) + 1
     }
 
     async getLeaderboardScoreRange(min: number, max: number): Promise<LeaderboardScore[]> {
@@ -156,7 +156,7 @@ export class MainRepository implements Repository {
             }
         }
         const queryResult = await this.documentClient.query(eventParams).promise()
-        if (!queryResult.Items) {
+        if (!queryResult.Items || queryResult.Items.length == 0) {
             return []
         }
         const users = queryResult.Items.map(item => {
