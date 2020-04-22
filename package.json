@@ -8,6 +8,8 @@
     "generateSeed": "npx ts-node ./scripts/generateSeed.ts",
     "testMigration": "export AWS_SDK_LOAD_CONFIG=1 && npx ts-node ./scripts/migrateDb.ts",
     "startOffline": "nodemon --exec \"sls offline start\" -e \"ts,json\"",
+    "watchTestsFast": "nodemon --exec \"npm run test\" -e \"ts\"",
+    "watchTestsWithCoverage": "nodemon --exec \"npm run testCoverage\" -e \"ts\"",
     "testStuff": "export $(cat .env | xargs) && export AWS_SDK_LOAD_CONFIG=1 && npx ts-node ./scripts/testStuff.ts",
     "testCoverage": "nyc npm run test"
   },

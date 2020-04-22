@@ -2,8 +2,7 @@ import sinon, { stubInterface } from "ts-sinon";
 import * as assert from 'assert'
 import { Event, User } from '../../src/data/model/Types';
 import { MainResolver } from '../../src/graphql/resolvers/mainResolver';
-import { MainRepository, GetUserAndEventsResult } from '../../src/data/mainRepository';
-import * as AWS from "aws-sdk";
+import { GetUserAndEventsResult } from '../../src/data/mainRepository';
 import { Repository } from '../../src/data/repository';
 import * as faker from 'faker';
 
