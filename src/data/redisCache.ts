@@ -4,15 +4,15 @@ import { Event, EventType } from './model/Types';
 const leaderboardAllTimeKey = "leaderboardAllTime"
 
 export interface LeaderboardScoreRedis {
-    userId: string
-    score: number
-    rank: number
+    readonly userId: string
+    readonly score: number
+    readonly rank: number
 }
 
 export interface LatestEventRedis {
-    userId: string
-    eventType: EventType
-    timestamp: string //ISO formatted
+    readonly userId: string
+    readonly eventType: EventType
+    readonly timestamp: string //ISO formatted
 }
 
 export class RedisCache {

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { gql } from 'apollo-server-lambda'
 import { mainResolver } from '../../data/injector';
-import { UpdateUserInfoPayloadGql, CurrentUserPayloadGql, SearchUsersPayloadGql, FollowUserPayloadGql, UnfollowUserPayloadGql, GetUserPayloadGql, FollowedUsersPayloadGql, FollowingUsersPayloadGql } from './userInterfaces';
+import { UpdateUserInfoPayloadGql, CurrentUserPayloadGql, SearchUsersPayloadGql, FollowUserPayloadGql, UnfollowUserPayloadGql, GetUserPayloadGql, FollowedUsersPayloadGql, FollowingUsersPayloadGql, CreateGeofenceEventPayloadGql, LeaderboardScoresPayloadGql } from './userInterfaces';
 
 export const typeDef = gql`
 schema {
@@ -72,10 +72,45 @@ type FollowingUsersPayload {
     users: [User!]!
 }
 
+input LeaderboardRangeInput {
+    start: Int!,
+    end: Int!
+}
+
+type LeaderboardRangePayload {
+    leaderboardScores: [LeaderboardScore]
+}
+
+type LeaderboardScore {
+    user: User,
+    rank: number,
+    score: number
+}
+
+input CreateGeofenceEventInput {
+    eventType: GeofenceEventType!
+}
+
+type CreateGeofenceEventPayload {
+    geofenceEvent: GeofenceEvent
+}
+
+enum GeofenceEventType { 
+    HOME
+    AWAY
+}
+
+type GeofenceEvent {
+    timestamp: String!
+    eventType: GeofenceEventType!
+    userId: String!
+}
+
 type Mutation {
     updateUserInfo(input: UpdateUserInfoInput!): UpdateUserInfoPayload!
     followUser(input: FollowUserInput!): FollowUserPayload!
     unfollowUser(input: UnfollowUserInput!): UnfollowUserPayload!
+    createGeofenceEvent(input: CreateGeofenceEventInput!): CreateGeofenceEventPayload
 }
 
 type Query {
@@ -84,6 +119,7 @@ type Query {
     getUser(input: GetUserInput!): GetUserPayload!
     followedUsers: FolloweredUsersPayload!
     followers: FollowingUsersPayload!
+    getLeaderboardRange(input: LeaderboardRangeInput!): LeaderboardRangePayload!
 }
 `
 
@@ -109,6 +145,11 @@ export const resolvers = {
             const currentUserId = getUserIdFromContext(context)
             const userIdToUnfollow = args.input.userId
             return mainResolver.unfollowUser(currentUserId, userIdToUnfollow)
+        },
+        createGeofenceEvent: async (_parent: any, args: any, context: any, _info: any): Promise<CreateGeofenceEventPayloadGql> => {
+            const userId = context.event.requestContext.authorizer.userId
+            const eventType = args.input.eventType
+            return await mainResolver.createEvent(userId, eventType)
         }
     },
 
@@ -138,5 +179,11 @@ export const resolvers = {
             const userId = getUserIdFromContext(context)
             return await mainResolver.getFollowedUsers(userId)
         },
+
+        getLeaderboardRange: async (parent: any, args: any, context: any): Promise<LeaderboardScoresPayloadGql[]> => {
+            const start: number = args.input.start
+            const end: number = args.input.end
+            return await mainResolver.getLeaderboardRange(start, end)
+        }
     }
 }

@@ -1,7 +1,7 @@
 import * as AWS from "aws-sdk"
 import { Repository } from "./repository"
 import { User, Event, EventDynamo, UserDynamo, FollowDynamo, Follow, LeaderboardScore, SearchDynamo } from './model/Types'
-import { RedisCache } from './redisCache'
+import { RedisCache, LeaderboardScoreRedis } from './redisCache';
 
 const mainTable = process.env.MAIN_TABLE as string
 
@@ -46,41 +46,60 @@ export class MainRepository implements Repository {
         const batchGetParams: AWS.DynamoDB.DocumentClient.BatchGetItemInput = {
             RequestItems: {
                 [mainTable]: {
-                    Keys: keys,
-                    ProjectionExpression: "username, userId"
+                    Keys: keys
                 }
             }
         }
         const batchGetResults = await this.documentClient.batchGet(batchGetParams).promise()
-        const items = batchGetResults.Responses?.[mainTable] ?? []
+        const resultItems = batchGetResults.Responses?.[mainTable] ?? []
 
-        const result = new Map(items.map(item => [item.userId, item.username]));
+        const users: User[] = resultItems.map(resultItem => {
+            return {
+                userId: resultItem.userId,
+                username: resultItem.username
+            }
+        })
+        const userMap = new Map(users.map(user => [user.userId, user]));
 
-        //Convert to LeaderboardScores and sort
-        const sortedResults = items
-            .filter(item => {
-                return item.userId && item.username
-            }).map((item, index) => {
-                return {
-                    userId: scores[index].userId,
-                    username: result.get(scores[index].userId),
-                    score: scores[index].score,
-                    rank: scores[index].rank
+        //Filter scores that do not have a corresponding user 
+        const sortedScores: LeaderboardScoreRedis[] = scores.sort((a, b) => (a.rank > b.rank) ? 1 : -1)
+
+        const filteredScores = sortedScores.reduce((output, score, index) => {
+            if (userMap.has(score.userId)) {
+                //array push
+                output.push({
+                    user: userMap[score.userId],
+                    rank: score.rank,
+                    score: score.score
+                })
+            }
+            return output
+        }, [] as LeaderboardScore[]);
+
+        //Handle duplicate scores and assign the same rank
+        const finalResult: LeaderboardScore[] = filteredScores.map((score, index) => {
+            const previousItem = sortedScores[index - 1]
+            if (previousItem) {
+                let newRank = 0
+                if (previousItem.score == score.score) {
+                    newRank = previousItem.rank
+                } else {
+                    newRank = previousItem.rank + 1
                 }
-            }).sort((a, b) => (a.rank > b.rank) ? 1 : -1)
-
-        //Handle duplicate scores
-        sortedResults.forEach((item, index) => {
-            if (index > 0) {
-                const previousItem = sortedResults[index - 1]
-                if (previousItem.score == item.score) {
-                    item.rank = previousItem.rank
-                } else if (item.rank > previousItem.rank + 1) {
-                    item.rank = previousItem.rank + 1
+                return {
+                    user: score.user,
+                    rank: newRank,
+                    score: score.score
+                }
+            } else {
+                return {
+                    user: score.user,
+                    rank: score.rank,
+                    score: score.score
                 }
             }
         })
-        return sortedResults
+        return finalResult
     }
 
     async getWhichUsersAreFollowed(currentUserId: string, userIdsToCheck: string[]): Promise<string[]> {

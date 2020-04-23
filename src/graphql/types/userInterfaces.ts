@@ -33,3 +33,18 @@ export interface FollowingUsersPayloadGql {
     readonly users: User[]
 }
 
+export interface LeaderboardScoresPayloadGql {
+    readonly user: User
+    readonly score: number
+    readonly rank: number
+}
+
+export interface GeofenceEventGql {
+    readonly timestamp: string
+    readonly userId: string
+    readonly eventType: "HOME" | "AWAY"
+}
+
+export interface CreateGeofenceEventPayloadGql {
+    readonly geofenceEvent: GeofenceEventGql
+}

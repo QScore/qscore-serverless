@@ -1,14 +1,17 @@
 import { Repository } from "../../data/repository"
-import { Event, EventType, User } from '../../data/model/Types';
-import { ApolloError } from "apollo-server-lambda";
-import { CreateGeofenceEventPayloadGql } from "../types/geofenceEvent";
-import { SearchUsersPayloadGql, UpdateUserInfoPayloadGql, CurrentUserPayloadGql, FollowUserPayloadGql, GetUserPayloadGql, FollowingUsersPayloadGql, FollowedUsersPayloadGql } from '../types/userInterfaces';
+import { Event, EventType, User } from '../../data/model/Types'
+import { ApolloError } from "apollo-server-lambda"
+import { SearchUsersPayloadGql, UpdateUserInfoPayloadGql, CurrentUserPayloadGql, FollowUserPayloadGql, GetUserPayloadGql, FollowingUsersPayloadGql, FollowedUsersPayloadGql, LeaderboardScoresPayloadGql, CreateGeofenceEventPayloadGql } from '../types/userInterfaces';
 
 export class MainResolver {
     private repository: Repository
 
     constructor(repository: Repository) {
         this.repository = repository
+    }
+
+    async getLeaderboardRange(start: number, end: number): Promise<LeaderboardScoresPayloadGql[]> {
+        return await this.repository.getLeaderboardScoreRange(start, end)
     }
 
     async getUser(userId: string): Promise<GetUserPayloadGql> {

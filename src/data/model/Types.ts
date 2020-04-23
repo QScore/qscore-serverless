@@ -23,8 +23,7 @@ export interface Follow {
 
 export interface LeaderboardScore {
     readonly rank: number
-    readonly userId: string
-    readonly username: string
+    readonly user: User
     readonly score: number
 }
 
