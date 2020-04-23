@@ -1,5 +1,4 @@
 import sinon, { stubInterface } from "ts-sinon";
-import * as assert from 'assert'
 import { Event, User } from '../../src/data/model/Types';
 import { MainResolver } from '../../src/graphql/resolvers/mainResolver';
 import { GetUserAndEventsResult, MainRepository } from '../../src/data/mainRepository';
@@ -10,6 +9,7 @@ import * as Redis from 'ioredis-mock';
 import { v4 as uuid } from 'uuid';
 import { RedisCache } from "../../src/data/redisCache";
 import * as AWS from "aws-sdk"
+import { assert, expect } from "chai";
 
 let clock: sinon.SinonFakeTimers
 const testRepository = stubInterface<Repository>()
@@ -30,7 +30,8 @@ const fakeUser: User = {
     username: faker.random.uuid(),
     followerCount: 1337,
     followingCount: 1,
-    allTimeScore: 0
+    allTimeScore: 0,
+    score: 0
 }
 
 describe('Main Resolver Unit Tests', function () {
@@ -311,14 +312,16 @@ describe('Main Resolver Unit Tests', function () {
                 username: 'gertrude',
                 allTimeScore: 0,
                 followerCount: 0,
-                followingCount: 0
+                followingCount: 0,
+                score: 0
             },
             {
                 userId: 'user2',
                 username: 'gerbert',
                 allTimeScore: 0,
                 followerCount: 0,
-                followingCount: 0
+                followingCount: 0,
+                score: 0
             }
         ])
 
@@ -329,21 +332,127 @@ describe('Main Resolver Unit Tests', function () {
         const result = await testResolver.searchUsers(fakeUser.userId, 'g')
         const expectedResult = {
             users: [{
-                id: 'user1',
+                userId: 'user1',
                 username: 'gertrude',
                 isCurrentUserFollowing: true,
                 followingCount: 0,
-                followerCount: 0
+                followerCount: 0,
+                score: 0,
+                allTimeScore: 0
             }, {
-                id: 'user2',
+                userId: 'user2',
                 username: 'gerbert',
                 isCurrentUserFollowing: false,
                 followingCount: 0,
-                followerCount: 0
+                followerCount: 0,
+                score: 0,
+                allTimeScore: 0
             }]
         }
 
         assert.deepStrictEqual(result, expectedResult, "Users do not match")
+    })
+})
+
+describe('Main Resolver Integration tests', function () {
+    it('should get user', async () => {
+        const user = await repository.createUser(uuid(), uuid())
+        const result = await repository.getUser(user.userId)
+        assert.deepStrictEqual(result, user)
+    })
+
+    it('should follow and unfollow user', async () => {
+        const user1 = await repository.createUser(uuid(), uuid())
+        const user2 = await repository.createUser(uuid(), uuid())
+
+        assert.equal(user1.followingCount, 0)
+        assert.equal(user2.followingCount, 0)
+
+        await realResolver.followUser(user1.userId, user2.userId)
+
+        const user1Result = await realResolver.getUser(user1.userId)
+        const user2Result = await realResolver.getUser(user2.userId)
+
+        assert.equal(user1Result.user?.followingCount, 1)
+        assert.equal(user1Result.user?.followerCount, 0)
+        assert.equal(user2Result.user?.followerCount, 1)
+        assert.equal(user2Result.user?.followingCount, 0)
+
+        //Check follows for user 1
+        const followingUser1 = await realResolver.getFollowers(user1.userId)
+        const user1Follows = await realResolver.getFollowedUsers(user1.userId)
+        assert.equal(followingUser1.users.length, 0)
+        assert.equal(user1Follows.users.length, 1)
+        const expected1: User = Object.assign(user2, { followerCount: 1 })
+        const actual1: User = user1Follows.users[0]
+        assert.deepStrictEqual(actual1, expected1)
+
+        //Check follows for user 2
+        const followingUser2 = await realResolver.getFollowers(user2.userId)
+        const user2Follows = await realResolver.getFollowedUsers(user2.userId)
+        assert.equal(followingUser2.users.length, 1)
+        assert.equal(user2Follows.users.length, 0)
+        const expected2: User = Object.assign(user1, { followingCount: 1 })
+        const actual2: User = followingUser2.users[0]
+        assert.deepStrictEqual(actual2, expected2)
+
+        //User 1 unfollows user 2
+        await realResolver.unfollowUser(user1.userId, user2.userId)
+        assert.equal((await realResolver.getFollowers(user1.userId)).users.length, 0)
+        assert.equal((await realResolver.getFollowedUsers(user1.userId)).users.length, 0)
+        assert.equal((await realResolver.getFollowers(user2.userId)).users.length, 0)
+        assert.equal((await realResolver.getFollowedUsers(user2.userId)).users.length, 0)
+        assert.equal((await realResolver.getUser(user1.userId)).user?.followingCount, 0)
+        assert.equal((await realResolver.getUser(user1.userId)).user?.followerCount, 0)
+        assert.equal((await realResolver.getUser(user2.userId)).user?.followingCount, 0)
+        assert.equal((await realResolver.getUser(user2.userId)).user?.followerCount, 0)
+    })
+
+    it('should search users', async () => {
+        const userSuffix = uuid()
+        const user = await repository.createUser(uuid(), "Billy" + userSuffix)
+        const searchResults1 = (await realResolver.searchUsers(user.userId, "billy")).users
+        const searchResults2 = (await realResolver.searchUsers(user.userId, "billy" + userSuffix)).users
+        const expected: User = Object.assign(user, {
+            isCurrentUserFollowing: false,
+            followerCount: undefined,
+            followingCount: undefined,
+            allTimeScore: undefined,
+            score: undefined
+        } as User)
+        assert(searchResults1.length > 0)
+        assert.deepStrictEqual(searchResults2[0], expected)
+
+        //Should show that we are following user
+        const user2 = await repository.createUser(uuid(), "Someone" + userSuffix)
+        await realResolver.followUser(user.userId, user2.userId)
+        const expected2: User = Object.assign(user2, {
+            isCurrentUserFollowing: true,
+            followerCount: undefined,
+            followingCount: undefined,
+            allTimeScore: undefined,
+            score: undefined
+        } as User)
+        const searchResults3 = (await realResolver.searchUsers(user.userId, "someone" + userSuffix)).users
+        assert.deepStrictEqual(searchResults3[0], expected2)
+    })
+
+
+    it('should update user info', async () => {
+        const user1 = await repository.createUser(uuid(), uuid())
+        const newUsername = user1.username + "zzz"
+        await realResolver.updateUserInfo(user1.userId, user1.username + "zzz")
+        const result = await realResolver.getUser(user1.userId)
+        assert.equal(result.user?.username, newUsername)
+    })
+
+    it('should throw error if user does not exist', async () => {
+        try {
+            await realResolver.getUser(uuid())
+            assert.fail("Returned a user that does not exist")
+        } catch (error) {
+            assert.ok("Threw error")
+        }
     })
 
     it('creating event should update all time score', async () => {
@@ -385,4 +494,3 @@ describe('Main Resolver Unit Tests', function () {
         assert.equal(result.user.allTimeScore, 800)
     })
 })
-

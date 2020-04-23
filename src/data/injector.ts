@@ -9,6 +9,5 @@ const documentClient = new AWS.DynamoDB.DocumentClient()
 const redisUrl = process.env.REDIS_URL
 const redis = new Redis(redisUrl)
 const redisCache = new RedisCache(redis)
-export const dynamoDbRepository = new MainRepository(documentClient, redisCache)
-
-export const mainResolver = new MainResolver(dynamoDbRepository)
+export const mainRepository = new MainRepository(documentClient, redisCache)
+export const mainResolver = new MainResolver(mainRepository)

@@ -1,14 +1,49 @@
 import { Repository } from "../../data/repository"
-import { Event, EventType } from '../../data/model/Types';
+import { Event, EventType, User } from '../../data/model/Types';
 import { ApolloError } from "apollo-server-lambda";
-import { UpdateUserInfoPayloadGql, SearchUsersPayloadGql, CurrentUserPayloadGql, UserGql } from '../types/user';
 import { CreateGeofenceEventPayloadGql } from "../types/geofenceEvent";
+import { SearchUsersPayloadGql, UpdateUserInfoPayloadGql, CurrentUserPayloadGql, FollowUserPayloadGql, GetUserPayloadGql, FollowingUsersPayloadGql, FollowedUsersPayloadGql } from '../types/userInterfaces';
 
 export class MainResolver {
     private repository: Repository
 
     constructor(repository: Repository) {
         this.repository = repository
+    }
+
+    async getUser(userId: string): Promise<GetUserPayloadGql> {
+        const user = await this.repository.getUser(userId)
+        return {
+            user: user
+        }
+    }
+
+    async getFollowers(userId: string): Promise<FollowingUsersPayloadGql> {
+        const users = await this.repository.getFollowers(userId)
+        return {
+            users: users
+        }
+    }
+
+    async getFollowedUsers(userId: string): Promise<FollowedUsersPayloadGql> {
+        const users = await this.repository.getFollowedUsers(userId)
+        return {
+            users: users
+        }
+    }
+
+    async unfollowUser(currentUserId: string, userIdToUnfollow: string): Promise<FollowUserPayloadGql> {
+        await this.repository.unfollowUser(currentUserId, userIdToUnfollow)
+        return {
+            userId: userIdToUnfollow
+        }
+    }
+
+    async followUser(currentUserId: string, userIdToFollow: string): Promise<FollowUserPayloadGql> {
+        await this.repository.followUser(currentUserId, userIdToFollow)
+        return {
+            userId: userIdToFollow
+        }
     }
 
     async createEvent(userId: string, eventType: EventType): Promise<CreateGeofenceEventPayloadGql> {
@@ -25,11 +60,7 @@ export class MainResolver {
             await this.updateAllTimeScore(userId, previousEvent)
         }
         return {
-            geofenceEvent: {
-                userId: event.userId,
-                eventType: event.eventType,
-                timestamp: event.timestamp
-            }
+            geofenceEvent: event
         }
     }
 
@@ -41,14 +72,10 @@ export class MainResolver {
         const followedUserIds = await this.repository.getWhichUsersAreFollowed(currentUserId, userIds)
         return {
             users: users.map(user => {
-                const userGql: UserGql = {
-                    id: user.userId,
-                    username: user.username,
-                    isCurrentUserFollowing: followedUserIds.includes(user.userId),
-                    followingCount: user.followingCount,
-                    followerCount: user.followerCount
-                }
-                return userGql
+                const result: User = Object.assign(user, {
+                    isCurrentUserFollowing: followedUserIds.includes(user.userId)
+                })
+                return result
             })
         }
     }
@@ -65,7 +92,7 @@ export class MainResolver {
     async getCurrentUser(userId: string): Promise<CurrentUserPayloadGql> {
         const startTime = this.getYesterdayISOString()
         const { user, events } = await this.repository.getUserAndEventsFromStartTime(userId, startTime)
-        if (!user || !events) {
+        if (!user) {
             throw new ApolloError("Current user could not be resolved")
         }
 
@@ -79,13 +106,13 @@ export class MainResolver {
             allTimeScore = await this.repository.getAllTimeScore(userId)
         }
 
+        const result: User = Object.assign(user, {
+            allTimeScore: allTimeScore,
+            score: score24
+        })
+
         return {
-            user: {
-                id: user.userId,
-                username: user.username,
-                score: score24,
-                allTimeScore: allTimeScore
-            }
+            user: result
         }
     }
 

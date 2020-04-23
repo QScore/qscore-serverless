@@ -1,8 +1,7 @@
 import * as AWS from "aws-sdk"
-import { Repository } from "./repository";
-import { User, Event, EventDynamo, UserDynamo, FollowDynamo, Follow, LeaderboardScore, SearchDynamo } from './model/Types';
-import { RedisCache } from './redisCache';
-import { redis } from 'io';
+import { Repository } from "./repository"
+import { User, Event, EventDynamo, UserDynamo, FollowDynamo, Follow, LeaderboardScore, SearchDynamo } from './model/Types'
+import { RedisCache } from './redisCache'
 
 const mainTable = process.env.MAIN_TABLE as string
 
@@ -37,7 +36,7 @@ export class MainRepository implements Repository {
             return score.userId
         })
 
-        //Batch get all user ids from scores
+        //Batch get all usernames from scores
         const keys = userIds.map(userId => {
             return {
                 PK: `USER#${userId}`,
@@ -128,7 +127,8 @@ export class MainRepository implements Repository {
                 username: item.username,
                 followerCount: item.followerCount,
                 followingCount: item.followingCount,
-                allTimeScore: item.allTimeScore
+                allTimeScore: item.allTimeScore,
+                score: item.score
             }
             return user
         })
@@ -288,7 +288,7 @@ export class MainRepository implements Repository {
                 username: user.username,
                 followerCount: user.followerCount,
                 followingCount: user.followingCount,
-                allTimeScore: user.allTimeScore
+                allTimeScore: user.allTimeScore,
             }
         }) ?? []
     }

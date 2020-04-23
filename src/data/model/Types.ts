@@ -8,10 +8,12 @@ export interface Event {
 
 export interface User {
     readonly userId: string
-    readonly followerCount: number
-    readonly followingCount: number
+    readonly followerCount?: number
+    readonly followingCount?: number
     readonly username: string
-    readonly allTimeScore: number
+    readonly allTimeScore?: number
+    readonly score?: number
+    readonly isCurrentUserFollowing?: boolean
 }
 
 export interface Follow {
