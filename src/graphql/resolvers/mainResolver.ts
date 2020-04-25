@@ -36,6 +36,9 @@ export class MainResolver {
     }
 
     async unfollowUser(currentUserId: string, userIdToUnfollow: string): Promise<FollowUserPayloadGql> {
+        if (currentUserId === userIdToUnfollow) {
+            throw new ApolloError("Cannot unfollow yourself", "400");
+        }
         await this.repository.unfollowUser(currentUserId, userIdToUnfollow)
         return {
             userId: userIdToUnfollow
@@ -43,6 +46,9 @@ export class MainResolver {
     }
 
     async followUser(currentUserId: string, userIdToFollow: string): Promise<FollowUserPayloadGql> {
+        if (currentUserId == userIdToFollow) {
+            throw new ApolloError("Cannot follow yourself", "400");
+        }
         await this.repository.followUser(currentUserId, userIdToFollow)
         return {
             userId: userIdToFollow
@@ -72,6 +78,12 @@ export class MainResolver {
         const userIds = users.map(user => {
             return user.userId
         })
+        if (userIds.length == 0) {
+            return {
+                users: []
+            }
+        }
+
         const followedUserIds = await this.repository.getWhichUsersAreFollowed(currentUserId, userIds)
         return {
             users: users.map(user => {

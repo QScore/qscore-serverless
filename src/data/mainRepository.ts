@@ -56,7 +56,10 @@ export class MainRepository implements Repository {
         const users: User[] = resultItems.map(resultItem => {
             return {
                 userId: resultItem.userId,
-                username: resultItem.username
+                username: resultItem.username,
+                followerCount: resultItem.followerCount,
+                followingCount: resultItem.followingCount,
+                allTimeScore: resultItem.allTimeScore
             }
         })
         const userMap = new Map(users.map(user => [user.userId, user]));
@@ -64,11 +67,12 @@ export class MainRepository implements Repository {
         //Filter scores that do not have a corresponding user 
         const sortedScores: LeaderboardScoreRedis[] = scores.sort((a, b) => (a.rank > b.rank) ? 1 : -1)
 
-        const filteredScores = sortedScores.reduce((output, score, index) => {
-            if (userMap.has(score.userId)) {
+        const filteredScores = sortedScores.reduce((output, score) => {
+            const user = userMap.get(score.userId)
+            if (user) {
                 //array push
                 output.push({
-                    user: userMap[score.userId],
+                    user: user,
                     rank: score.rank,
                     score: score.score
                 })
@@ -77,26 +81,18 @@ export class MainRepository implements Repository {
         }, [] as LeaderboardScore[]);
 
         //Handle duplicate scores and assign the same rank
+        let newRank = 0
         const finalResult: LeaderboardScore[] = filteredScores.map((score, index) => {
             const previousItem = sortedScores[index - 1]
-            if (previousItem) {
-                let newRank = 0
-                if (previousItem.score == score.score) {
-                    newRank = previousItem.rank
-                } else {
-                    newRank = previousItem.rank + 1
-                }
-                return {
-                    user: score.user,
-                    rank: newRank,
-                    score: score.score
-                }
-            } else {
-                return {
-                    user: score.user,
-                    rank: score.rank,
-                    score: score.score
-                }
+            if (!previousItem) {
+                newRank = 1
+            } else if (previousItem.score > score.score) {
+                newRank++
+            }
+            return {
+                user: score.user,
+                rank: newRank,
+                score: score.score
             }
         })
         return finalResult
@@ -403,6 +399,10 @@ export class MainRepository implements Repository {
     async updateUsername(userId: string, username: string): Promise<void> {
         //Check for existing user:
         const existingUser = await this.getUser(userId)
+        if (existingUser?.username === username) {
+            //Nothing to do
+            return
+        }
         if (existingUser) {
             const params: AWS.DynamoDB.DocumentClient.TransactWriteItemsInput = {
                 TransactItems: [

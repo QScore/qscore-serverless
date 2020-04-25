@@ -15,11 +15,6 @@ const documentClient = new AWS.DynamoDB.DocumentClient({
     endpoint: 'http://localhost:8000'
 })
 const repository = new MainRepository(documentClient, redisCache)
-const expectedUser = {
-    userId: 'bb463b8b-b76c-4f6a-9726-65ab5730b69b',
-    username: 'Lonnie.Deckow'
-}
-const lonnieUserId = expectedUser.userId
 
 async function createFakeUser(prefix = ""): Promise<User> {
     return await repository.createUser(prefix + uuid(), uuid())
@@ -39,75 +34,50 @@ describe("Main repository tests", () => {
     })
 
     it('Should follow user', async () => {
-        const userIdToFollow = '5ce32379-318e-42ae-bf07-9488242cb158'
-
-        //Verify that we are not currently following this user
-        const followedUsersPrevious = await repository.getFollowedUsers(lonnieUserId)
-        const hasFollowedUser = followedUsersPrevious.filter(user => {
-            return user.userId === userIdToFollow
-        }).length == 1
-        assert.ok(!hasFollowedUser, "Currently is following user, should not be")
+        let user = await repository.createUser(uuid(), uuid())
+        let userToFollow = await repository.createUser(uuid(), uuid())
 
         //Follow user
-        const followedUserPrevious = await repository.getUser(userIdToFollow) ?? assert.fail("No followed previous user found")
-        const currentUserPrevious = await repository.getUser(lonnieUserId) ?? assert.fail("No current user previous found")
-        await repository.followUser(lonnieUserId, userIdToFollow)
-        const currentUser = await repository.getUser(lonnieUserId) ?? assert.fail("No current user found")
-        const followedUser = await repository.getUser(userIdToFollow) ?? assert.fail("No followed user found")
+        await repository.followUser(user.userId, userToFollow.userId)
 
         //Verify that the follower and following counts were updated
-        assert.equal(currentUser.followingCount, (currentUserPrevious.followingCount ?? 0) + 1)
-        assert.equal(followedUser.followerCount, (followedUserPrevious.followerCount ?? 0) + 1)
+
+        user = await repository.getUser(user.userId) ?? assert.fail("Missing user")
+        userToFollow = await repository.getUser(userToFollow.userId) ?? assert.fail("Missing user")
+        assert.equal(user.followingCount, 1)
+        assert.equal(user.followerCount, 0)
+        assert.equal(userToFollow.followerCount, 1)
+        assert.equal(userToFollow.followingCount, 0)
 
         //Verify that getFollowedUsers returns our newly followed user
-        const followedUsers = await repository.getFollowedUsers(lonnieUserId)
-        const followedUserFromResult = followedUsers.filter(user => {
-            return user.userId === userIdToFollow
-        })[0]
-        assert.deepStrictEqual(followedUserFromResult, followedUser, "Followed user does not match")
+        const followedUsers = await repository.getFollowedUsers(user.userId)
+        assert.deepStrictEqual(followedUsers[0], userToFollow, "Followed user does not match")
 
         //Verify that getFollowers on target user returns our user
-        const followingUsers = await repository.getFollowers(userIdToFollow)
-        const followingUsersFromResult = followingUsers.filter(user => {
-            return user.userId === lonnieUserId
-        })[0]
-        assert.deepStrictEqual(followingUsersFromResult, currentUser, "Following user does not match")
+        const followingUsers = await repository.getFollowers(userToFollow.userId)
+        assert.deepStrictEqual(followingUsers[0], user, "Following user does not match")
 
-        const userIds = await repository.getWhichUsersAreFollowed(lonnieUserId, [userIdToFollow, 'b8f05ac0-90be-4246-8355-d80a8132e57a'])
+        const userIds = await repository.getWhichUsersAreFollowed(user.userId, [userToFollow.userId, 'b8f05ac0-90be-4246-8355-d80a8132e57a'])
         assert.equal(userIds.length, 1)
-        assert.equal(userIds[0], userIdToFollow)
-
-        //Test no followers on user
-        const noFollowersResult = await repository.getFollowers(uuid())
-        assert.equal(noFollowersResult.length, 0)
-    })
-
-    it('Should unfollow user', async () => {
-        const userIdToUnfollow = '5ce32379-318e-42ae-bf07-9488242cb158'
-
-        //Verify that we are currently following this user
-        const followedUsersPrevious = await repository.getFollowedUsers(lonnieUserId)
-        const hasFollowedUser = followedUsersPrevious.filter(user => {
-            return user.userId === userIdToUnfollow
-        }).length == 1
-        assert.ok(hasFollowedUser, "Does not have followed user!")
+        assert.equal(userIds[0], userToFollow.userId)
 
         //Unfollow user
-        const followedUserPrevious = await repository.getUser(userIdToUnfollow) ?? assert.fail("No followed previous user found")
-        const currentUserPrevious = await repository.getUser(lonnieUserId) ?? assert.fail("No current user previous found")
-        await repository.unfollowUser(lonnieUserId, userIdToUnfollow)
-        const currentUser = await repository.getUser(lonnieUserId) ?? assert.fail("No current user found")
-        const followedUser = await repository.getUser(userIdToUnfollow) ?? assert.fail("No followed user found")
+        await repository.unfollowUser(user.userId, userToFollow.userId)
+        user = await repository.getUser(user.userId) ?? assert.fail("Missing user")
+        userToFollow = await repository.getUser(userToFollow.userId) ?? assert.fail("Missing user")
+        //Verify that the follower and following counts were updated
+        assert.equal(user.followingCount, 0)
+        assert.equal(user.followerCount, 0)
+        assert.equal(userToFollow.followerCount, 0)
+        assert.equal(userToFollow.followingCount, 0)
 
-        //Verify that the follower and following counts were decreased
-        assert.equal(currentUser.followingCount, (currentUserPrevious.followingCount ?? 0) - 1)
-        assert.equal(followedUser.followerCount, (followedUserPrevious.followerCount ?? 0) - 1)
+        //Get followed users
+        const followedUsers2 = await repository.getFollowers(user.userId)
+        assert.equal(followedUsers2.length, 0)
 
-        //Verify that getFollowedUsers does not retturn our newly followed user
-        const hasFollowedUserAfter = followedUsersPrevious.filter(user => {
-            return user.userId === userIdToUnfollow
-        }).length == 0
-        assert.ok(!hasFollowedUserAfter, "User still has followed user after unfollow")
+        //Get following users
+        const followingUsers2 = await repository.getFollowers(userToFollow.userId)
+        assert.equal(followingUsers2.length, 0)
     })
 
     it('Should search for users', async () => {
@@ -117,31 +87,6 @@ describe("Main repository tests", () => {
         const results2 = await repository.searchUsers(uuid())
         assert.equal(results2.length, 0)
     })
-
-    it('Should find user and events after start time', async () => {
-        const oneDay = 24 * 60 * 60 * 1000
-        const startTime = new Date(oneDay).toISOString()
-        const { user, events } = await repository.getUserAndEventsFromStartTime(lonnieUserId, startTime)
-        if (!user) {
-            assert.fail("User not found")
-        }
-
-        assert.equal(user.userId, expectedUser.userId)
-        assert.equal(user.username, expectedUser.username)
-
-        events.forEach((event) => {
-            assert(event.userId == lonnieUserId, "UserIds do not match")
-            assert(event.eventType === "HOME" || event.eventType === "AWAY", "Event type is invalid")
-            assert(event.timestamp >= startTime, "Timestamp should be >= start time")
-        })
-
-        //Test getting events for noexistent user
-        const emptyResult = await repository.getUserAndEventsFromStartTime(uuid(), startTime)
-        assert.deepEqual(emptyResult, {
-            user: undefined,
-            events: []
-        })
-    });
 
     it('Should not create event if same event type as previous ', async () => {
         const user = await createFakeUser()
@@ -198,21 +143,6 @@ describe("Main repository tests", () => {
         assert.deepStrictEqual(user, expected)
     });
 
-    it('Should not create duplicate user ', async () => {
-        try {
-            await repository.createUser(lonnieUserId, uuid())
-            assert.fail("User should not have been created")
-        } catch (error) {
-            assert.ok("User was not created")
-        }
-    });
-
-    it('Should get user by id', async () => {
-        const user = await repository.getUser(lonnieUserId) ?? assert.fail("No user found")
-        assert.equal(user.userId, expectedUser.userId)
-        assert.equal(user.username, expectedUser.username)
-    });
-
     it('Should update username', async () => {
         const user = await createFakeUser()
         await repository.updateUsername(user.userId, user.username + 'zzz')
@@ -250,7 +180,7 @@ describe("Main repository tests", () => {
 
         // //Fake user ids should not actually be possible
         const scores = await repository.getLeaderboardScoreRange(0, 10)
-        // assert.equal(scores.length, 6, "Scores has wrong length!")
+        assert.equal(scores.length, 6, "Scores has wrong length!")
         const expected1: LeaderboardScore = {
             user: user1,
             score: 900,
@@ -286,12 +216,12 @@ describe("Main repository tests", () => {
             rank: 4
         }
 
-        // assert.deepStrictEqual(scores[0], expected1, "First user is incorrect")
-        // assert.deepStrictEqual(scores[1], expected3, "Second user is incorrect")
-        // assert.deepStrictEqual(scores[2], expected2, "Third user is incorrect")
-        // assert.deepStrictEqual(scores[3], expected5, "Fourth user is incorrect")
-        // assert.deepStrictEqual(scores[4], expected4, "Fifth user is incorrect")
-        // assert.deepStrictEqual(scores[5], expected6, "Sixth user is incorrect")
+        assert.deepStrictEqual(scores[0], expected1, "First user is incorrect")
+        assert.deepStrictEqual(scores[1], expected3, "Second user is incorrect")
+        assert.deepStrictEqual(scores[2], expected2, "Third user is incorrect")
+        assert.deepStrictEqual(scores[3], expected5, "Fourth user is incorrect")
+        assert.deepStrictEqual(scores[4], expected4, "Fifth user is incorrect")
+        assert.deepStrictEqual(scores[5], expected6, "Sixth user is incorrect")
     });
 
     it('Should save all time score', async () => {

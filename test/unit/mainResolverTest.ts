@@ -7,7 +7,7 @@ import * as faker from 'faker';
 import { Redis as RedisInterface } from "ioredis";
 import * as Redis from 'ioredis-mock';
 import { v4 as uuid } from 'uuid';
-import { RedisCache } from "../../src/data/redisCache";
+import { RedisCache, LatestEventRedis } from '../../src/data/redisCache';
 import * as AWS from "aws-sdk"
 import { assert, expect } from "chai";
 
@@ -435,15 +435,22 @@ describe('Main Resolver Integration tests', function () {
         } as User)
         const searchResults3 = (await realResolver.searchUsers(user.userId, "someone" + userSuffix)).users
         assert.deepStrictEqual(searchResults3[0], expected2)
+
+        //Should handle case where no users found
+        const noUsersResult = (await realResolver.searchUsers(user.userId, "fhdsglkjfhdgks")).users
+        assert.equal(noUsersResult.length, 0)
     })
 
 
     it('should update user info', async () => {
         const user1 = await repository.createUser(uuid(), uuid())
         const newUsername = user1.username + "zzz"
-        await realResolver.updateUserInfo(user1.userId, user1.username + "zzz")
+        await realResolver.updateUserInfo(user1.userId, newUsername)
         const result = await realResolver.getUser(user1.userId)
         assert.equal(result.user?.username, newUsername)
+
+        //Test updating to the same name
+        await realResolver.updateUserInfo(user1.userId, newUsername)
     })
 
     it('should throw error if user does not exist', async () => {
@@ -453,6 +460,81 @@ describe('Main Resolver Integration tests', function () {
         } catch (error) {
             assert.ok("Threw error")
         }
+    })
+
+    it('should get leaderboard range', async () => {
+        const user1 = await repository.createUser("first-" + uuid(), uuid())
+        const user2 = await repository.createUser("second-" + uuid(), uuid())
+        const user3 = await repository.createUser("third-" + uuid(), uuid())
+
+        clock = sinon.useFakeTimers({ now: 100 })
+        await realResolver.createEvent(user1.userId, "HOME")
+
+        clock = sinon.useFakeTimers({ now: 200 })
+        await realResolver.createEvent(user1.userId, "AWAY")
+        await realResolver.createEvent(user2.userId, "HOME")
+
+        clock = sinon.useFakeTimers({ now: 300 })
+        await realResolver.createEvent(user1.userId, "HOME")
+        await realResolver.createEvent(user2.userId, "AWAY")
+        await realResolver.createEvent(user3.userId, "HOME")
+
+        clock = sinon.useFakeTimers({ now: 400 })
+        await realResolver.createEvent(user1.userId, "AWAY")
+        await realResolver.createEvent(user2.userId, "HOME")
+        await realResolver.createEvent(user3.userId, "AWAY")
+
+        clock = sinon.useFakeTimers({ now: 500 })
+        await realResolver.createEvent(user1.userId, "HOME")
+        await realResolver.createEvent(user2.userId, "AWAY")
+        await realResolver.createEvent(user3.userId, "HOME")
+
+        const range = await realResolver.getLeaderboardRange(0, 10)
+        assert.deepStrictEqual(range[0], {
+            rank: 1,
+            score: 200,
+            user: user2
+        })
+        assert.deepStrictEqual(range[1], {
+            rank: 1,
+            score: 200,
+            user: user1
+        })
+        assert.deepStrictEqual(range[2], {
+            rank: 2,
+            score: 100,
+            user: user3
+        })
+    })
+
+    it('should not be able to follow yourself', async () => {
+        const userId = uuid()
+        const user = await repository.createUser(userId, uuid())
+        try {
+            await realResolver.followUser(userId, userId)
+            assert.fail("Was able to follow yourself")
+        } catch (error) {
+            assert.ok("OK")
+        }
+        assert.equal(user.followingCount, 0)
+        assert.equal(user.followerCount, 0)
+        const followingUsers = await realResolver.getFollowedUsers(userId)
+        assert.equal(followingUsers.users.length, 0)
+    })
+
+    it('should not be able to follow user that does not exist', async () => {
+        const userId = uuid()
+        await repository.createUser(userId, uuid())
+        try {
+            await realResolver.followUser(userId, uuid())
+            assert.fail()
+        } catch (error) {
+            assert.ok("Following user that does not exist produced error")
+        }
+        const followed = await realResolver.getFollowedUsers(userId)
+        assert.equal(followed.users.length, 0)
+        const followers = await realResolver.getFollowers(userId)
+        assert.equal(followers.users.length, 0)
     })
 
     it('creating event should update all time score', async () => {

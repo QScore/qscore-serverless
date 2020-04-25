@@ -45,7 +45,7 @@ export const handler = async (event: any, context: Context): Promise<any> => {
         if (isOffline) {
             return generateIamPolicy('Allow', event.methodArn, {
                 // eslint-disable-next-line @typescript-eslint/camelcase
-                user_id: "Tb1xh6O9StZFHGC3K8zf9iyaVH12",
+                user_id: "bb463b8b-b76c-4f6a-9726-65ab5730b69b",
             });
         }
 

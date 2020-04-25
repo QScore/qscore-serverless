@@ -11,6 +11,7 @@
         "sourceMap": true,
         "target": "es2019",
         "outDir": "lib",
+        "module": "commonjs",
         "strictNullChecks": true,
         "resolveJsonModule": true
     },

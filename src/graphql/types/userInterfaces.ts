@@ -14,11 +14,11 @@ export interface UpdateUserInfoPayloadGql {
 }
 
 export interface FollowUserPayloadGql {
-    readonly userId: string
+    readonly userId?: string
 }
 
 export interface UnfollowUserPayloadGql {
-    readonly userId: string
+    readonly userId?: string
 }
 
 export interface GetUserPayloadGql {
