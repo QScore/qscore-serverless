@@ -6,9 +6,8 @@ import { Context, Callback } from 'aws-lambda';
 import { mainResolver } from '../data/injector';
 import { testResolver } from '../data/testInjector';
 
-
 let resolver
-if (process.env.TEST_RESOLVER as boolean | undefined == true) {
+if (process.env.SLS_OFFLINE) {
   resolver = buildResolver(testResolver)
 } else {
   resolver = buildResolver(mainResolver)

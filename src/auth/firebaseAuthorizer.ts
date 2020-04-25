@@ -41,8 +41,7 @@ const generateIamPolicy = (effect: any, resource: any, data: any): any => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handler = async (event: any, context: Context): Promise<any> => {
     try {
-        const isOffline: boolean = process.env.SLS_OFFLINE == "true"
-        if (isOffline) {
+        if (process.env.SLS_OFFLINE && process.env.NO_AUTH) {
             return generateIamPolicy('Allow', event.methodArn, {
                 // eslint-disable-next-line @typescript-eslint/camelcase
                 user_id: "bb463b8b-b76c-4f6a-9726-65ab5730b69b",

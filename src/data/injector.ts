@@ -1,8 +1,8 @@
 import { MainRepository } from "./mainRepository";
 import * as AWS from "aws-sdk"
-import * as Redis from 'ioredis';
 import { RedisCache } from './redisCache';
 import { MainResolver } from "../graphql/resolvers/mainResolver";
+import Redis from 'ioredis';
 
 
 const redisUrl = process.env.REDIS_URL

@@ -1,6 +1,6 @@
 import { MainRepository } from "./mainRepository";
 import * as AWS from "aws-sdk"
-import * as Redis from 'ioredis-mock';
+import Redis from 'ioredis-mock';
 import { RedisCache } from './redisCache';
 import { MainResolver } from "../graphql/resolvers/mainResolver";
 
