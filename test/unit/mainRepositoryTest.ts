@@ -1,20 +1,11 @@
-import * as AWS from "aws-sdk"
-import { MainRepository } from "../../src/data/mainRepository";
 import { User, Event, LeaderboardScore } from '../../src/data/model/Types';
-import * as faker from 'faker'
-import * as Redis from 'ioredis-mock';
-import { RedisCache } from "../../src/data/redisCache";
+import faker from 'faker'
 import { assert } from "chai";
-import { Redis as RedisInterface } from "ioredis";
 import { v4 as uuid } from 'uuid';
+import { testRepository, testRedis } from '../../src/data/testInjector';
 
-const redis: RedisInterface = new Redis()
-const redisCache = new RedisCache(redis)
-const documentClient = new AWS.DynamoDB.DocumentClient({
-    region: 'localhost',
-    endpoint: 'http://localhost:8000'
-})
-const repository = new MainRepository(documentClient, redisCache)
+const redis = testRedis
+const repository = testRepository
 
 async function createFakeUser(prefix = ""): Promise<User> {
     return await repository.createUser(prefix + uuid(), uuid())

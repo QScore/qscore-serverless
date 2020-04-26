@@ -1,14 +1,12 @@
-import * as Redis from 'ioredis-mock';
-import { RedisCache, LatestEventRedis } from '../../src/data/redisCache';
+import { LatestEventRedis } from '../../src/data/redisCache';
 import { Event } from '../../src/data/model/Types';
 
-import * as faker from 'faker'
+import faker from 'faker';
 import { assert } from 'chai';
 import { v4 as uuid } from 'uuid';
-import { Redis as RedisInterface } from 'ioredis';
-import * as redis from 'redis';
-const redisClient: RedisInterface = new Redis()
-const redisCache = new RedisCache(redisClient)
+import { testRedisCache, testRedis } from '../../src/data/testInjector';
+const redisClient = testRedis
+const redisCache = testRedisCache
 faker.seed(123)
 
 describe("Redis cache tests", () => {

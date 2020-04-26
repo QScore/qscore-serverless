@@ -113,8 +113,6 @@ export class MainResolver {
 
         const latestEvent = await this.repository.getLatestEventForUser(userId)
         const score24 = this.calculate24HourScore(events, latestEvent)
-
-        console.log(">>LATEST: " + JSON.stringify(latestEvent))
         let allTimeScore = 0
         if (latestEvent?.eventType == "HOME") {
             allTimeScore = await this.updateAllTimeScore(userId, latestEvent)

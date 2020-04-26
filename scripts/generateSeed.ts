@@ -3,8 +3,8 @@
  */
 
 import { UserDynamo, EventDynamo, EventType, FollowDynamo, SearchDynamo } from '../src/data/model/Types';
-import * as faker from 'faker'
-import * as fs from 'fs';
+import faker from 'faker'
+import fs from 'fs';
 
 faker.seed(123);
 const numUsers = 8

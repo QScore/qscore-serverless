@@ -1,29 +1,14 @@
 import sinon, { stubInterface } from "ts-sinon";
 import { Event, User } from '../../src/data/model/Types';
 import { MainResolver } from '../../src/graphql/resolvers/mainResolver';
-import { GetUserAndEventsResult, MainRepository } from '../../src/data/mainRepository';
+import { GetUserAndEventsResult } from '../../src/data/mainRepository';
 import { Repository } from '../../src/data/repository';
 import * as faker from 'faker';
-import { Redis as RedisInterface } from "ioredis";
-import * as Redis from 'ioredis-mock';
 import { v4 as uuid } from 'uuid';
-import { RedisCache, LatestEventRedis } from '../../src/data/redisCache';
-import * as AWS from "aws-sdk"
-import { assert, expect } from "chai";
+import { assert } from "chai";
+import { testResolver, testRepository, testRedis } from '../../src/data/testInjector';
 
 let clock: sinon.SinonFakeTimers
-const testRepository = stubInterface<Repository>()
-const testResolver = new MainResolver(testRepository)
-
-const redis: RedisInterface = new Redis()
-const redisCache = new RedisCache(redis)
-const documentClient = new AWS.DynamoDB.DocumentClient({
-    region: 'localhost',
-    endpoint: 'http://localhost:8000'
-})
-
-const repository = new MainRepository(documentClient, redisCache)
-const realResolver = new MainResolver(repository)
 
 const fakeUser: User = {
     userId: faker.random.uuid(),
@@ -35,15 +20,20 @@ const fakeUser: User = {
 }
 
 describe('Main Resolver Unit Tests', function () {
-    beforeEach(function () {
+    const redis = testRedis
+    beforeEach(async function () {
         clock = sinon.useFakeTimers({
             now: 24 * 60 * 60 * 1000
         });
+        await redis.flushall()
     })
 
     afterEach(function () {
         clock.restore();
     })
+
+    const testRepository = stubInterface<Repository>()
+    const resolver = new MainResolver(testRepository)
 
     it('should calculate score with first event Home', async () => {
         const events: Event[] = [
@@ -63,7 +53,7 @@ describe('Main Resolver Unit Tests', function () {
             user: fakeUser
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const result = await resolver.getCurrentUser(fakeUser.userId)
         const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0.11574074074074073), "Scores do not match!")
     })
@@ -87,7 +77,7 @@ describe('Main Resolver Unit Tests', function () {
             user: fakeUser
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const result = await resolver.getCurrentUser(fakeUser.userId)
         const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(99.88426208496094), "Scores do not match!")
     })
@@ -106,7 +96,7 @@ describe('Main Resolver Unit Tests', function () {
             user: fakeUser
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const result = await resolver.getCurrentUser(fakeUser.userId)
         const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0.11574074074074073), "Scores do not match!")
     })
@@ -124,7 +114,7 @@ describe('Main Resolver Unit Tests', function () {
             user: fakeUser
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const result = await resolver.getCurrentUser(fakeUser.userId)
         const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
     })
@@ -143,7 +133,7 @@ describe('Main Resolver Unit Tests', function () {
             user: fakeUser
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const result = await resolver.getCurrentUser(fakeUser.userId)
         const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(100), "Scores do not match!")
     })
@@ -166,7 +156,7 @@ describe('Main Resolver Unit Tests', function () {
             user: fakeUser
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const result = await resolver.getCurrentUser(fakeUser.userId)
         const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(99.88426208496094), "Scores do not match!")
     })
@@ -189,7 +179,7 @@ describe('Main Resolver Unit Tests', function () {
             user: fakeUser
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const result = await resolver.getCurrentUser(fakeUser.userId)
         const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
     })
@@ -243,7 +233,7 @@ describe('Main Resolver Unit Tests', function () {
             user: fakeUser
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const result = await resolver.getCurrentUser(fakeUser.userId)
         const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0.4629629629629629), "Scores do not match!")
     })
@@ -265,7 +255,7 @@ describe('Main Resolver Unit Tests', function () {
             userId: fakeUser.userId
         }
         testRepository.getLatestEventForUser.resolves(latestEventResult)
-        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const result = await resolver.getCurrentUser(fakeUser.userId)
         const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(100), "Scores do not match!")
     })
@@ -287,7 +277,7 @@ describe('Main Resolver Unit Tests', function () {
             userId: fakeUser.userId
         }
         testRepository.getLatestEventForUser.resolves(latestEventResult)
-        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const result = await resolver.getCurrentUser(fakeUser.userId)
         const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
     })
@@ -299,7 +289,7 @@ describe('Main Resolver Unit Tests', function () {
         }
         testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
         testRepository.getLatestEventForUser.resolves(undefined)
-        const result = await testResolver.getCurrentUser(fakeUser.userId)
+        const result = await resolver.getCurrentUser(fakeUser.userId)
         const score = result.user.score ?? assert.fail("No score found")
         assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
     })
@@ -329,7 +319,7 @@ describe('Main Resolver Unit Tests', function () {
             'user1'
         ])
 
-        const result = await testResolver.searchUsers(fakeUser.userId, 'g')
+        const result = await resolver.searchUsers(fakeUser.userId, 'g')
         const expectedResult = {
             users: [{
                 userId: 'user1',
@@ -355,6 +345,8 @@ describe('Main Resolver Unit Tests', function () {
 })
 
 describe('Main Resolver Integration tests', function () {
+    const repository = testRepository
+    const resolver = testResolver
     it('should get user', async () => {
         const user = await repository.createUser(uuid(), uuid())
         const result = await repository.getUser(user.userId)
@@ -368,10 +360,10 @@ describe('Main Resolver Integration tests', function () {
         assert.equal(user1.followingCount, 0)
         assert.equal(user2.followingCount, 0)
 
-        await realResolver.followUser(user1.userId, user2.userId)
+        await resolver.followUser(user1.userId, user2.userId)
 
-        const user1Result = await realResolver.getUser(user1.userId)
-        const user2Result = await realResolver.getUser(user2.userId)
+        const user1Result = await resolver.getUser(user1.userId)
+        const user2Result = await resolver.getUser(user2.userId)
 
         assert.equal(user1Result.user?.followingCount, 1)
         assert.equal(user1Result.user?.followerCount, 0)
@@ -379,8 +371,8 @@ describe('Main Resolver Integration tests', function () {
         assert.equal(user2Result.user?.followingCount, 0)
 
         //Check follows for user 1
-        const followingUser1 = await realResolver.getFollowers(user1.userId)
-        const user1Follows = await realResolver.getFollowedUsers(user1.userId)
+        const followingUser1 = await resolver.getFollowers(user1.userId)
+        const user1Follows = await resolver.getFollowedUsers(user1.userId)
         assert.equal(followingUser1.users.length, 0)
         assert.equal(user1Follows.users.length, 1)
         const expected1: User = Object.assign(user2, { followerCount: 1 })
@@ -388,8 +380,8 @@ describe('Main Resolver Integration tests', function () {
         assert.deepStrictEqual(actual1, expected1)
 
         //Check follows for user 2
-        const followingUser2 = await realResolver.getFollowers(user2.userId)
-        const user2Follows = await realResolver.getFollowedUsers(user2.userId)
+        const followingUser2 = await resolver.getFollowers(user2.userId)
+        const user2Follows = await resolver.getFollowedUsers(user2.userId)
         assert.equal(followingUser2.users.length, 1)
         assert.equal(user2Follows.users.length, 0)
         const expected2: User = Object.assign(user1, { followingCount: 1 })
@@ -397,22 +389,22 @@ describe('Main Resolver Integration tests', function () {
         assert.deepStrictEqual(actual2, expected2)
 
         //User 1 unfollows user 2
-        await realResolver.unfollowUser(user1.userId, user2.userId)
-        assert.equal((await realResolver.getFollowers(user1.userId)).users.length, 0)
-        assert.equal((await realResolver.getFollowedUsers(user1.userId)).users.length, 0)
-        assert.equal((await realResolver.getFollowers(user2.userId)).users.length, 0)
-        assert.equal((await realResolver.getFollowedUsers(user2.userId)).users.length, 0)
-        assert.equal((await realResolver.getUser(user1.userId)).user?.followingCount, 0)
-        assert.equal((await realResolver.getUser(user1.userId)).user?.followerCount, 0)
-        assert.equal((await realResolver.getUser(user2.userId)).user?.followingCount, 0)
-        assert.equal((await realResolver.getUser(user2.userId)).user?.followerCount, 0)
+        await resolver.unfollowUser(user1.userId, user2.userId)
+        assert.equal((await resolver.getFollowers(user1.userId)).users.length, 0)
+        assert.equal((await resolver.getFollowedUsers(user1.userId)).users.length, 0)
+        assert.equal((await resolver.getFollowers(user2.userId)).users.length, 0)
+        assert.equal((await resolver.getFollowedUsers(user2.userId)).users.length, 0)
+        assert.equal((await resolver.getUser(user1.userId)).user?.followingCount, 0)
+        assert.equal((await resolver.getUser(user1.userId)).user?.followerCount, 0)
+        assert.equal((await resolver.getUser(user2.userId)).user?.followingCount, 0)
+        assert.equal((await resolver.getUser(user2.userId)).user?.followerCount, 0)
     })
 
     it('should search users', async () => {
         const userSuffix = uuid()
         const user = await repository.createUser(uuid(), "Billy" + userSuffix)
-        const searchResults1 = (await realResolver.searchUsers(user.userId, "billy")).users
-        const searchResults2 = (await realResolver.searchUsers(user.userId, "billy" + userSuffix)).users
+        const searchResults1 = (await resolver.searchUsers(user.userId, "billy")).users
+        const searchResults2 = (await resolver.searchUsers(user.userId, "billy" + userSuffix)).users
         const expected: User = Object.assign(user, {
             isCurrentUserFollowing: false,
             followerCount: undefined,
@@ -425,7 +417,7 @@ describe('Main Resolver Integration tests', function () {
 
         //Should show that we are following user
         const user2 = await repository.createUser(uuid(), "Someone" + userSuffix)
-        await realResolver.followUser(user.userId, user2.userId)
+        await resolver.followUser(user.userId, user2.userId)
         const expected2: User = Object.assign(user2, {
             isCurrentUserFollowing: true,
             followerCount: undefined,
@@ -433,11 +425,11 @@ describe('Main Resolver Integration tests', function () {
             allTimeScore: undefined,
             score: undefined
         } as User)
-        const searchResults3 = (await realResolver.searchUsers(user.userId, "someone" + userSuffix)).users
+        const searchResults3 = (await resolver.searchUsers(user.userId, "someone" + userSuffix)).users
         assert.deepStrictEqual(searchResults3[0], expected2)
 
         //Should handle case where no users found
-        const noUsersResult = (await realResolver.searchUsers(user.userId, "fhdsglkjfhdgks")).users
+        const noUsersResult = (await resolver.searchUsers(user.userId, "fhdsglkjfhdgks")).users
         assert.equal(noUsersResult.length, 0)
     })
 
@@ -445,17 +437,17 @@ describe('Main Resolver Integration tests', function () {
     it('should update user info', async () => {
         const user1 = await repository.createUser(uuid(), uuid())
         const newUsername = user1.username + "zzz"
-        await realResolver.updateUserInfo(user1.userId, newUsername)
-        const result = await realResolver.getUser(user1.userId)
+        await resolver.updateUserInfo(user1.userId, newUsername)
+        const result = await resolver.getUser(user1.userId)
         assert.equal(result.user?.username, newUsername)
 
         //Test updating to the same name
-        await realResolver.updateUserInfo(user1.userId, newUsername)
+        await resolver.updateUserInfo(user1.userId, newUsername)
     })
 
     it('should throw error if user does not exist', async () => {
         try {
-            await realResolver.getUser(uuid())
+            await resolver.getUser(uuid())
             assert.fail("Returned a user that does not exist")
         } catch (error) {
             assert.ok("Threw error")
@@ -468,28 +460,28 @@ describe('Main Resolver Integration tests', function () {
         const user3 = await repository.createUser("third-" + uuid(), uuid())
 
         clock = sinon.useFakeTimers({ now: 100 })
-        await realResolver.createEvent(user1.userId, "HOME")
+        await resolver.createEvent(user1.userId, "HOME")
 
         clock = sinon.useFakeTimers({ now: 200 })
-        await realResolver.createEvent(user1.userId, "AWAY")
-        await realResolver.createEvent(user2.userId, "HOME")
+        await resolver.createEvent(user1.userId, "AWAY")
+        await resolver.createEvent(user2.userId, "HOME")
 
         clock = sinon.useFakeTimers({ now: 300 })
-        await realResolver.createEvent(user1.userId, "HOME")
-        await realResolver.createEvent(user2.userId, "AWAY")
-        await realResolver.createEvent(user3.userId, "HOME")
+        await resolver.createEvent(user1.userId, "HOME")
+        await resolver.createEvent(user2.userId, "AWAY")
+        await resolver.createEvent(user3.userId, "HOME")
 
         clock = sinon.useFakeTimers({ now: 400 })
-        await realResolver.createEvent(user1.userId, "AWAY")
-        await realResolver.createEvent(user2.userId, "HOME")
-        await realResolver.createEvent(user3.userId, "AWAY")
+        await resolver.createEvent(user1.userId, "AWAY")
+        await resolver.createEvent(user2.userId, "HOME")
+        await resolver.createEvent(user3.userId, "AWAY")
 
         clock = sinon.useFakeTimers({ now: 500 })
-        await realResolver.createEvent(user1.userId, "HOME")
-        await realResolver.createEvent(user2.userId, "AWAY")
-        await realResolver.createEvent(user3.userId, "HOME")
+        await resolver.createEvent(user1.userId, "HOME")
+        await resolver.createEvent(user2.userId, "AWAY")
+        await resolver.createEvent(user3.userId, "HOME")
 
-        const range = await realResolver.getLeaderboardRange(0, 10)
+        const range = await resolver.getLeaderboardRange(0, 10)
         assert.deepStrictEqual(range[0], {
             rank: 1,
             score: 200,
@@ -511,14 +503,14 @@ describe('Main Resolver Integration tests', function () {
         const userId = uuid()
         const user = await repository.createUser(userId, uuid())
         try {
-            await realResolver.followUser(userId, userId)
+            await resolver.followUser(userId, userId)
             assert.fail("Was able to follow yourself")
         } catch (error) {
             assert.ok("OK")
         }
         assert.equal(user.followingCount, 0)
         assert.equal(user.followerCount, 0)
-        const followingUsers = await realResolver.getFollowedUsers(userId)
+        const followingUsers = await resolver.getFollowedUsers(userId)
         assert.equal(followingUsers.users.length, 0)
     })
 
@@ -526,53 +518,53 @@ describe('Main Resolver Integration tests', function () {
         const userId = uuid()
         await repository.createUser(userId, uuid())
         try {
-            await realResolver.followUser(userId, uuid())
+            await resolver.followUser(userId, uuid())
             assert.fail()
         } catch (error) {
             assert.ok("Following user that does not exist produced error")
         }
-        const followed = await realResolver.getFollowedUsers(userId)
+        const followed = await resolver.getFollowedUsers(userId)
         assert.equal(followed.users.length, 0)
-        const followers = await realResolver.getFollowers(userId)
+        const followers = await resolver.getFollowers(userId)
         assert.equal(followers.users.length, 0)
     })
 
     it('creating event should update all time score', async () => {
         const user = await repository.createUser(uuid(), uuid())
         clock = sinon.useFakeTimers({ now: 100 })
-        await realResolver.createEvent(user.userId, "HOME")
-        let result = await realResolver.getCurrentUser(user.userId)
+        await resolver.createEvent(user.userId, "HOME")
+        let result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 0)
 
         clock = sinon.useFakeTimers({ now: 200 });
-        await realResolver.createEvent(user.userId, "AWAY")
-        result = await realResolver.getCurrentUser(user.userId)
+        await resolver.createEvent(user.userId, "AWAY")
+        result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 100)
 
         clock = sinon.useFakeTimers({ now: 300 });
-        await realResolver.createEvent(user.userId, "HOME")
-        result = await realResolver.getCurrentUser(user.userId)
+        await resolver.createEvent(user.userId, "HOME")
+        result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 100)
 
         clock = sinon.useFakeTimers({ now: 500 });
-        await realResolver.createEvent(user.userId, "AWAY")
-        result = await realResolver.getCurrentUser(user.userId)
+        await resolver.createEvent(user.userId, "AWAY")
+        result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 300)
 
         //Time elapses, score is the same because last event was AWAY
         clock = sinon.useFakeTimers({ now: 1000 });
-        result = await realResolver.getCurrentUser(user.userId)
+        result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 300)
 
         //Now Home event comes in
         clock = sinon.useFakeTimers({ now: 1500 });
-        await realResolver.createEvent(user.userId, "HOME")
-        result = await realResolver.getCurrentUser(user.userId)
+        await resolver.createEvent(user.userId, "HOME")
+        result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 300)
 
         //Now recheck 500ms later
         clock = sinon.useFakeTimers({ now: 2000 });
-        result = await realResolver.getCurrentUser(user.userId)
+        result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 800)
     })
 })

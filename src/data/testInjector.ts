@@ -9,7 +9,7 @@ export const testDocumentClient = new AWS.DynamoDB.DocumentClient({
     region: 'localhost',
     endpoint: 'http://localhost:8000'
 })
-const redis = new Redis()
-export const testRedisCache = new RedisCache(redis)
+export const testRedis = new Redis()
+export const testRedisCache = new RedisCache(testRedis)
 export const testRepository = new MainRepository(testDocumentClient, testRedisCache)
 export const testResolver = new MainResolver(testRepository)
