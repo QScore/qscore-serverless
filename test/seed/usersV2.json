@@ -1,5 +1,17 @@
 [
     {
+        "PK": "USER#Tb1xh6O9StZFHGC3K8zf9iyaVH12",
+        "SK": "EVENT#9999",
+        "GS1PK": "SCORE#ALL_TIME",
+        "GS1SK": "8372",
+        "itemType": "User",
+        "userId": "Tb1xh6O9StZFHGC3K8zf9iyaVH12",
+        "username": "phil",
+        "followerCount": 5316,
+        "followingCount": 7124,
+        "allTimeScore": 8372
+    },
+    {
         "PK": "USER#bb463b8b-b76c-4f6a-9726-65ab5730b69b",
         "SK": "EVENT#9999",
         "GS1PK": "SCORE#ALL_TIME",

@@ -13,4 +13,3 @@ const redis = new Redis()
 export const testRedisCache = new RedisCache(redis)
 export const testRepository = new MainRepository(testDocumentClient, testRedisCache)
 export const testResolver = new MainResolver(testRepository)
-

@@ -544,14 +544,35 @@ export class MainRepository implements Repository {
     }
 
     async getLatestEventForUser(userId: string): Promise<Event | undefined> {
-        const latestEventRedis = await this.redisCache.getLatestEvent(userId)
-        if (!latestEventRedis) {
-            return undefined
+        const latestEvent = await this.redisCache.getLatestEvent(userId)
+        if (!latestEvent) {
+            //Couldn't find in redis, get from dynamodb
+            const params: AWS.DynamoDB.DocumentClient.QueryInput = {
+                TableName: mainTable,
+                KeyConditionExpression: '#PK = :PK And #SK < :SK',
+                ExpressionAttributeNames: {
+                    '#PK': "PK",
+                    '#SK': "SK"
+                },
+                ExpressionAttributeValues: {
+                    ':PK': `USER#${userId}`,
+                    ':SK': `EVENT#9999`
+                },
+                ScanIndexForward: false,
+                Limit: 1
+            }
+            const result = await this.documentClient.query(params).promise()
+            const latestEvent = result.Items?.pop() as Event
+            if (!latestEvent) {
+                return undefined
+            }
+            await this.redisCache.setLatestEvent(latestEvent)
+            return latestEvent
         }
         return {
-            eventType: latestEventRedis.eventType,
-            timestamp: latestEventRedis.timestamp,
-            userId: latestEventRedis.userId
+            eventType: latestEvent.eventType,
+            timestamp: latestEvent.timestamp,
+            userId: latestEvent.userId
         }
     }
 
