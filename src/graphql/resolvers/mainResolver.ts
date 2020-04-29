@@ -1,7 +1,7 @@
 import { Repository } from "../../data/repository"
 import { Event, EventType, User } from '../../data/model/Types'
 import { ApolloError } from "apollo-server-lambda"
-import { SearchUsersPayloadGql, UpdateUserInfoPayloadGql, CurrentUserPayloadGql, FollowUserPayloadGql, GetUserPayloadGql, FollowingUsersPayloadGql, FollowedUsersPayloadGql, LeaderboardScoresPayloadGql, CreateGeofenceEventPayloadGql } from '../types/userInterfaces';
+import { SearchUsersPayloadGql, UpdateUserInfoPayloadGql, CurrentUserPayloadGql, FollowUserPayloadGql, GetUserPayloadGql, FollowingUsersPayloadGql, FollowedUsersPayloadGql, CreateGeofenceEventPayloadGql, LeaderboardRangePayloadGql } from '../types/userInterfaces';
 
 export class MainResolver {
     private repository: Repository
@@ -10,8 +10,11 @@ export class MainResolver {
         this.repository = repository
     }
 
-    async getLeaderboardRange(start: number, end: number): Promise<LeaderboardScoresPayloadGql[]> {
-        return await this.repository.getLeaderboardScoreRange(start, end)
+    async getLeaderboardRange(start: number, end: number): Promise<LeaderboardRangePayloadGql> {
+        const scores = await this.repository.getLeaderboardScoreRange(start, end)
+        return {
+            leaderboardScores: scores
+        }
     }
 
     async getUser(userId: string): Promise<GetUserPayloadGql> {
@@ -73,18 +76,18 @@ export class MainResolver {
         }
     }
 
+    //TODO: paginate this call
     async searchUsers(currentUserId: string, searchQuery: string): Promise<SearchUsersPayloadGql> {
         const users = await this.repository.searchUsers(searchQuery)
-        const userIds = users.map(user => {
+        const searchUserIds = users.map(user => {
             return user.userId
         })
-        if (userIds.length == 0) {
+        if (searchUserIds.length == 0) {
             return {
                 users: []
             }
         }
-
-        const followedUserIds = await this.repository.getWhichUsersAreFollowed(currentUserId, userIds)
+        const followedUserIds = await this.repository.getWhichUsersAreFollowed(currentUserId, searchUserIds)
         return {
             users: users.map(user => {
                 const result: User = Object.assign(user, {
@@ -95,11 +98,11 @@ export class MainResolver {
         }
     }
 
-    async updateUserInfo(userId: string, username: string): Promise<UpdateUserInfoPayloadGql> {
-        await this.repository.updateUsername(userId, username)
+    async updateUserInfo(userId: string, username: string, avatar?: string): Promise<UpdateUserInfoPayloadGql> {
+        await this.repository.updateUserInfo(userId, username, avatar)
         const result: UpdateUserInfoPayloadGql = {
             id: userId,
-            username: username
+            username: username,
         }
         return result
     }
@@ -119,10 +122,12 @@ export class MainResolver {
         } else {
             allTimeScore = await this.repository.getAllTimeScore(userId)
         }
+        const rank = await this.repository.getAllTimeLeaderboardRank(userId)
 
         const result: User = Object.assign(user, {
-            allTimeScore: allTimeScore,
-            score: score24
+            allTimeScore: allTimeScore / 100000000,
+            score: score24,
+            rank: rank
         })
 
         return {

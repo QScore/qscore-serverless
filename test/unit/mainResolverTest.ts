@@ -16,7 +16,8 @@ const fakeUser: User = {
     followerCount: 1337,
     followingCount: 1,
     allTimeScore: 0,
-    score: 0
+    score: 0,
+    avatar: undefined
 }
 
 describe('Main Resolver Unit Tests', function () {
@@ -303,7 +304,8 @@ describe('Main Resolver Unit Tests', function () {
                 allTimeScore: 0,
                 followerCount: 0,
                 followingCount: 0,
-                score: 0
+                score: 0,
+                avatar: undefined
             },
             {
                 userId: 'user2',
@@ -311,7 +313,8 @@ describe('Main Resolver Unit Tests', function () {
                 allTimeScore: 0,
                 followerCount: 0,
                 followingCount: 0,
-                score: 0
+                score: 0,
+                avatar: undefined
             }
         ])
 
@@ -328,7 +331,8 @@ describe('Main Resolver Unit Tests', function () {
                 followingCount: 0,
                 followerCount: 0,
                 score: 0,
-                allTimeScore: 0
+                allTimeScore: 0,
+                avatar: undefined
             }, {
                 userId: 'user2',
                 username: 'gerbert',
@@ -336,7 +340,8 @@ describe('Main Resolver Unit Tests', function () {
                 followingCount: 0,
                 followerCount: 0,
                 score: 0,
-                allTimeScore: 0
+                allTimeScore: 0,
+                avatar: undefined
             }]
         }
 
@@ -443,6 +448,18 @@ describe('Main Resolver Integration tests', function () {
 
         //Test updating to the same name
         await resolver.updateUserInfo(user1.userId, newUsername)
+
+        //Test adding an avatar
+        const avatar = uuid()
+        await resolver.updateUserInfo(user1.userId, newUsername, avatar)
+        const result2 = await resolver.getUser(user1.userId)
+        assert.equal(result2.user?.avatar, avatar)
+
+        //Updating username should not remove avatar
+        const newUsername2 = uuid()
+        await resolver.updateUserInfo(user1.userId, newUsername2)
+        // const result3 = await resolver.getUser(user1.userId)
+        // assert.equal(result3.user?.avatar, avatar)
     })
 
     it('should throw error if user does not exist', async () => {
@@ -481,21 +498,42 @@ describe('Main Resolver Integration tests', function () {
         await resolver.createEvent(user2.userId, "AWAY")
         await resolver.createEvent(user3.userId, "HOME")
 
-        const range = await resolver.getLeaderboardRange(0, 10)
-        assert.deepStrictEqual(range[0], {
+        const result = await resolver.getLeaderboardRange(0, 10)
+        assert.deepStrictEqual(result.leaderboardScores[0], {
             rank: 1,
             score: 200,
             user: user2
         })
-        assert.deepStrictEqual(range[1], {
+        assert.deepStrictEqual(result.leaderboardScores[1], {
             rank: 1,
             score: 200,
             user: user1
         })
-        assert.deepStrictEqual(range[2], {
+        assert.deepStrictEqual(result.leaderboardScores[2], {
             rank: 2,
             score: 100,
             user: user3
+        })
+
+        clock = sinon.useFakeTimers({ now: 1000 })
+        await resolver.getCurrentUser(user1.userId)
+        await resolver.getCurrentUser(user2.userId)
+        await resolver.getCurrentUser(user3.userId)
+        const result2 = await resolver.getLeaderboardRange(0, 10)
+        assert.deepStrictEqual(result2.leaderboardScores[0], {
+            rank: 1,
+            score: 700,
+            user: user1
+        })
+        assert.deepStrictEqual(result2.leaderboardScores[1], {
+            rank: 2,
+            score: 600,
+            user: user3
+        })
+        assert.deepStrictEqual(result2.leaderboardScores[2], {
+            rank: 3,
+            score: 200,
+            user: user2
         })
     })
 
@@ -539,32 +577,32 @@ describe('Main Resolver Integration tests', function () {
         clock = sinon.useFakeTimers({ now: 200 });
         await resolver.createEvent(user.userId, "AWAY")
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 100)
+        assert.equal(result.user.allTimeScore, 0.000001)
 
         clock = sinon.useFakeTimers({ now: 300 });
         await resolver.createEvent(user.userId, "HOME")
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 100)
+        assert.equal(result.user.allTimeScore, 0.000001)
 
         clock = sinon.useFakeTimers({ now: 500 });
         await resolver.createEvent(user.userId, "AWAY")
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 300)
+        assert.equal(result.user.allTimeScore, 0.000003)
 
         //Time elapses, score is the same because last event was AWAY
         clock = sinon.useFakeTimers({ now: 1000 });
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 300)
+        assert.equal(result.user.allTimeScore, 0.000003)
 
         //Now Home event comes in
         clock = sinon.useFakeTimers({ now: 1500 });
         await resolver.createEvent(user.userId, "HOME")
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 300)
+        assert.equal(result.user.allTimeScore, 0.000003)
 
         //Now recheck 500ms later
         clock = sinon.useFakeTimers({ now: 2000 });
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 800)
+        assert.equal(result.user.allTimeScore, 0.000008)
     })
 })

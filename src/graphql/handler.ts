@@ -4,11 +4,11 @@ import { ApolloServer } from "apollo-server-lambda";
 import { typeDef as userTypeDef, buildResolver } from './types/user';
 import { Context, Callback } from 'aws-lambda';
 import { mainResolver } from '../data/injector';
-import { testResolver } from '../data/testInjector';
+import { localResolver } from '../data/testInjector';
 
 let resolver
 if (process.env.SLS_OFFLINE) {
-  resolver = buildResolver(testResolver)
+  resolver = buildResolver(localResolver)
 } else {
   resolver = buildResolver(mainResolver)
 }

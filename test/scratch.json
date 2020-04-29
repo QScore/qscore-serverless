@@ -1,74 +1,37 @@
-[
-    {
-        "GS1SK": "0",
-        "itemType": "User",
-        "allTimeScore": 0,
-        "SK": "EVENT#9999",
-        "PK": "USER#fe83e44d4-fe32-4b4a-ba5d-bbc2f1fdd7c8",
-        "userId": "fe83e44d4-fe32-4b4a-ba5d-bbc2f1fdd7c8",
-        "followerCount": 0,
-        "followingCount": 0,
-        "GS1PK": "SCORE#ALL_TIME",
-        "username": "baf197fa-06aa-4499-9178-fe3787ca8fa7"
-    },
-    {
-        "GS1SK": "0",
-        "itemType": "User",
-        "allTimeScore": 0,
-        "SK": "EVENT#9999",
-        "PK": "USER#e64611058-0bbf-47de-8e45-fdd1c50f2dac",
-        "userId": "e64611058-0bbf-47de-8e45-fdd1c50f2dac",
-        "followerCount": 0,
-        "followingCount": 0,
-        "GS1PK": "SCORE#ALL_TIME",
-        "username": "acad7934-5f49-45cf-a33b-23229f8a95f1"
-    },
-    {
-        "GS1SK": "0",
-        "itemType": "User",
-        "allTimeScore": 0,
-        "SK": "EVENT#9999",
-        "PK": "USER#c97046bda-9951-49c5-9581-a84fb1eca656",
-        "userId": "c97046bda-9951-49c5-9581-a84fb1eca656",
-        "followerCount": 0,
-        "followingCount": 0,
-        "GS1PK": "SCORE#ALL_TIME",
-        "username": "6152f25d-54d0-4842-8d94-b06a9e913bf1"
-    },
-    {
-        "GS1SK": "0",
-        "itemType": "User",
-        "allTimeScore": 0,
-        "SK": "EVENT#9999",
-        "PK": "USER#b2c617370-f0f5-455b-a38e-59dc5aeb13b5",
-        "userId": "b2c617370-f0f5-455b-a38e-59dc5aeb13b5",
-        "followerCount": 0,
-        "followingCount": 0,
-        "GS1PK": "SCORE#ALL_TIME",
-        "username": "d64e2901-6d9b-47bb-a566-433416a9e7a5"
-    },
-    {
-        "GS1SK": "0",
-        "itemType": "User",
-        "allTimeScore": 0,
-        "SK": "EVENT#9999",
-        "PK": "USER#d71399c6b-abe1-4dda-bc99-4bc482e1f5d5",
-        "userId": "d71399c6b-abe1-4dda-bc99-4bc482e1f5d5",
-        "followerCount": 0,
-        "followingCount": 0,
-        "GS1PK": "SCORE#ALL_TIME",
-        "username": "9c29dc53-9343-4196-aa3e-78713b6b5bcc"
-    },
-    {
-        "GS1SK": "0",
-        "itemType": "User",
-        "allTimeScore": 0,
-        "SK": "EVENT#9999",
-        "PK": "USER#ac283ba3a-fdff-4347-80ee-f210b5a2ccf5",
-        "userId": "ac283ba3a-fdff-4347-80ee-f210b5a2ccf5",
-        "followerCount": 0,
-        "followingCount": 0,
-        "GS1PK": "SCORE#ALL_TIME",
-        "username": "cb380710-12ed-4618-904a-c98970a88b2c"
-    }
-]
+{
+    "leaderboardScores": [
+        {
+            "user": {
+                "userId": "first-61c00071-85cc-414d-a6e5-cd4232b710f7",
+                "username": "96fa04f5-3da5-485b-969a-c8143e7af06d",
+                "followerCount": 0,
+                "followingCount": 0,
+                "allTimeScore": 0
+            },
+            "rank": 1,
+            "score": 700
+        },
+        {
+            "user": {
+                "userId": "third-809c8d62-829d-4a7c-bbae-d73ef35b4d71",
+                "username": "9fa90105-7f52-45ce-ad1a-655da944d936",
+                "followerCount": 0,
+                "followingCount": 0,
+                "allTimeScore": 0
+            },
+            "rank": 2,
+            "score": 600
+        },
+        {
+            "user": {
+                "userId": "second-a36fe0b5-f452-45e8-9a64-c8c3094bf91d",
+                "username": "8a06fa6a-02d8-4940-a878-26f6e8260f3e",
+                "followerCount": 0,
+                "followingCount": 0,
+                "allTimeScore": 0
+            },
+            "rank": 3,
+            "score": 200
+        }
+    ]
+}

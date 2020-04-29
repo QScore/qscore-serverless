@@ -7,9 +7,9 @@ export interface Repository {
     getLeaderboardScoreRange(start: number, end: number): Promise<LeaderboardScore[]>
     saveAllTimeScore(userId: string, score: number): Promise<void>
     getUser(userId: string): Promise<User | undefined>
-    updateUsername(userId: string, username: string): Promise<void>
+    updateUserInfo(userId: string, username: string, avatar?: string): Promise<void>
     getUserAndEventsFromStartTime(userId: string, startTimestamp: string): Promise<GetUserAndEventsResult>
-    searchUsers(searchQuery: string): Promise<User[]>
+    searchUsers(searchQuery: string, limit: number): Promise<User[]>
     followUser(currentUserId: string, userIdToFollow: string)
     unfollowUser(currentUserId: string, userIdToUnfollow: string)
     getFollowedUsers(currentUserId: string): Promise<User[]>

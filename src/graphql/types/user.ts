@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { gql, ApolloError } from 'apollo-server-lambda';
 import { mainResolver } from '../../data/injector';
-import { UpdateUserInfoPayloadGql, CurrentUserPayloadGql, SearchUsersPayloadGql, FollowUserPayloadGql, UnfollowUserPayloadGql, GetUserPayloadGql, FollowedUsersPayloadGql, FollowingUsersPayloadGql, CreateGeofenceEventPayloadGql, LeaderboardScoresPayloadGql } from './userInterfaces';
+import { UpdateUserInfoPayloadGql, CurrentUserPayloadGql, SearchUsersPayloadGql, FollowUserPayloadGql, UnfollowUserPayloadGql, GetUserPayloadGql, FollowedUsersPayloadGql, FollowingUsersPayloadGql, CreateGeofenceEventPayloadGql, LeaderboardRangePayloadGql } from './userInterfaces';
 import { MainResolver } from '../resolvers/mainResolver';
 
 export const typeDef = gql`
@@ -16,6 +16,8 @@ type User {
     username: String!
     score: Float
     allTimeScore: Float
+    rank: Int
+    avatar: String
     isCurrentUserFollowing: Boolean
     followingCount: Int
     followerCount: Int
@@ -27,7 +29,8 @@ input UpdateUserInfoInput {
 
 type UpdateUserInfoPayload {
     id: ID!,
-    username: String!
+    username: String,
+    avatar: String
 }
 
 type CurrentUserPayload {
@@ -35,7 +38,7 @@ type CurrentUserPayload {
 }
 
 input SearchUsersInput {
-    searchQuery: String
+    searchQuery: String!
 }
 
 type SearchUsersPayload {
@@ -80,13 +83,13 @@ input LeaderboardRangeInput {
 }
 
 type LeaderboardRangePayload {
-    leaderboardScores: [LeaderboardScore]
+    leaderboardScores: [LeaderboardScore!]!
 }
 
 type LeaderboardScore {
     user: User,
     rank: Int,
-    score: Int
+    score: String
 }
 
 input CreateGeofenceEventInput {
@@ -183,7 +186,7 @@ export function buildResolver(resolver: MainResolver): any {
                 return await resolver.getFollowedUsers(userId)
             },
 
-            getLeaderboardRange: async (parent: any, args: any, context: any): Promise<LeaderboardScoresPayloadGql[]> => {
+            getLeaderboardRange: async (parent: any, args: any, context: any): Promise<LeaderboardRangePayloadGql> => {
                 const start: number = args.input.start
                 const end: number = args.input.end
                 return await resolver.getLeaderboardRange(start, end)

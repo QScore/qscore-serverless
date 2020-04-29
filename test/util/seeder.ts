@@ -1,5 +1,5 @@
 import * as seeder from 'serverless-dynamodb-local/src/seeder'
-import { testDocumentClient } from '../../src/data/testInjector';
+import { localDocumentClient } from '../../src/data/testInjector';
 
 export async function seedDatabase(): Promise<void> {
     const source = {
@@ -9,5 +9,5 @@ export async function seedDatabase(): Promise<void> {
 
     const seeds = await seeder.locateSeeds(source.sources)
     console.log(">>SEEDING")
-    await seeder.writeSeeds(testDocumentClient.batchWrite.bind(testDocumentClient), source.table, seeds)
+    await seeder.writeSeeds(localDocumentClient.batchWrite.bind(localDocumentClient), source.table, seeds)
 }

@@ -13,6 +13,7 @@ export interface User {
     readonly username: string
     readonly allTimeScore?: number
     readonly score?: number
+    readonly avatar: (string | undefined)
     readonly isCurrentUserFollowing?: boolean
 }
 
@@ -40,6 +41,7 @@ export interface UserDynamo {
     readonly username: string
     readonly itemType: DynamoType
     readonly allTimeScore: number
+    readonly avatar?: string
 }
 
 export interface EventDynamo {

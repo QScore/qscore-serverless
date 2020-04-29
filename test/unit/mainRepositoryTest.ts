@@ -129,18 +129,20 @@ describe("Main repository tests", () => {
             username: user.username,
             allTimeScore: 0,
             followerCount: 0,
-            followingCount: 0
+            followingCount: 0,
+            avatar: undefined
         }
         assert.deepStrictEqual(user, expected)
     });
 
-    it('Should update username', async () => {
+    it('Should update user', async () => {
         const user = await createFakeUser()
-        await repository.updateUsername(user.userId, user.username + 'zzz')
+        await repository.updateUserInfo(user.userId, user.username + 'zzz')
         const userResult = await repository.getUser(user.userId)
         const expectedUser: User = {
             userId: user.userId,
             username: user.username + 'zzz',
+            avatar: undefined,
             allTimeScore: 0,
             followerCount: 0,
             followingCount: 0
@@ -150,7 +152,7 @@ describe("Main repository tests", () => {
         //Create user if username does not already exists
         const fakeUserId = uuid()
         const fakeusername = uuid()
-        await repository.updateUsername(fakeUserId, fakeusername)
+        await repository.updateUserInfo(fakeUserId, fakeusername)
         const newUser = await repository.getUser(fakeUserId)
         assert.equal(newUser?.username, fakeusername)
     });

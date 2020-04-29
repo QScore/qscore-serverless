@@ -1,4 +1,4 @@
-import { User } from "../../data/model/Types";
+import { User, LeaderboardScore } from '../../data/model/Types';
 
 export interface SearchUsersPayloadGql {
     readonly users: User[]
@@ -33,10 +33,8 @@ export interface FollowingUsersPayloadGql {
     readonly users: User[]
 }
 
-export interface LeaderboardScoresPayloadGql {
-    readonly user: User
-    readonly score: number
-    readonly rank: number
+export interface LeaderboardRangePayloadGql {
+    readonly leaderboardScores: LeaderboardScore[]
 }
 
 export interface GeofenceEventGql {

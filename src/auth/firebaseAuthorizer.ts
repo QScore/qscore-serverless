@@ -40,8 +40,9 @@ const generateIamPolicy = (effect: any, resource: any, data: any): any => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handler = async (event: any, context: Context): Promise<any> => {
+    const startTime = Date.now()
     try {
-        if (process.env.SLS_OFFLINE && process.env.NO_AUTH) {
+        if (process.env.SLS_OFFLINE) {
             return generateIamPolicy('Allow', event.methodArn, {
                 // eslint-disable-next-line @typescript-eslint/camelcase
                 user_id: "bb463b8b-b76c-4f6a-9726-65ab5730b69b",
@@ -74,8 +75,8 @@ export const handler = async (event: any, context: Context): Promise<any> => {
         const resp = await admin.auth().verifyIdToken(tokenValue);
 
         console.log("Allowing request")
+        console.log(">>ELAPSED: " + (Date.now() - startTime))
         return generateIamPolicy('Allow', event.methodArn, resp);
-
     } catch (err) {
         console.log("Error validating: " + err)
         return generateIamPolicy('Deny', event.methodArn, null);

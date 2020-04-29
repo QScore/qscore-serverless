@@ -31,10 +31,13 @@ export class MainRepository implements Repository {
 
     async getLeaderboardScoreRange(min: number, max: number): Promise<LeaderboardScore[]> {
         const scores = await this.redisCache.getLeaderboardScoreRange(min, max)
-
         const userIds = scores.map(score => {
             return score.userId
         })
+
+        if (userIds.length == 0) {
+            return []
+        }
 
         //Batch get all usernames from scores
         const keys = userIds.map(userId => {
@@ -59,7 +62,8 @@ export class MainRepository implements Repository {
                 username: resultItem.username,
                 followerCount: resultItem.followerCount,
                 followingCount: resultItem.followingCount,
-                allTimeScore: resultItem.allTimeScore
+                allTimeScore: resultItem.allTimeScore,
+                avatar: resultItem.avatar
             }
         })
         const userMap = new Map(users.map(user => [user.userId, user]));
@@ -98,6 +102,7 @@ export class MainRepository implements Repository {
         return finalResult
     }
 
+    //TODO: Paginate this
     async getWhichUsersAreFollowed(currentUserId: string, userIdsToCheck: string[]): Promise<string[]> {
         const keys = userIdsToCheck.map(userId => {
             return {
@@ -119,7 +124,7 @@ export class MainRepository implements Repository {
         }) ?? []
     }
 
-    async searchUsers(searchQuery: string): Promise<User[]> {
+    async searchUsers(searchQuery: string, limit: number): Promise<User[]> {
         const eventParams: AWS.DynamoDB.DocumentClient.QueryInput = {
             TableName: mainTable,
             KeyConditionExpression: '#PK = :PK And begins_with(#SK, :SK)',
@@ -130,7 +135,8 @@ export class MainRepository implements Repository {
             ExpressionAttributeValues: {
                 ':PK': `SEARCH`,
                 ':SK': searchQuery.toLowerCase(),
-            }
+            },
+            Limit: limit
         }
         const queryResult = await this.documentClient.query(eventParams).promise()
         if (!queryResult.Items || queryResult.Items.length == 0) {
@@ -143,7 +149,8 @@ export class MainRepository implements Repository {
                 followerCount: item.followerCount,
                 followingCount: item.followingCount,
                 allTimeScore: item.allTimeScore,
-                score: item.score
+                score: item.score,
+                avatar: item.avatar
             }
             return user
         })
@@ -304,6 +311,7 @@ export class MainRepository implements Repository {
                 followerCount: user.followerCount,
                 followingCount: user.followingCount,
                 allTimeScore: user.allTimeScore,
+                avatar: user.avatar
             }
         }) ?? []
     }
@@ -358,7 +366,8 @@ export class MainRepository implements Repository {
                 username: user.username,
                 followerCount: user.followerCount,
                 followingCount: user.followingCount,
-                allTimeScore: user.allTimeScore
+                allTimeScore: user.allTimeScore,
+                avatar: user.avatar
             }
         }) ?? []
     }
@@ -396,69 +405,83 @@ export class MainRepository implements Repository {
     }
 
     //This functions as a create sometimes
-    async updateUsername(userId: string, username: string): Promise<void> {
+    async updateUserInfo(userId: string, username: string, avatar?: string): Promise<void> {
         //Check for existing user:
         const existingUser = await this.getUser(userId)
-        if (existingUser?.username === username) {
-            //Nothing to do
+
+        if (!existingUser) {
+            await this.createUser(userId, username, avatar)
             return
         }
-        if (existingUser) {
-            const params: AWS.DynamoDB.DocumentClient.TransactWriteItemsInput = {
-                TransactItems: [
-                    {
-                        Update: {
-                            TableName: mainTable,
-                            Key: {
-                                "PK": `USER#${userId}`,
-                                "SK": `EVENT#9999`
-                            },
-                            UpdateExpression: "set username = :username",
-                            ExpressionAttributeValues: {
-                                ":username": username,
-                            }
-                        }
-                    },
-                    {
-                        Delete: {
-                            TableName: mainTable,
-                            Key: {
-                                "PK": `SEARCH`,
-                                "SK": existingUser.username.toLowerCase()
-                            }
-                        }
-                    },
-                    {
-                        Put: {
-                            TableName: mainTable,
-                            Item: {
-                                PK: `SEARCH`,
-                                SK: username.toLowerCase(),
-                                username: username,
-                                userId: userId
-                            }
-                        }
+
+        const transactItems: AWS.DynamoDB.DocumentClient.TransactWriteItemList = []
+        const update: AWS.DynamoDB.DocumentClient.TransactWriteItem = {
+            Update: {
+                TableName: mainTable,
+                Key: {
+                    "PK": `USER#${userId}`,
+                    "SK": `EVENT#9999`
+                },
+                UpdateExpression: ((): string => {
+                    let expression = "set username = :username "
+                    expression += avatar ? ", avatar = :avatar" : "remove avatar"
+                    return expression
+                })(),
+                ExpressionAttributeValues: ((): AWS.DynamoDB.DocumentClient.ExpressionAttributeValueMap => {
+                    const result: AWS.DynamoDB.DocumentClient.ExpressionAttributeValueMap = {}
+                    result[":username"] = username
+                    if (avatar) {
+                        result[":avatar"] = avatar
                     }
-                ]
+                    return result
+                })()
             }
-            await this.documentClient.transactWrite(params).promise()
-        } else {
-            await this.createUser(userId, username)
         }
+        transactItems.push(update)
+
+        if (existingUser?.username != username) {
+            //Username changed, update it
+            transactItems.push({
+                Delete: {
+                    TableName: mainTable,
+                    Key: {
+                        "PK": `SEARCH`,
+                        "SK": existingUser?.username.toLowerCase()
+                    }
+                }
+            })
+            transactItems.push({
+                Put: {
+                    TableName: mainTable,
+                    Item: {
+                        PK: `SEARCH`,
+                        SK: username.toLowerCase(),
+                        username: username,
+                        userId: userId
+                    }
+                }
+            })
+        }
+
+        const params: AWS.DynamoDB.DocumentClient.TransactWriteItemsInput = {
+            TransactItems: transactItems
+        }
+        await this.documentClient.transactWrite(params).promise()
     }
 
-    async createUser(userId: string, username: string): Promise<User> {
+    async createUser(userId: string, username: string, avatar?: string): Promise<User> {
         const userItem: UserDynamo = {
             PK: `USER#${userId}`,
             SK: `EVENT#9999`,
             GS1PK: `SCORE#ALL_TIME`,
             GS1SK: "0",
             itemType: `User`,
+            avatar: avatar,
             userId: userId,
             username: username,
             followerCount: 0,
             followingCount: 0,
-            allTimeScore: 0
+            allTimeScore: 0,
         }
 
         const searchItem: SearchDynamo = {
@@ -498,7 +521,8 @@ export class MainRepository implements Repository {
             username: username,
             allTimeScore: 0,
             followerCount: 0,
-            followingCount: 0
+            followingCount: 0,
+            avatar: avatar
         }
     }
 
@@ -534,7 +558,8 @@ export class MainRepository implements Repository {
             username: userResult.username,
             followerCount: userResult.followerCount,
             followingCount: userResult.followingCount,
-            allTimeScore: userResult.allTimeScore
+            allTimeScore: userResult.allTimeScore,
+            avatar: userResult.avatar
         }
         const events = queryResult.Items as Event[]
         return {
@@ -593,7 +618,8 @@ export class MainRepository implements Repository {
             username: result.Item.username,
             followerCount: result.Item.followerCount,
             followingCount: result.Item.followingCount,
-            allTimeScore: result.Item.allTimeScore
+            allTimeScore: result.Item.allTimeScore,
+            avatar: result.Item.avatar
         }
     }
 }
