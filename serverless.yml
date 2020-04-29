@@ -41,6 +41,7 @@ provider:
     USERS_TABLE_NAME: ${self:custom.usersTableName}
     MAIN_TABLE: ${self:custom.mainTableName}
     FIREBASE_DATABASE_URL: ${self:custom.secrets.FIREBASE_DATABASE_URL}
+    FIREBASE_SERVICE_ACCOUNT: ${self:custom.secrets.FIREBASE_SERVICE_ACCOUNT}
     SECRET_KEY: ${self:custom.secrets.SECRET_KEY}
     REDIS_HOST: 
       "Fn::GetAtt": [ElasticacheCluster, RedisEndpoint.Address]

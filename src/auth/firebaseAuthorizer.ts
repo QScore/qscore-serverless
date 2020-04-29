@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin'
-import serviceAccount from './serviceAccountKey.json'
 import { Context } from 'aws-lambda';
+
+const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT as string
 
 const initializeSdk = function (): void {
     // Check if Firebase Admin SDK is already initialized, if not, then do it
