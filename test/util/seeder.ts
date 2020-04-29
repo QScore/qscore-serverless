@@ -8,6 +8,5 @@ export async function seedDatabase(): Promise<void> {
     };
 
     const seeds = await seeder.locateSeeds(source.sources)
-    console.log(">>SEEDING")
     await seeder.writeSeeds(localDocumentClient.batchWrite.bind(localDocumentClient), source.table, seeds)
 }

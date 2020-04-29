@@ -2,7 +2,8 @@
  * USAGE: npx ts-node ./scripts/generateSeed.ts
  */
 
-import { UserDynamo, EventDynamo, EventType, FollowDynamo, SearchDynamo } from '../src/data/model/Types';
+import { EventType } from '../src/data/model/types';
+import { UserDynamo, EventDynamo, FollowDynamo, SearchDynamo } from "../src/data/model/dynamoTypes";
 import faker from 'faker'
 import fs from 'fs';
 

@@ -1,7 +1,10 @@
 import * as AWS from "aws-sdk"
 import { Repository } from "./repository"
-import { User, Event, EventDynamo, UserDynamo, FollowDynamo, Follow, LeaderboardScore, SearchDynamo } from './model/Types'
+import { User, Event, Follow, LeaderboardScore, SearchResult } from './model/types'
+import { EventDynamo, UserDynamo, FollowDynamo, SearchDynamo } from "./model/dynamoTypes";
 import { RedisCache, LeaderboardScoreRedis } from './redisCache';
+import { encrypt, decrypt } from "../util/encryption/encryptor";
+// import { encryptor } from "./injector";
 
 const mainTable = process.env.MAIN_TABLE as string
 
@@ -124,8 +127,13 @@ export class MainRepository implements Repository {
         }) ?? []
     }
 
-    async searchUsers(searchQuery: string, limit: number): Promise<User[]> {
-        const eventParams: AWS.DynamoDB.DocumentClient.QueryInput = {
+    async searchUsersWithCursor(cursor: string): Promise<SearchResult> {
+        const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
+        return await this.doSearch(queryInput)
+    }
+
+    async searchUsers(searchQuery: string, limit: number): Promise<SearchResult> {
+        const queryInput: AWS.DynamoDB.DocumentClient.QueryInput = {
             TableName: mainTable,
             KeyConditionExpression: '#PK = :PK And begins_with(#SK, :SK)',
             ExpressionAttributeNames: {
@@ -138,10 +146,18 @@ export class MainRepository implements Repository {
             },
             Limit: limit
         }
-        const queryResult = await this.documentClient.query(eventParams).promise()
+        return await this.doSearch(queryInput)
+    }
+
+    private async doSearch(queryInput: AWS.DynamoDB.DocumentClient.QueryInput): Promise<SearchResult> {
+        const queryResult = await this.documentClient.query(queryInput).promise()
         if (!queryResult.Items || queryResult.Items.length == 0) {
-            return []
+            return {
+                users: [],
+                nextCursor: undefined
+            }
         }
+
         const users = queryResult.Items.map(item => {
             const user: User = {
                 userId: item.userId,
@@ -154,7 +170,20 @@ export class MainRepository implements Repository {
             }
             return user
         })
-        return users
+
+        return {
+            users: users,
+            nextCursor: (() => {
+                const lastKey = queryResult?.LastEvaluatedKey
+                if (!lastKey) {
+                    return undefined
+                }
+
+                const newQuery = queryInput
+                newQuery.ExclusiveStartKey = queryResult?.LastEvaluatedKey
+                return encrypt(JSON.stringify(newQuery))
+            })()
+        }
     }
 
     async unfollowUser(currentUserId: string, targetUserId: string): Promise<void> {

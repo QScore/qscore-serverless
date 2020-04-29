@@ -3,7 +3,7 @@ import * as AWS from "aws-sdk"
 import RedisMock from 'ioredis-mock';
 import Redis from 'ioredis'
 import { RedisCache } from './redisCache';
-import { MainResolver } from "../graphql/resolvers/mainResolver";
+import { MainResolver } from "./mainResolver";
 
 
 export const localDocumentClient = new AWS.DynamoDB.DocumentClient({

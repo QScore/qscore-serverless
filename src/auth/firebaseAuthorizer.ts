@@ -40,7 +40,6 @@ const generateIamPolicy = (effect: any, resource: any, data: any): any => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handler = async (event: any, context: Context): Promise<any> => {
-    const startTime = Date.now()
     try {
         if (process.env.SLS_OFFLINE) {
             return generateIamPolicy('Allow', event.methodArn, {
@@ -75,7 +74,6 @@ export const handler = async (event: any, context: Context): Promise<any> => {
         const resp = await admin.auth().verifyIdToken(tokenValue);
 
         console.log("Allowing request")
-        console.log(">>ELAPSED: " + (Date.now() - startTime))
         return generateIamPolicy('Allow', event.methodArn, resp);
     } catch (err) {
         console.log("Error validating: " + err)

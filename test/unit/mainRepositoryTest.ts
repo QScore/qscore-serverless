@@ -1,4 +1,4 @@
-import { User, Event, LeaderboardScore } from '../../src/data/model/Types';
+import { User, Event, LeaderboardScore } from '../../src/data/model/types';
 import faker from 'faker'
 import { assert } from "chai";
 import { v4 as uuid } from 'uuid';
@@ -72,11 +72,11 @@ describe("Main repository tests", () => {
     })
 
     it('Should search for users', async () => {
-        const results = await repository.searchUsers('t')
-        assert.equal(results.length, 1)
+        const results = await repository.searchUsers('t', 50)
+        assert.equal(results.users.length, 1)
 
-        const results2 = await repository.searchUsers(uuid())
-        assert.equal(results2.length, 0)
+        const results2 = await repository.searchUsers(uuid(), 50)
+        assert.equal(results2.users.length, 0)
     })
 
     it('Should not create event if same event type as previous ', async () => {

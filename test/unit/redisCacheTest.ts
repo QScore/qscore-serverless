@@ -1,5 +1,5 @@
 import { LatestEventRedis } from '../../src/data/redisCache';
-import { Event } from '../../src/data/model/Types';
+import { Event } from '../../src/data/model/types';
 
 import faker from 'faker';
 import { assert } from 'chai';

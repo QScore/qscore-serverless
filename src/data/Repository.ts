@@ -1,5 +1,5 @@
 import { GetUserAndEventsResult } from "./mainRepository";
-import { Event, User, LeaderboardScore } from './model/Types';
+import { Event, User, LeaderboardScore, SearchResult } from './model/types';
 
 export interface Repository {
     getAllTimeScore(userId: string): Promise<number>
@@ -9,7 +9,8 @@ export interface Repository {
     getUser(userId: string): Promise<User | undefined>
     updateUserInfo(userId: string, username: string, avatar?: string): Promise<void>
     getUserAndEventsFromStartTime(userId: string, startTimestamp: string): Promise<GetUserAndEventsResult>
-    searchUsers(searchQuery: string, limit: number): Promise<User[]>
+    searchUsersWithCursor(cursor: string): Promise<SearchResult>
+    searchUsers(searchQuery: string, limit: number): Promise<SearchResult>
     followUser(currentUserId: string, userIdToFollow: string)
     unfollowUser(currentUserId: string, userIdToUnfollow: string)
     getFollowedUsers(currentUserId: string): Promise<User[]>

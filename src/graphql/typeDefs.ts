@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { gql, ApolloError } from 'apollo-server-lambda';
-import { mainResolver } from '../../data/injector';
-import { UpdateUserInfoPayloadGql, CurrentUserPayloadGql, SearchUsersPayloadGql, FollowUserPayloadGql, UnfollowUserPayloadGql, GetUserPayloadGql, FollowedUsersPayloadGql, FollowingUsersPayloadGql, CreateGeofenceEventPayloadGql, LeaderboardRangePayloadGql } from './userInterfaces';
-import { MainResolver } from '../resolvers/mainResolver';
+import { mainResolver } from '../data/injector';
+import { UpdateUserInfoPayloadGql, CurrentUserPayloadGql, SearchUsersPayloadGql, FollowUserPayloadGql, UnfollowUserPayloadGql, GetUserPayloadGql, FollowedUsersPayloadGql, FollowingUsersPayloadGql, CreateGeofenceEventPayloadGql, LeaderboardRangePayloadGql } from './graphqlTypes';
+import { MainResolver } from '../data/mainResolver';
 
 export const typeDef = gql`
 schema {
@@ -39,10 +39,16 @@ type CurrentUserPayload {
 
 input SearchUsersInput {
     searchQuery: String!
+    limit: Int!
+}
+
+input SearchUsersWithCursorInput {
+    cursor: String!
 }
 
 type SearchUsersPayload {
     users: [User!]!
+    nextCursor: String
 }
 
 input GetUserInput {
@@ -121,6 +127,7 @@ type Mutation {
 type Query {
     currentUser: CurrentUserPayload!
     searchUsers(input: SearchUsersInput!): SearchUsersPayload!
+    searchUsersWithCursor(input: SearchUsersWithCursorInput!): SearchUsersPayload!
     getUser(input: GetUserInput!): GetUserPayload!
     followedUsers: FollowedUsersPayload!
     followers: FollowingUsersPayload!
@@ -168,7 +175,13 @@ export function buildResolver(resolver: MainResolver): any {
             searchUsers: async (parent: any, args: any, context: any): Promise<SearchUsersPayloadGql> => {
                 const userId = getUserIdFromContext(context)
                 const searchQuery = args.input.searchQuery
-                return await resolver.searchUsers(userId, searchQuery)
+                const limit = args.input.limit
+                return await resolver.searchUsers(userId, searchQuery, limit)
+            },
+
+            searchUsersWithCursor: async (parent: any, args: any, context: any): Promise<SearchUsersPayloadGql> => {
+                const cursor = args.input.cursor
+                return await resolver.searchUsersWithCursor(cursor)
             },
 
             getUser: async (parent: any, args: any, context: any): Promise<GetUserPayloadGql> => {
@@ -190,7 +203,7 @@ export function buildResolver(resolver: MainResolver): any {
                 const start: number = args.input.start
                 const end: number = args.input.end
                 return await resolver.getLeaderboardRange(start, end)
-            }
+            },
         }
     }
 }

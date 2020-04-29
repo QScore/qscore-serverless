@@ -1,7 +1,8 @@
-import { User, LeaderboardScore } from '../../data/model/Types';
+import { User, LeaderboardScore } from '../data/model/types';
 
 export interface SearchUsersPayloadGql {
     readonly users: User[]
+    readonly nextCursor: (string | undefined)
 }
 
 export interface CurrentUserPayloadGql {

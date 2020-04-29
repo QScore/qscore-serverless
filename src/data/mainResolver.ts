@@ -1,7 +1,7 @@
-import { Repository } from "../../data/repository"
-import { Event, EventType, User } from '../../data/model/Types'
+import { Repository } from "./repository"
+import { Event, EventType, User } from './model/types';
 import { ApolloError } from "apollo-server-lambda"
-import { SearchUsersPayloadGql, UpdateUserInfoPayloadGql, CurrentUserPayloadGql, FollowUserPayloadGql, GetUserPayloadGql, FollowingUsersPayloadGql, FollowedUsersPayloadGql, CreateGeofenceEventPayloadGql, LeaderboardRangePayloadGql } from '../types/userInterfaces';
+import { SearchUsersPayloadGql, UpdateUserInfoPayloadGql, CurrentUserPayloadGql, FollowUserPayloadGql, GetUserPayloadGql, FollowingUsersPayloadGql, FollowedUsersPayloadGql, CreateGeofenceEventPayloadGql, LeaderboardRangePayloadGql } from '../graphql/graphqlTypes';
 
 export class MainResolver {
     private repository: Repository
@@ -76,25 +76,30 @@ export class MainResolver {
         }
     }
 
-    //TODO: paginate this call
-    async searchUsers(currentUserId: string, searchQuery: string): Promise<SearchUsersPayloadGql> {
-        const users = await this.repository.searchUsers(searchQuery)
-        const searchUserIds = users.map(user => {
+    async searchUsersWithCursor(cursor: string): Promise<SearchUsersPayloadGql> {
+        return await this.repository.searchUsersWithCursor(cursor)
+    }
+
+    async searchUsers(currentUserId: string, searchQuery: string, limit: number): Promise<SearchUsersPayloadGql> {
+        const searchResult = await this.repository.searchUsers(searchQuery, limit)
+        const searchUserIds = searchResult.users.map(user => {
             return user.userId
         })
         if (searchUserIds.length == 0) {
             return {
-                users: []
+                users: [],
+                nextCursor: undefined
             }
         }
         const followedUserIds = await this.repository.getWhichUsersAreFollowed(currentUserId, searchUserIds)
         return {
-            users: users.map(user => {
+            users: searchResult.users.map(user => {
                 const result: User = Object.assign(user, {
                     isCurrentUserFollowing: followedUserIds.includes(user.userId)
                 })
                 return result
-            })
+            }),
+            nextCursor: searchResult.nextCursor
         }
     }
 

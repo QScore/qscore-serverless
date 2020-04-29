@@ -29,6 +29,7 @@
     "@types/chai-http": "^4.2.0",
     "apollo-server-lambda": "^2.11.0",
     "apollo-server-testing": "^2.12.0",
+    "cryptr": "^6.0.2",
     "dotenv": "^8.2.0",
     "firebase": "^7.13.1",
     "firebase-admin": "^8.10.0",

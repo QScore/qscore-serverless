@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import chaiHttp = require('chai-http');
 import { assert } from 'chai';
-import { User, Event } from '../../src/data/model/Types';
-import { FollowUserPayloadGql, UpdateUserInfoPayloadGql } from '../../src/graphql/types/userInterfaces';
+import { User, Event } from '../../src/data/model/types';
+import { FollowUserPayloadGql, UpdateUserInfoPayloadGql } from '../../src/graphql/graphqlTypes';
 import { seedDatabase } from '../util/seeder';
 
 chai.use(chaiHttp)

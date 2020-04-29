@@ -1,6 +1,6 @@
 import sinon, { stubInterface } from "ts-sinon";
-import { Event, User } from '../../src/data/model/Types';
-import { MainResolver } from '../../src/graphql/resolvers/mainResolver';
+import { Event, User, SearchResult } from '../../src/data/model/types';
+import { MainResolver } from '../../src/data/mainResolver';
 import { GetUserAndEventsResult } from '../../src/data/mainRepository';
 import { Repository } from '../../src/data/repository';
 import * as faker from 'faker';
@@ -297,33 +297,36 @@ describe('Main Resolver Unit Tests', function () {
 
 
     it('should search users', async () => {
-        testRepository.searchUsers.resolves([
-            {
-                userId: 'user1',
-                username: 'gertrude',
-                allTimeScore: 0,
-                followerCount: 0,
-                followingCount: 0,
-                score: 0,
-                avatar: undefined
-            },
-            {
-                userId: 'user2',
-                username: 'gerbert',
-                allTimeScore: 0,
-                followerCount: 0,
-                followingCount: 0,
-                score: 0,
-                avatar: undefined
-            }
-        ])
+        testRepository.searchUsers.resolves({
+            users: [
+                {
+                    userId: 'user1',
+                    username: 'gertrude',
+                    allTimeScore: 0,
+                    followerCount: 0,
+                    followingCount: 0,
+                    score: 0,
+                    avatar: undefined
+                },
+                {
+                    userId: 'user2',
+                    username: 'gerbert',
+                    allTimeScore: 0,
+                    followerCount: 0,
+                    followingCount: 0,
+                    score: 0,
+                    avatar: undefined
+                }
+            ],
+            nextCursor: undefined
+        })
 
         testRepository.getWhichUsersAreFollowed.resolves([
             'user1'
         ])
 
-        const result = await resolver.searchUsers(fakeUser.userId, 'g')
-        const expectedResult = {
+        const result = await resolver.searchUsers(fakeUser.userId, 'g', 50)
+        const expectedResult: SearchResult = {
             users: [{
                 userId: 'user1',
                 username: 'gertrude',
@@ -342,9 +345,9 @@ describe('Main Resolver Unit Tests', function () {
                 score: 0,
                 allTimeScore: 0,
                 avatar: undefined
-            }]
+            }],
+            nextCursor: undefined
         }
-
         assert.deepStrictEqual(result, expectedResult, "Users do not match")
     })
 })
@@ -408,8 +411,8 @@ describe('Main Resolver Integration tests', function () {
     it('should search users', async () => {
         const userSuffix = uuid()
         const user = await repository.createUser(uuid(), "Billy" + userSuffix)
-        const searchResults1 = (await resolver.searchUsers(user.userId, "billy")).users
-        const searchResults2 = (await resolver.searchUsers(user.userId, "billy" + userSuffix)).users
+        const searchResults1 = (await resolver.searchUsers(user.userId, "billy", 50)).users
+        const searchResults2 = (await resolver.searchUsers(user.userId, "billy" + userSuffix, 50)).users
         const expected: User = Object.assign(user, {
             isCurrentUserFollowing: false,
             followerCount: undefined,
@@ -430,12 +433,23 @@ describe('Main Resolver Integration tests', function () {
             allTimeScore: undefined,
             score: undefined
         } as User)
-        const searchResults3 = (await resolver.searchUsers(user.userId, "someone" + userSuffix)).users
+        const searchResults3 = (await resolver.searchUsers(user.userId, "someone" + userSuffix, 50)).users
         assert.deepStrictEqual(searchResults3[0], expected2)
 
         //Should handle case where no users found
-        const noUsersResult = (await resolver.searchUsers(user.userId, "fhdsglkjfhdgks")).users
+        const noUsersResult = (await resolver.searchUsers(user.userId, "fhdsglkjfhdgks", 50)).users
         assert.equal(noUsersResult.length, 0)
+    })
+
+    it('should paginate search users', async () => {
+        const user = await repository.createUser(uuid(), "Billy" + uuid())
+        const user2 = await repository.createUser(uuid(), "Billy" + uuid())
+        const searchResults = await resolver.searchUsers(user.userId, "billy", 1)
+        assert.equal(searchResults.users.length, 1)
+        assert.exists(searchResults.nextCursor)
+        const searchResults2 = await resolver.searchUsersWithCursor(searchResults.nextCursor as string)
+        assert.equal(searchResults2.users.length, 1)
+        assert.notDeepEqual(searchResults2.users[0], searchResults.users[0])
     })
 
 

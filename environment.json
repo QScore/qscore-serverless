@@ -1,3 +1,4 @@
 {
-  "FIREBASE_DATABASE_URL": "https://qscore-1414c.firebaseio.com"
+  "FIREBASE_DATABASE_URL": "https://qscore-1414c.firebaseio.com",
+  "SECRET_KEY": "kYp3s6v8y/B?E(H+MbQeThWmZq4t7w!z"
 }

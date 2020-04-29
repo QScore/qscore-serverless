@@ -1,5 +1,5 @@
 import { Redis as RedisInterface } from "ioredis";
-import { Event, EventType } from './model/Types';
+import { Event, EventType } from './model/types';
 
 const leaderboardAllTimeKey = "leaderboardAllTime"
 
