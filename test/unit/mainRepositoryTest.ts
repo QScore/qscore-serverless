@@ -1,8 +1,8 @@
-import { User, Event, LeaderboardScore } from '../../src/data/model/types';
+import {Event, LeaderboardScore, User} from '../../src/data/model/types';
 import faker from 'faker'
-import { assert } from "chai";
-import { v4 as uuid } from 'uuid';
-import { testRepository, testRedis } from '../../src/data/testInjector';
+import {assert} from "chai";
+import {v4 as uuid} from 'uuid';
+import {testRedis, testRepository} from '../../src/data/testInjector';
 
 const redis = testRedis
 const repository = testRepository
@@ -137,7 +137,10 @@ describe("Main repository tests", () => {
 
     it('Should update user', async () => {
         const user = await createFakeUser()
-        await repository.updateUserInfo(user.userId, user.username + 'zzz')
+        await repository.updateUserInfo({
+            userId: user.userId,
+            username: user.username + 'zzz'
+        })
         const userResult = await repository.getUser(user.userId)
         const expectedUser: User = {
             userId: user.userId,
@@ -148,13 +151,6 @@ describe("Main repository tests", () => {
             followingCount: 0
         }
         assert.deepStrictEqual(userResult, expectedUser)
-
-        //Create user if username does not already exists
-        const fakeUserId = uuid()
-        const fakeusername = uuid()
-        await repository.updateUserInfo(fakeUserId, fakeusername)
-        const newUser = await repository.getUser(fakeUserId)
-        assert.equal(newUser?.username, fakeusername)
     });
 
     it('Should update leaderboards', async () => {

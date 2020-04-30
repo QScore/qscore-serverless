@@ -1,12 +1,12 @@
-import sinon, { stubInterface } from "ts-sinon";
-import { Event, User, SearchResult } from '../../src/data/model/types';
-import { MainResolver } from '../../src/data/mainResolver';
-import { GetUserAndEventsResult } from '../../src/data/mainRepository';
-import { Repository } from '../../src/data/repository';
+import sinon, {stubInterface} from "ts-sinon";
+import {Event, SearchResult, User} from '../../src/data/model/types';
+import {MainResolver} from '../../src/data/mainResolver';
+import {GetUserAndEventsResult} from '../../src/data/mainRepository';
+import {Repository} from '../../src/data/repository';
 import * as faker from 'faker';
-import { v4 as uuid } from 'uuid';
-import { assert } from "chai";
-import { testResolver, testRepository, testRedis } from '../../src/data/testInjector';
+import {v4 as uuid} from 'uuid';
+import {assert} from "chai";
+import {testRedis, testRepository, testResolver} from '../../src/data/testInjector';
 
 let clock: sinon.SinonFakeTimers
 
@@ -355,6 +355,15 @@ describe('Main Resolver Unit Tests', function () {
 describe('Main Resolver Integration tests', function () {
     const repository = testRepository
     const resolver = testResolver
+
+    it('should create new user', async () => {
+        const username = uuid()
+        const userId = uuid()
+        const result = await resolver.createUser(userId, username)
+        assert.equal(result.user.username, username)
+        assert.equal(result.user.userId, userId)
+    })
+
     it('should get user', async () => {
         const user = await repository.createUser(uuid(), uuid())
         const result = await repository.getUser(user.userId)
@@ -383,7 +392,7 @@ describe('Main Resolver Integration tests', function () {
         const user1Follows = await resolver.getFollowedUsers(user1.userId)
         assert.equal(followingUser1.users.length, 0)
         assert.equal(user1Follows.users.length, 1)
-        const expected1: User = Object.assign(user2, { followerCount: 1 })
+        const expected1: User = Object.assign(user2, {followerCount: 1})
         const actual1: User = user1Follows.users[0]
         assert.deepStrictEqual(actual1, expected1)
 
@@ -392,7 +401,7 @@ describe('Main Resolver Integration tests', function () {
         const user2Follows = await resolver.getFollowedUsers(user2.userId)
         assert.equal(followingUser2.users.length, 1)
         assert.equal(user2Follows.users.length, 0)
-        const expected2: User = Object.assign(user1, { followingCount: 1 })
+        const expected2: User = Object.assign(user1, {followingCount: 1})
         const actual2: User = followingUser2.users[0]
         assert.deepStrictEqual(actual2, expected2)
 
@@ -456,24 +465,30 @@ describe('Main Resolver Integration tests', function () {
     it('should update user info', async () => {
         const user1 = await repository.createUser(uuid(), uuid())
         const newUsername = user1.username + "zzz"
-        await resolver.updateUserInfo(user1.userId, newUsername)
+        await resolver.updateUserInfo({userId: user1.userId, username: newUsername})
         const result = await resolver.getUser(user1.userId)
         assert.equal(result.user?.username, newUsername)
 
         //Test updating to the same name
-        await resolver.updateUserInfo(user1.userId, newUsername)
+        await resolver.updateUserInfo({userId: user1.userId, username: newUsername})
 
         //Test adding an avatar
         const avatar = uuid()
-        await resolver.updateUserInfo(user1.userId, newUsername, avatar)
+        await resolver.updateUserInfo({
+            userId: user1.userId,
+            avatar: avatar
+        })
         const result2 = await resolver.getUser(user1.userId)
         assert.equal(result2.user?.avatar, avatar)
 
         //Updating username should not remove avatar
         const newUsername2 = uuid()
-        await resolver.updateUserInfo(user1.userId, newUsername2)
-        // const result3 = await resolver.getUser(user1.userId)
-        // assert.equal(result3.user?.avatar, avatar)
+        await resolver.updateUserInfo({
+            userId: user1.userId,
+            username: newUsername2
+        })
+        const result3 = await resolver.getUser(user1.userId)
+        assert.equal(result3.user?.avatar, avatar)
     })
 
     it('should throw error if user does not exist', async () => {
@@ -490,24 +505,24 @@ describe('Main Resolver Integration tests', function () {
         const user2 = await repository.createUser("second-" + uuid(), uuid())
         const user3 = await repository.createUser("third-" + uuid(), uuid())
 
-        clock = sinon.useFakeTimers({ now: 100 })
+        clock = sinon.useFakeTimers({now: 100})
         await resolver.createEvent(user1.userId, "HOME")
 
-        clock = sinon.useFakeTimers({ now: 200 })
+        clock = sinon.useFakeTimers({now: 200})
         await resolver.createEvent(user1.userId, "AWAY")
         await resolver.createEvent(user2.userId, "HOME")
 
-        clock = sinon.useFakeTimers({ now: 300 })
+        clock = sinon.useFakeTimers({now: 300})
         await resolver.createEvent(user1.userId, "HOME")
         await resolver.createEvent(user2.userId, "AWAY")
         await resolver.createEvent(user3.userId, "HOME")
 
-        clock = sinon.useFakeTimers({ now: 400 })
+        clock = sinon.useFakeTimers({now: 400})
         await resolver.createEvent(user1.userId, "AWAY")
         await resolver.createEvent(user2.userId, "HOME")
         await resolver.createEvent(user3.userId, "AWAY")
 
-        clock = sinon.useFakeTimers({ now: 500 })
+        clock = sinon.useFakeTimers({now: 500})
         await resolver.createEvent(user1.userId, "HOME")
         await resolver.createEvent(user2.userId, "AWAY")
         await resolver.createEvent(user3.userId, "HOME")
@@ -529,7 +544,7 @@ describe('Main Resolver Integration tests', function () {
             user: user3
         })
 
-        clock = sinon.useFakeTimers({ now: 1000 })
+        clock = sinon.useFakeTimers({now: 1000})
         await resolver.getCurrentUser(user1.userId)
         await resolver.getCurrentUser(user2.userId)
         await resolver.getCurrentUser(user3.userId)
@@ -583,39 +598,39 @@ describe('Main Resolver Integration tests', function () {
 
     it('creating event should update all time score', async () => {
         const user = await repository.createUser(uuid(), uuid())
-        clock = sinon.useFakeTimers({ now: 100 })
+        clock = sinon.useFakeTimers({now: 100})
         await resolver.createEvent(user.userId, "HOME")
         let result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 0)
 
-        clock = sinon.useFakeTimers({ now: 200 });
+        clock = sinon.useFakeTimers({now: 200});
         await resolver.createEvent(user.userId, "AWAY")
         result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 0.000001)
 
-        clock = sinon.useFakeTimers({ now: 300 });
+        clock = sinon.useFakeTimers({now: 300});
         await resolver.createEvent(user.userId, "HOME")
         result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 0.000001)
 
-        clock = sinon.useFakeTimers({ now: 500 });
+        clock = sinon.useFakeTimers({now: 500});
         await resolver.createEvent(user.userId, "AWAY")
         result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 0.000003)
 
         //Time elapses, score is the same because last event was AWAY
-        clock = sinon.useFakeTimers({ now: 1000 });
+        clock = sinon.useFakeTimers({now: 1000});
         result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 0.000003)
 
         //Now Home event comes in
-        clock = sinon.useFakeTimers({ now: 1500 });
+        clock = sinon.useFakeTimers({now: 1500});
         await resolver.createEvent(user.userId, "HOME")
         result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 0.000003)
 
         //Now recheck 500ms later
-        clock = sinon.useFakeTimers({ now: 2000 });
+        clock = sinon.useFakeTimers({now: 2000});
         result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 0.000008)
     })

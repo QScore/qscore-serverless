@@ -1,13 +1,32 @@
-import { Repository } from "./repository"
-import { Event, EventType, User } from './model/types';
-import { ApolloError } from "apollo-server-lambda"
-import { SearchUsersPayloadGql, UpdateUserInfoPayloadGql, CurrentUserPayloadGql, FollowUserPayloadGql, GetUserPayloadGql, FollowingUsersPayloadGql, FollowedUsersPayloadGql, CreateGeofenceEventPayloadGql, LeaderboardRangePayloadGql } from '../graphql/graphqlTypes';
+import {Repository} from "./repository"
+import {Event, EventType, User} from './model/types';
+import {ApolloError} from "apollo-server-lambda"
+import {
+    CreateGeofenceEventPayloadGql,
+    CreateUserPayloadGql,
+    CurrentUserPayloadGql,
+    FollowedUsersPayloadGql,
+    FollowingUsersPayloadGql,
+    FollowUserPayloadGql,
+    GetUserPayloadGql,
+    LeaderboardRangePayloadGql,
+    SearchUsersPayloadGql,
+    UpdateUserInfoPayloadGql
+} from '../graphql/graphqlTypes';
+import {UserInfoParams} from "./mainRepository";
 
 export class MainResolver {
-    private repository: Repository
+    private readonly repository: Repository
 
     constructor(repository: Repository) {
         this.repository = repository
+    }
+
+    async createUser(userId: string, username: any): Promise<CreateUserPayloadGql> {
+        const user = await this.repository.createUser(userId, username)
+        return {
+            user: user
+        }
     }
 
     async getLeaderboardRange(start: number, end: number): Promise<LeaderboardRangePayloadGql> {
@@ -103,18 +122,19 @@ export class MainResolver {
         }
     }
 
-    async updateUserInfo(userId: string, username: string, avatar?: string): Promise<UpdateUserInfoPayloadGql> {
-        await this.repository.updateUserInfo(userId, username, avatar)
+    async updateUserInfo(userInfoParams: UserInfoParams): Promise<UpdateUserInfoPayloadGql> {
+        await this.repository.updateUserInfo(userInfoParams)
         const result: UpdateUserInfoPayloadGql = {
-            id: userId,
-            username: username,
+            id: userInfoParams.userId,
+            username: userInfoParams.userId,
+            avatar: userInfoParams.avatar
         }
         return result
     }
 
     async getCurrentUser(userId: string): Promise<CurrentUserPayloadGql> {
         const startTime = this.getYesterdayISOString()
-        const { user, events } = await this.repository.getUserAndEventsFromStartTime(userId, startTime)
+        const {user, events} = await this.repository.getUserAndEventsFromStartTime(userId, startTime)
         if (!user) {
             throw new ApolloError("Current user could not be resolved")
         }

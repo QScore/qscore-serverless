@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ApolloServer } from "apollo-server-lambda";
-import { typeDef as userTypeDef, buildResolver } from './typeDefs';
+import { typeDef as userTypeDef, buildResolver } from './mainDefs';
 import { Context, Callback } from 'aws-lambda';
 import { mainResolver } from '../data/injector';
 import { localResolver } from '../data/testInjector';

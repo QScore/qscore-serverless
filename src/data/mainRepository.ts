@@ -1,12 +1,17 @@
 import * as AWS from "aws-sdk"
-import { Repository } from "./repository"
-import { User, Event, Follow, LeaderboardScore, SearchResult } from './model/types'
-import { EventDynamo, UserDynamo, FollowDynamo, SearchDynamo } from "./model/dynamoTypes";
-import { RedisCache, LeaderboardScoreRedis } from './redisCache';
-import { encrypt, decrypt } from "../util/encryption/encryptor";
-// import { encryptor } from "./injector";
+import {Repository} from "./repository"
+import {Event, Follow, LeaderboardScore, SearchResult, User} from './model/types'
+import {EventDynamo, FollowDynamo, SearchDynamo, UserDynamo} from "./model/dynamoTypes";
+import {LeaderboardScoreRedis, RedisCache} from './redisCache';
+import {decrypt, encrypt} from "../util/encryption/encryptor";
 
 const mainTable = process.env.MAIN_TABLE as string
+
+export interface UserInfoParams {
+    readonly userId: string,
+    readonly username?: string,
+    readonly avatar?: string
+}
 
 export class MainRepository implements Repository {
     private documentClient: AWS.DynamoDB.DocumentClient
@@ -173,7 +178,7 @@ export class MainRepository implements Repository {
 
         return {
             users: users,
-            nextCursor: (() => {
+            nextCursor: ((): string | undefined => {
                 const lastKey = queryResult?.LastEvaluatedKey
                 if (!lastKey) {
                     return undefined
@@ -433,15 +438,10 @@ export class MainRepository implements Repository {
         return event
     }
 
-    //This functions as a create sometimes
-    async updateUserInfo(userId: string, username: string, avatar?: string): Promise<void> {
+    async updateUserInfo(userInfoParams: UserInfoParams): Promise<void> {
         //Check for existing user:
+        const {userId, avatar, username} = userInfoParams
         const existingUser = await this.getUser(userId)
-
-        if (!existingUser) {
-            await this.createUser(userId, username, avatar)
-            return
-        }
 
         const transactItems: AWS.DynamoDB.DocumentClient.TransactWriteItemList = []
         const update: AWS.DynamoDB.DocumentClient.TransactWriteItem = {
@@ -452,23 +452,29 @@ export class MainRepository implements Repository {
                     "SK": `EVENT#9999`
                 },
                 UpdateExpression: ((): string => {
-                    let expression = "set username = :username "
-                    expression += avatar ? ", avatar = :avatar" : "remove avatar"
-                    return expression
+                    let setExpressions: string[] = []
+                    if (username) {
+                        setExpressions.push("username = :username")
+                    }
+                    if (avatar) {
+                        setExpressions.push("avatar = :avatar")
+                    }
+
+                    let result = ""
+                    if (setExpressions.length > 0) result += " set " + setExpressions.join(",")
+                    return result
                 })(),
                 ExpressionAttributeValues: ((): AWS.DynamoDB.DocumentClient.ExpressionAttributeValueMap => {
                     const result: AWS.DynamoDB.DocumentClient.ExpressionAttributeValueMap = {}
                     result[":username"] = username
-                    if (avatar) {
-                        result[":avatar"] = avatar
-                    }
+                    result[":avatar"] = avatar
                     return result
                 })()
             }
         }
         transactItems.push(update)
 
-        if (existingUser?.username != username) {
+        if (username && existingUser?.username != username) {
             //Username changed, update it
             transactItems.push({
                 Delete: {

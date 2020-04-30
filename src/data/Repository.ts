@@ -1,22 +1,39 @@
-import { GetUserAndEventsResult } from "./mainRepository";
-import { Event, User, LeaderboardScore, SearchResult } from './model/types';
+import {GetUserAndEventsResult, UserInfoParams} from "./mainRepository";
+import {Event, LeaderboardScore, SearchResult, User} from './model/types';
 
 export interface Repository {
+    createUser(userId: string, username: string, avatar?: string): Promise<User>
+
     getAllTimeScore(userId: string): Promise<number>
+
     getAllTimeLeaderboardRank(userId: string): Promise<number>
+
     getLeaderboardScoreRange(start: number, end: number): Promise<LeaderboardScore[]>
+
     saveAllTimeScore(userId: string, score: number): Promise<void>
+
     getUser(userId: string): Promise<User | undefined>
-    updateUserInfo(userId: string, username: string, avatar?: string): Promise<void>
+
+    updateUserInfo(userId: UserInfoParams): Promise<void>
+
     getUserAndEventsFromStartTime(userId: string, startTimestamp: string): Promise<GetUserAndEventsResult>
+
     searchUsersWithCursor(cursor: string): Promise<SearchResult>
+
     searchUsers(searchQuery: string, limit: number): Promise<SearchResult>
+
     followUser(currentUserId: string, userIdToFollow: string)
+
     unfollowUser(currentUserId: string, userIdToUnfollow: string)
+
     getFollowedUsers(currentUserId: string): Promise<User[]>
+
     getFollowers(currentUserId: string): Promise<User[]>
+
     createEvent(event: Event): Promise<Event>
+
     getLatestEventForUser(userId: string): Promise<Event | undefined>
+
     getWhichUsersAreFollowed(currentUserId: string, userIdsToCheck: string[]): Promise<string[]>
 }
 
