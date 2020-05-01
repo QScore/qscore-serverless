@@ -2,8 +2,8 @@
  * USAGE: npx ts-node ./scripts/generateSeed.ts
  */
 
-import { EventType } from '../src/data/model/types';
-import { UserDynamo, EventDynamo, FollowDynamo, SearchDynamo } from "../src/data/model/dynamoTypes";
+import {EventType} from '../src/data/model/types';
+import {EventDynamo, FollowDynamo, SearchDynamo, UserDynamo} from "../src/data/model/dynamoTypes";
 import faker from 'faker'
 import fs from 'fs';
 
@@ -40,7 +40,8 @@ for (let i = 0; i < numUsers; i++) {
         PK: `SEARCH`,
         SK: username.toLowerCase(),
         username: username,
-        userId: userId
+        userId: userId,
+        itemType: "Search"
     }
     searches.push(searchDynamo)
 

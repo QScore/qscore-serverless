@@ -424,10 +424,9 @@ describe('Main Resolver Integration tests', function () {
         const searchResults2 = (await resolver.searchUsers(user.userId, "billy" + userSuffix, 50)).users
         const expected: User = Object.assign(user, {
             isCurrentUserFollowing: false,
-            followerCount: undefined,
-            followingCount: undefined,
-            allTimeScore: undefined,
-            score: undefined
+            followerCount: 0,
+            followingCount: 0,
+            allTimeScore: 0
         } as User)
         assert(searchResults1.length > 0)
         assert.deepStrictEqual(searchResults2[0], expected)
@@ -437,10 +436,9 @@ describe('Main Resolver Integration tests', function () {
         await resolver.followUser(user.userId, user2.userId)
         const expected2: User = Object.assign(user2, {
             isCurrentUserFollowing: true,
-            followerCount: undefined,
-            followingCount: undefined,
-            allTimeScore: undefined,
-            score: undefined
+            followerCount: 1,
+            followingCount: 0,
+            allTimeScore: 0
         } as User)
         const searchResults3 = (await resolver.searchUsers(user.userId, "someone" + userSuffix, 50)).users
         assert.deepStrictEqual(searchResults3[0], expected2)

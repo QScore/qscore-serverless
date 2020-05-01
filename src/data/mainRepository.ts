@@ -46,34 +46,7 @@ export class MainRepository implements Repository {
         if (userIds.length == 0) {
             return []
         }
-
-        //Batch get all usernames from scores
-        const keys = userIds.map(userId => {
-            return {
-                PK: `USER#${userId}`,
-                SK: `EVENT#9999`
-            }
-        })
-        const batchGetParams: AWS.DynamoDB.DocumentClient.BatchGetItemInput = {
-            RequestItems: {
-                [mainTable]: {
-                    Keys: keys
-                }
-            }
-        }
-        const batchGetResults = await this.documentClient.batchGet(batchGetParams).promise()
-        const resultItems = batchGetResults.Responses?.[mainTable] ?? []
-
-        const users: User[] = resultItems.map(resultItem => {
-            return {
-                userId: resultItem.userId,
-                username: resultItem.username,
-                followerCount: resultItem.followerCount,
-                followingCount: resultItem.followingCount,
-                allTimeScore: resultItem.allTimeScore,
-                avatar: resultItem.avatar
-            }
-        })
+        const users = await this.batchGetUsers(userIds)
         const userMap = new Map(users.map(user => [user.userId, user]));
 
         //Filter scores that do not have a corresponding user 
@@ -163,19 +136,12 @@ export class MainRepository implements Repository {
             }
         }
 
-        const users = queryResult.Items.map(item => {
-            const user: User = {
-                userId: item.userId,
-                username: item.username,
-                followerCount: item.followerCount,
-                followingCount: item.followingCount,
-                allTimeScore: item.allTimeScore,
-                score: item.score,
-                avatar: item.avatar
-            }
-            return user
+        //Batch get users
+        const userIds = queryResult.Items.map(user => {
+            return user.userId
         })
 
+        const users = await this.batchGetUsers(userIds)
         return {
             users: users,
             nextCursor: ((): string | undefined => {
@@ -322,10 +288,18 @@ export class MainRepository implements Repository {
             return []
         }
 
+        const userIds = users.map((user) => {
+            return user.followingUserId
+        })
+
+        return await this.batchGetUsers(userIds)
+    }
+
+    private async batchGetUsers(userIds: string[]): Promise<User[]> {
         //Batch get users
-        const keys = users.map(user => {
+        const keys = userIds.map(userId => {
             return {
-                PK: `USER#${user.followingUserId}`,
+                PK: `USER#${userId}`,
                 SK: `EVENT#9999`
             }
         })
@@ -380,30 +354,10 @@ export class MainRepository implements Repository {
 
         //Batch get users
         const keys = followerUsers.map(user => {
-            return {
-                PK: `USER#${user.userId}`,
-                SK: `EVENT#9999`
-            }
+            return user.userId
         })
 
-        const batchGetParams: AWS.DynamoDB.DocumentClient.BatchGetItemInput = {
-            RequestItems: {
-                [mainTable]: {
-                    Keys: keys
-                }
-            }
-        }
-        const results = await this.documentClient.batchGet(batchGetParams).promise()
-        return results.Responses?.[mainTable].map((user: UserDynamo) => {
-            return {
-                userId: user.userId,
-                username: user.username,
-                followerCount: user.followerCount,
-                followingCount: user.followingCount,
-                allTimeScore: user.allTimeScore,
-                avatar: user.avatar
-            }
-        }) ?? []
+        return await this.batchGetUsers(keys)
     }
 
     async createEvent(event: Event): Promise<Event> {
@@ -492,7 +446,8 @@ export class MainRepository implements Repository {
                         PK: `SEARCH`,
                         SK: username.toLowerCase(),
                         username: username,
-                        userId: userId
+                        userId: userId,
+                        itemType: "Search"
                     }
                 }
             })
@@ -523,7 +478,8 @@ export class MainRepository implements Repository {
             PK: `SEARCH`,
             SK: username.toLowerCase(),
             username: username,
-            userId: userId
+            userId: userId,
+            itemType: "Search"
         }
 
         const params: AWS.DynamoDB.DocumentClient.TransactWriteItemsInput = {

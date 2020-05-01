@@ -1,5 +1,7 @@
-import { EventType } from "./types"
-export type DynamoType = "Event" | "User" | "Follow"
+import {EventType} from "./types"
+
+export type DynamoType = "Event" | "User" | "Follow" | "Search"
+
 export interface UserDynamo {
     readonly PK: string
     readonly SK: string
@@ -13,6 +15,7 @@ export interface UserDynamo {
     readonly allTimeScore: number
     readonly avatar?: string
 }
+
 export interface EventDynamo {
     readonly PK: string
     readonly SK: string
@@ -21,6 +24,7 @@ export interface EventDynamo {
     readonly eventType: EventType
     readonly userId: string
 }
+
 export interface FollowDynamo {
     readonly PK: string
     readonly SK: string
@@ -30,9 +34,11 @@ export interface FollowDynamo {
     readonly userId: string
     readonly followingUserId: string
 }
+
 export interface SearchDynamo {
     readonly PK: string
     readonly SK: string
     readonly username: string
     readonly userId: string
+    readonly itemType: DynamoType
 }
