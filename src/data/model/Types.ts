@@ -15,6 +15,7 @@ export interface User {
     readonly score?: number
     readonly avatar: (string | undefined)
     readonly isCurrentUserFollowing?: boolean
+    readonly rank?: number
 }
 
 export interface SearchResult {
@@ -25,11 +26,5 @@ export interface SearchResult {
 export interface Follow {
     readonly userId: string
     readonly followingUserId: string
-}
-
-export interface LeaderboardScore {
-    readonly rank: number
-    readonly user: User
-    readonly score: number
 }
 

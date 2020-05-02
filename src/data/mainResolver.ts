@@ -30,17 +30,49 @@ export class MainResolver {
     }
 
     async getLeaderboardRange(start: number, end: number): Promise<LeaderboardRangePayloadGql> {
-        const scores = await this.repository.getLeaderboardScoreRange(start, end)
+        const users = await this.repository.getLeaderboardScoreRange(start, end)
         return {
-            leaderboardScores: scores
+            users: users
         }
     }
 
-    async getUser(userId: string): Promise<GetUserPayloadGql> {
+    async getUser(currentUserId: string, userId: string): Promise<GetUserPayloadGql> {
         const user = await this.repository.getUser(userId)
-        return {
-            user: user
+        if (!user) {
+            throw new ApolloError("User could not be resolved for id: " + userId)
         }
+
+        //Calculate all time score
+        const latestEvent = await this.repository.getLatestEventForUser(userId)
+        let allTimeScore = 0
+        if (latestEvent?.eventType == "HOME") {
+            allTimeScore = await this.updateAllTimeScore(userId, latestEvent)
+        } else {
+            allTimeScore = await this.repository.getAllTimeScore(userId)
+        }
+        const rank = await this.repository.getAllTimeLeaderboardRank(userId)
+
+        //Check if current user is following
+        const isCurrentUserFollowing = await this.isCurrentUserFollowing(currentUserId, userId)
+
+        const result: User = {
+            userId: user.userId,
+            username: user.username,
+            avatar: user.avatar,
+            followerCount: user.followerCount,
+            followingCount: user.followingCount,
+            isCurrentUserFollowing: isCurrentUserFollowing,
+            allTimeScore: allTimeScore,
+            rank: rank
+        }
+        return {
+            user: result
+        }
+    }
+
+    private async isCurrentUserFollowing(currentUserId: string, userId: string) {
+        const followedUserIds = await this.repository.getWhichUsersAreFollowed(currentUserId, [userId])
+        return followedUserIds.includes(userId)
     }
 
     async getFollowers(userId: string): Promise<FollowingUsersPayloadGql> {
@@ -88,6 +120,7 @@ export class MainResolver {
         const event = await this.repository.createEvent(input)
 
         if (previousEvent && event?.eventType == "AWAY") {
+            console.log(">>UPDate all time score")
             await this.updateAllTimeScore(userId, previousEvent)
         }
         return {
@@ -150,7 +183,7 @@ export class MainResolver {
         const rank = await this.repository.getAllTimeLeaderboardRank(userId)
 
         const result: User = Object.assign(user, {
-            allTimeScore: allTimeScore / 100000000,
+            allTimeScore: allTimeScore,
             score: score24,
             rank: rank
         })
@@ -162,10 +195,10 @@ export class MainResolver {
 
     private async updateAllTimeScore(userId: string, latestEvent: Event): Promise<number> {
         const currentTimeMillis = Date.now()
-        const extra = currentTimeMillis - new Date(latestEvent.timestamp).getTime()
+        const extra = (currentTimeMillis - new Date(latestEvent.timestamp).getTime()) / 1000 / 10 //Every 5 seconds
         const currentAllTimeScore = await this.repository.getAllTimeScore(userId)
         const finalAllTimeScore = currentAllTimeScore + extra
-        await this.repository.saveAllTimeScore(userId, finalAllTimeScore)
+        await this.repository.saveAllTimeScore(userId, finalAllTimeScore, latestEvent)
         return finalAllTimeScore
     }
 

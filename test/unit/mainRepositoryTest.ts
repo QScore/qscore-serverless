@@ -1,4 +1,4 @@
-import {Event, LeaderboardScore, User} from '../../src/data/model/types';
+import {Event, User} from '../../src/data/model/types';
 import faker from 'faker'
 import {assert} from "chai";
 import {v4 as uuid} from 'uuid';
@@ -170,47 +170,20 @@ describe("Main repository tests", () => {
         // //Fake user ids should not actually be possible
         const scores = await repository.getLeaderboardScoreRange(0, 10)
         assert.equal(scores.length, 6, "Scores has wrong length!")
-        const expected1: LeaderboardScore = {
-            user: user1,
-            score: 900,
-            rank: 1
-        }
 
-        const expected2: LeaderboardScore = {
-            user: user2,
-            score: 700,
-            rank: 2
-        }
+        Object.assign(user1, {allTimeScore: 900, rank: 1})
+        Object.assign(user2, {allTimeScore: 700, rank: 2})
+        Object.assign(user3, {allTimeScore: 700, rank: 2})
+        Object.assign(user4, {allTimeScore: 400, rank: 3})
+        Object.assign(user5, {allTimeScore: 400, rank: 3})
+        Object.assign(user6, {allTimeScore: 200, rank: 4})
 
-        const expected3: LeaderboardScore = {
-            user: user3,
-            score: 700,
-            rank: 2
-        }
-
-        const expected4: LeaderboardScore = {
-            user: user4,
-            score: 400,
-            rank: 3
-        }
-
-        const expected5: LeaderboardScore = {
-            user: user5,
-            score: 400,
-            rank: 3
-        }
-        const expected6: LeaderboardScore = {
-            user: user6,
-            score: 200,
-            rank: 4
-        }
-
-        assert.deepStrictEqual(scores[0], expected1, "First user is incorrect")
-        assert.deepStrictEqual(scores[1], expected3, "Second user is incorrect")
-        assert.deepStrictEqual(scores[2], expected2, "Third user is incorrect")
-        assert.deepStrictEqual(scores[3], expected5, "Fourth user is incorrect")
-        assert.deepStrictEqual(scores[4], expected4, "Fifth user is incorrect")
-        assert.deepStrictEqual(scores[5], expected6, "Sixth user is incorrect")
+        assert.deepStrictEqual(scores[0], user1, "First user is incorrect")
+        assert.deepStrictEqual(scores[1], user3, "Second user is incorrect")
+        assert.deepStrictEqual(scores[2], user2, "Third user is incorrect")
+        assert.deepStrictEqual(scores[3], user5, "Fourth user is incorrect")
+        assert.deepStrictEqual(scores[4], user4, "Fifth user is incorrect")
+        assert.deepStrictEqual(scores[5], user6, "Sixth user is incorrect")
     });
 
     it('Should save all time score', async () => {

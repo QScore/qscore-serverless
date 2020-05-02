@@ -371,6 +371,7 @@ describe('Main Resolver Integration tests', function () {
     })
 
     it('should follow and unfollow user', async () => {
+        const currentUser = await repository.createUser(uuid(), uuid())
         const user1 = await repository.createUser(uuid(), uuid())
         const user2 = await repository.createUser(uuid(), uuid())
 
@@ -379,8 +380,8 @@ describe('Main Resolver Integration tests', function () {
 
         await resolver.followUser(user1.userId, user2.userId)
 
-        const user1Result = await resolver.getUser(user1.userId)
-        const user2Result = await resolver.getUser(user2.userId)
+        const user1Result = await resolver.getUser(currentUser.userId, user1.userId)
+        const user2Result = await resolver.getUser(currentUser.userId, user2.userId)
 
         assert.equal(user1Result.user?.followingCount, 1)
         assert.equal(user1Result.user?.followerCount, 0)
@@ -411,10 +412,10 @@ describe('Main Resolver Integration tests', function () {
         assert.equal((await resolver.getFollowedUsers(user1.userId)).users.length, 0)
         assert.equal((await resolver.getFollowers(user2.userId)).users.length, 0)
         assert.equal((await resolver.getFollowedUsers(user2.userId)).users.length, 0)
-        assert.equal((await resolver.getUser(user1.userId)).user?.followingCount, 0)
-        assert.equal((await resolver.getUser(user1.userId)).user?.followerCount, 0)
-        assert.equal((await resolver.getUser(user2.userId)).user?.followingCount, 0)
-        assert.equal((await resolver.getUser(user2.userId)).user?.followerCount, 0)
+        assert.equal((await resolver.getUser(currentUser.userId, user1.userId)).user?.followingCount, 0)
+        assert.equal((await resolver.getUser(currentUser.userId, user1.userId)).user?.followerCount, 0)
+        assert.equal((await resolver.getUser(currentUser.userId, user2.userId)).user?.followingCount, 0)
+        assert.equal((await resolver.getUser(currentUser.userId, user2.userId)).user?.followerCount, 0)
     })
 
     it('should search users', async () => {
@@ -461,10 +462,11 @@ describe('Main Resolver Integration tests', function () {
 
 
     it('should update user info', async () => {
+        const currentUser = await repository.createUser(uuid(), uuid())
         const user1 = await repository.createUser(uuid(), uuid())
         const newUsername = user1.username + "zzz"
         await resolver.updateUserInfo({userId: user1.userId, username: newUsername})
-        const result = await resolver.getUser(user1.userId)
+        const result = await resolver.getUser(currentUser.userId, user1.userId)
         assert.equal(result.user?.username, newUsername)
 
         //Test updating to the same name
@@ -476,7 +478,7 @@ describe('Main Resolver Integration tests', function () {
             userId: user1.userId,
             avatar: avatar
         })
-        const result2 = await resolver.getUser(user1.userId)
+        const result2 = await resolver.getUser(currentUser.userId, user1.userId)
         assert.equal(result2.user?.avatar, avatar)
 
         //Updating username should not remove avatar
@@ -485,13 +487,14 @@ describe('Main Resolver Integration tests', function () {
             userId: user1.userId,
             username: newUsername2
         })
-        const result3 = await resolver.getUser(user1.userId)
+        const result3 = await resolver.getUser(currentUser.userId, user1.userId)
         assert.equal(result3.user?.avatar, avatar)
     })
 
     it('should throw error if user does not exist', async () => {
         try {
-            await resolver.getUser(uuid())
+            const currentUser = await repository.createUser(uuid(), uuid())
+            await resolver.getUser(currentUser.userId, uuid())
             assert.fail("Returned a user that does not exist")
         } catch (error) {
             assert.ok("Threw error")
@@ -526,38 +529,31 @@ describe('Main Resolver Integration tests', function () {
         await resolver.createEvent(user3.userId, "HOME")
 
         const result = await resolver.getLeaderboardRange(0, 10)
-        assert.deepStrictEqual(result.leaderboardScores[0], {
-            rank: 1,
-            score: 200,
-            user: user2
-        })
-        assert.deepStrictEqual(result.leaderboardScores[1], {
-            rank: 1,
-            score: 200,
-            user: user1
-        })
-        assert.deepStrictEqual(result.leaderboardScores[2], {
-            rank: 2,
-            score: 100,
-            user: user3
-        })
+
+        Object.assign(user1, {rank: 1, allTimeScore: 200})
+        Object.assign(user2, {rank: 1, allTimeScore: 200})
+        Object.assign(user3, {rank: 2, allTimeScore: 100})
+
+        assert.deepStrictEqual(result.users[0], user2)
+        assert.deepStrictEqual(result.users[1], user1)
+        assert.deepStrictEqual(result.users[2], user3)
 
         clock = sinon.useFakeTimers({now: 1000})
         await resolver.getCurrentUser(user1.userId)
         await resolver.getCurrentUser(user2.userId)
         await resolver.getCurrentUser(user3.userId)
         const result2 = await resolver.getLeaderboardRange(0, 10)
-        assert.deepStrictEqual(result2.leaderboardScores[0], {
+        assert.deepStrictEqual(result2.users[0], {
             rank: 1,
             score: 700,
             user: user1
         })
-        assert.deepStrictEqual(result2.leaderboardScores[1], {
+        assert.deepStrictEqual(result2.users[1], {
             rank: 2,
             score: 600,
             user: user3
         })
-        assert.deepStrictEqual(result2.leaderboardScores[2], {
+        assert.deepStrictEqual(result2.users[2], {
             rank: 3,
             score: 200,
             user: user2

@@ -1,6 +1,6 @@
 import * as AWS from "aws-sdk"
 import {Repository} from "./repository"
-import {Event, Follow, LeaderboardScore, SearchResult, User} from './model/types'
+import {Event, Follow, SearchResult, User} from './model/types'
 import {EventDynamo, FollowDynamo, SearchDynamo, UserDynamo} from "./model/dynamoTypes";
 import {LeaderboardScoreRedis, RedisCache} from './redisCache';
 import {decrypt, encrypt} from "../util/encryption/encryptor";
@@ -29,7 +29,11 @@ export class MainRepository implements Repository {
         return await this.redisCache.getAllTimeScore(userId)
     }
 
-    async saveAllTimeScore(userId: string, score: number): Promise<void> {
+    async saveAllTimeScore(userId: string, score: number, latestEvent?: Event): Promise<void> {
+        if (latestEvent) {
+            const updatedEvent = Object.assign(latestEvent, {timestamp: Date.now()})
+            await this.redisCache.setLatestEvent(updatedEvent)
+        }
         await this.redisCache.saveScoreToLeaderboard(userId, score)
     }
 
@@ -37,7 +41,7 @@ export class MainRepository implements Repository {
         return await this.redisCache.getLeaderboardRank(userId) + 1
     }
 
-    async getLeaderboardScoreRange(min: number, max: number): Promise<LeaderboardScore[]> {
+    async getLeaderboardScoreRange(min: number, max: number): Promise<User[]> {
         const scores = await this.redisCache.getLeaderboardScoreRange(min, max)
         const userIds = scores.map(score => {
             return score.userId
@@ -52,32 +56,35 @@ export class MainRepository implements Repository {
         //Filter scores that do not have a corresponding user 
         const sortedScores: LeaderboardScoreRedis[] = scores.sort((a, b) => (a.rank > b.rank) ? 1 : -1)
 
-        const filteredScores = sortedScores.reduce((output, score) => {
+        const filteredUsers = sortedScores.reduce((output, score) => {
             const user = userMap.get(score.userId)
             if (user) {
+                console.log(">>UPDATED USER: " + JSON.stringify(score.score))
+                const updatedUser: User =
+                    Object.assign(user, {allTimeScore: score.score, rank: score.rank})
                 //array push
-                output.push({
-                    user: user,
-                    rank: score.rank,
-                    score: score.score
-                })
+                output.push(updatedUser)
             }
             return output
-        }, [] as LeaderboardScore[]);
+        }, [] as User[]);
 
         //Handle duplicate scores and assign the same rank
         let newRank = 0
-        const finalResult: LeaderboardScore[] = filteredScores.map((score, index) => {
+        const finalResult: User[] = filteredUsers.map((user, index) => {
             const previousItem = sortedScores[index - 1]
             if (!previousItem) {
                 newRank = 1
-            } else if (previousItem.score > score.score) {
+            } else if (user.allTimeScore && previousItem.score > user.allTimeScore) {
                 newRank++
             }
             return {
-                user: score.user,
-                rank: newRank,
-                score: score.score
+                userId: user.userId,
+                username: user.username,
+                followerCount: user.followerCount,
+                followingCount: user.followingCount,
+                allTimeScore: user.allTimeScore,
+                avatar: user.avatar,
+                rank: newRank
             }
         })
         return finalResult

@@ -1,5 +1,5 @@
 import {GetUserAndEventsResult, UserInfoParams} from "./mainRepository";
-import {Event, LeaderboardScore, SearchResult, User} from './model/types';
+import {Event, SearchResult, User} from './model/types';
 
 export interface Repository {
     createUser(userId: string, username: string, avatar?: string): Promise<User>
@@ -8,9 +8,9 @@ export interface Repository {
 
     getAllTimeLeaderboardRank(userId: string): Promise<number>
 
-    getLeaderboardScoreRange(start: number, end: number): Promise<LeaderboardScore[]>
+    getLeaderboardScoreRange(start: number, end: number): Promise<User[]>
 
-    saveAllTimeScore(userId: string, score: number): Promise<void>
+    saveAllTimeScore(userId: string, score: number, latestEvent: Event): Promise<void>
 
     getUser(userId: string): Promise<User | undefined>
 

@@ -1,5 +1,5 @@
-import { Redis as RedisInterface } from "ioredis";
-import { Event, EventType } from './model/types';
+import {Redis as RedisInterface} from "ioredis";
+import {Event, EventType} from './model/types';
 
 const leaderboardAllTimeKey = "leaderboardAllTime"
 
@@ -42,10 +42,16 @@ export class RedisCache {
 
         //Separate user ids and scores
         const userIds = result
-            .filter((_, index) => { return index % 2 === 0; })
-            .map((key) => { return key.split(":")[1] })
+            .filter((_, index) => {
+                return index % 2 === 0;
+            })
+            .map((key) => {
+                return key.split(":")[1]
+            })
         const scores = result
-            .filter((_, index) => { return index % 2 != 0; })
+            .filter((_, index) => {
+                return index % 2 != 0;
+            })
 
         return userIds.map((userId, index) => {
             return {

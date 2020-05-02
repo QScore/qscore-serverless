@@ -101,13 +101,7 @@ export const typeDef = gql`
     }
 
     type LeaderboardRangePayload {
-        leaderboardScores: [LeaderboardScore!]!
-    }
-
-    type LeaderboardScore {
-        user: User,
-        rank: Int,
-        score: String
+        users: [User!]!
     }
 
     input CreateGeofenceEventInput {
@@ -213,8 +207,9 @@ export function buildResolver(resolver: MainResolver): any {
             },
 
             getUser: async (parent: any, args: any, context: any): Promise<GetUserPayloadGql> => {
-                const userId = getUserIdFromContext(context)
-                return await resolver.getUser(userId)
+                const currentUserId = getUserIdFromContext(context)
+                const userId = args.input.userId
+                return await resolver.getUser(currentUserId, userId)
             },
 
             followers: async (parent: any, args: any, context: any): Promise<FollowedUsersPayloadGql> => {
