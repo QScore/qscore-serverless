@@ -50,7 +50,7 @@ export class MainRepository {
         return await this.redisCache.getLeaderboardRank(userId) + 1
     }
 
-    async getLeaderboardScoreRange(min: number, max: number): Promise<User[]> {
+    async getLeaderboardScoreRange(currentUserId: string, min: number, max: number): Promise<User[]> {
         //Get leaderboard scores from redis
         const scores = await this.redisCache.getLeaderboardScoreRange(min, max)
 
@@ -78,11 +78,16 @@ export class MainRepository {
             return (b.allTimeScore ?? 0) - (a.allTimeScore ?? 0)
         })
 
+        await this.setCurrentUserFollowingStatus(currentUserId, users)
+
         //Return users
         return users
     }
 
     async getWhichUsersAreFollowed(currentUserId: string, userIdsToCheck: string[]): Promise<string[]> {
+        if (userIdsToCheck.length == 0) {
+            return []
+        }
         const keys: PrimaryKey[] = userIdsToCheck.map(userId => {
             return {
                 PK: `USER#${currentUserId}`,
@@ -96,19 +101,25 @@ export class MainRepository {
         }) ?? []
     }
 
-    async getFollowedUsersWithCursor(cursor: string): Promise<UserListResult> {
+    async getFollowedUsersWithCursor(currentUserId: string, cursor: string): Promise<UserListResult> {
         const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
-        return await this.fetchUsers(queryInput, "followingUserId")
+        const result = await this.fetchUsers(queryInput, "followingUserId")
+        await this.setCurrentUserFollowingStatus(currentUserId, result.users)
+        return result
     }
 
-    async getFollowersWithCursor(cursor: string): Promise<UserListResult> {
+    async getFollowersWithCursor(currentUserId: string, cursor: string): Promise<UserListResult> {
         const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
-        return await this.fetchUsers(queryInput, "userId")
+        const result = await this.fetchUsers(queryInput, "userId")
+        await this.setCurrentUserFollowingStatus(currentUserId, result.users)
+        return result
     }
 
-    async searchQueryWithCursor(cursor: string): Promise<UserListResult> {
+    async searchQueryWithCursor(currentUserId: string, cursor: string): Promise<UserListResult> {
         const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
-        return await this.fetchUsers(queryInput, "userId")
+        const result = await this.fetchUsers(queryInput, "userId")
+        await this.setCurrentUserFollowingStatus(currentUserId, result.users)
+        return result
     }
 
     async searchUsers(searchQuery: string, currentUserId: string, limit: number): Promise<UserListResult> {
@@ -120,7 +131,17 @@ export class MainRepository {
             }
         }
         await this.setCurrentUserFollowingStatus(currentUserId, searchResult.users)
+        await this.setRankOnUsers(searchResult.users)
         return searchResult
+    }
+
+    async setRankOnUsers(users: User[]) {
+        for (const user of users) {
+            const rank = await this.redisCache.getLeaderboardRank(user.userId)
+            if (rank > 0) {
+                Object.assign(user, {rank: rank})
+            }
+        }
     }
 
     async unfollowUser(currentUserId: string, targetUserId: string): Promise<void> {
@@ -228,7 +249,7 @@ export class MainRepository {
         await this.documentClient.transactWrite(params).promise()
     }
 
-    async getFollowedUsers(currentUserId: string): Promise<UserListResult> {
+    async getFollowedUsers(currentUserId: string, userId: string): Promise<UserListResult> {
         //Run the query
         const queryParams: AWS.DynamoDB.DocumentClient.QueryInput = {
             TableName: mainTable,
@@ -238,15 +259,17 @@ export class MainRepository {
                 '#SK': "SK"
             },
             ExpressionAttributeValues: {
-                ':PK': `USER#${currentUserId}`,
+                ':PK': `USER#${userId}`,
                 ':SK': `FOLLOWING#`
             },
             ScanIndexForward: false
         }
-        return await this.fetchUsers(queryParams, "followingUserId")
+        const result = await this.fetchUsers(queryParams, "followingUserId")
+        await this.setCurrentUserFollowingStatus(currentUserId, result.users)
+        return result
     }
 
-    async getFollowers(userId: string): Promise<UserListResult> {
+    async getFollowers(currentUserId: string, userId: string): Promise<UserListResult> {
         //Run the query
         const queryParams: AWS.DynamoDB.DocumentClient.QueryInput = {
             TableName: mainTable,
@@ -262,16 +285,12 @@ export class MainRepository {
             },
             ScanIndexForward: false
         }
-        return await this.fetchUsers(queryParams, "userId")
+        const result = await this.fetchUsers(queryParams, "userId")
+        await this.setCurrentUserFollowingStatus(currentUserId, result.users)
+        return result
     }
 
     async createEvent(event: Event): Promise<Event> {
-        //Get most recent event and see if it is alternating event type, otherwise ignore.
-        const latestEvent = await this.getLatestEventForUser(event.userId)
-        if (latestEvent && latestEvent.eventType === event.eventType) {
-            return latestEvent
-        }
-
         //Set latest event in redis
         await this.redisCache.setLatestEvent(event)
 
@@ -644,6 +663,18 @@ export class MainRepository {
 
     private convertUsersToMap(users: User[]) {
         return new Map(users.map(user => [user.userId, user]));
+    }
+
+    async saveLatestEvent(input: Event) {
+        await this.redisCache.setLatestEvent(input)
+    }
+
+    async getLastUpdatedTime(userId: string): Promise<number | undefined> {
+        return await this.redisCache.getLastUpdatedTime(userId)
+    }
+
+    async updateLastUpdatedTime(userId: string) {
+        return await this.redisCache.updateLastUpdatedTime(userId)
     }
 }
 

@@ -221,8 +221,9 @@ export function buildResolver(resolver: MainResolver): any {
             },
 
             searchUsersWithCursor: async (parent: any, args: any, context: any): Promise<SearchUsersPayloadGql> => {
+                const currentUserId = getUserIdFromContext(context)
                 const cursor = args.input.cursor
-                return await resolver.searchUsersWithCursor(cursor)
+                return await resolver.searchUsersWithCursor(currentUserId, cursor)
             },
 
             getUser: async (parent: any, args: any, context: any): Promise<GetUserPayloadGql> => {
@@ -232,29 +233,34 @@ export function buildResolver(resolver: MainResolver): any {
             },
 
             getFollowedUsers: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
-                const userId = getUserIdFromContext(context)
-                return await resolver.getFollowedUsers(userId)
+                const currentUserId = getUserIdFromContext(context)
+                const userId = args.input.userId
+                return await resolver.getFollowedUsers(currentUserId, userId)
             },
 
             getFollowedUsersWithCursor: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
+                const currentUserId = getUserIdFromContext(context)
                 const cursor = args.input.cursor
-                return await resolver.getFollowedUsersWithCursor(cursor)
+                return await resolver.getFollowedUsersWithCursor(currentUserId, cursor)
             },
 
             getFollowers: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
-                const userId = getUserIdFromContext(context)
-                return await resolver.getFollowers(userId)
+                const currentUserId = getUserIdFromContext(context)
+                const userId = args.input.userId
+                return await resolver.getFollowers(currentUserId, userId)
             },
 
             getFollowersWithCursor: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
+                const currentUserId = getUserIdFromContext(context)
                 const cursor = args.input.cursor
-                return await resolver.getFollowersWithCursor(cursor)
+                return await resolver.getFollowersWithCursor(currentUserId, cursor)
             },
 
             getLeaderboardRange: async (parent: any, args: any, context: any): Promise<LeaderboardRangePayloadGql> => {
+                const currentUserId = getUserIdFromContext(context)
                 const start: number = args.input.start
                 const end: number = args.input.end
-                return await resolver.getLeaderboardRange(start, end)
+                return await resolver.getLeaderboardRange(currentUserId, start, end)
             },
         }
     }

@@ -26,8 +26,8 @@ export class MainResolver {
         }
     }
 
-    async getLeaderboardRange(start: number, end: number): Promise<LeaderboardRangePayloadGql> {
-        const users = await this.repository.getLeaderboardScoreRange(start, end)
+    async getLeaderboardRange(currentUserId: string, start: number, end: number): Promise<LeaderboardRangePayloadGql> {
+        const users = await this.repository.getLeaderboardScoreRange(currentUserId, start, end)
         return {
             users: users
         }
@@ -43,10 +43,11 @@ export class MainResolver {
         const latestEvent = await this.repository.getLatestEventForUser(userId)
         let allTimeScore = 0
         if (latestEvent?.eventType == "HOME") {
-            allTimeScore = await this.updateAllTimeScore(userId, latestEvent)
+            allTimeScore = await this.updateAllTimeScore(userId)
         } else {
             allTimeScore = await this.repository.getAllTimeScore(userId)
         }
+        await this.repository.updateLastUpdatedTime(userId)
         const rank = await this.repository.getAllTimeLeaderboardRank(userId)
 
         //Check if current user is following
@@ -68,20 +69,20 @@ export class MainResolver {
         }
     }
 
-    async getFollowers(userId: string): Promise<FollowingUsersPayloadGql> {
-        return await this.repository.getFollowers(userId)
+    async getFollowers(currentUserId: string, userId: string): Promise<FollowingUsersPayloadGql> {
+        return await this.repository.getFollowers(currentUserId, userId)
     }
 
-    async getFollowersWithCursor(cursor: string): Promise<FollowedUsersPayloadGql> {
-        return await this.repository.getFollowedUsersWithCursor(cursor)
+    async getFollowersWithCursor(currentUserId: string, cursor: string): Promise<FollowedUsersPayloadGql> {
+        return await this.repository.getFollowedUsersWithCursor(currentUserId, cursor)
     }
 
-    async getFollowedUsers(userId: string): Promise<FollowedUsersPayloadGql> {
-        return await this.repository.getFollowedUsers(userId)
+    async getFollowedUsers(currentUserId: string, userId: string): Promise<FollowedUsersPayloadGql> {
+        return await this.repository.getFollowedUsers(currentUserId, userId)
     }
 
-    async getFollowedUsersWithCursor(cursor: string): Promise<FollowedUsersPayloadGql> {
-        return await this.repository.getFollowedUsersWithCursor(cursor)
+    async getFollowedUsersWithCursor(currentUserId: string, cursor: string): Promise<FollowedUsersPayloadGql> {
+        return await this.repository.getFollowedUsersWithCursor(currentUserId, cursor)
     }
 
     async unfollowUser(currentUserId: string, userIdToUnfollow: string): Promise<FollowUserPayloadGql> {
@@ -111,19 +112,28 @@ export class MainResolver {
             userId: userId
         }
 
+        //Early return if the event type is the same as the previous event
         const previousEvent = await this.repository.getLatestEventForUser(userId)
-        const event = await this.repository.createEvent(input)
-
-        if (previousEvent && event?.eventType == "AWAY") {
-            await this.updateAllTimeScore(userId, previousEvent)
+        if (previousEvent && previousEvent.eventType === input.eventType) {
+            return {
+                geofenceEvent: input
+            }
         }
+
+        //Update the all time score if previously home, now away
+        const event = await this.repository.createEvent(input)
+        if (previousEvent && previousEvent.eventType == "HOME" && event?.eventType == "AWAY") {
+            await this.updateAllTimeScore(userId)
+        }
+        await this.repository.updateLastUpdatedTime(userId)
+
         return {
             geofenceEvent: event
         }
     }
 
-    async searchUsersWithCursor(cursor: string): Promise<SearchUsersPayloadGql> {
-        return await this.repository.searchQueryWithCursor(cursor)
+    async searchUsersWithCursor(currentUserId: string, cursor: string): Promise<SearchUsersPayloadGql> {
+        return await this.repository.searchQueryWithCursor(currentUserId, cursor)
     }
 
     async searchUsers(currentUserId: string, searchQuery: string, limit: number): Promise<SearchUsersPayloadGql> {
@@ -173,10 +183,11 @@ export class MainResolver {
 
         let allTimeScore = 0
         if (latestEvent?.eventType == "HOME") {
-            allTimeScore = await this.updateAllTimeScore(userId, latestEvent)
+            allTimeScore = await this.updateAllTimeScore(userId)
         } else {
             allTimeScore = await this.repository.getAllTimeScore(userId)
         }
+        await this.repository.updateLastUpdatedTime(userId)
         const rank = await this.repository.getAllTimeLeaderboardRank(userId)
 
         const result: User = Object.assign(user, {
@@ -195,12 +206,14 @@ export class MainResolver {
         return followedUserIds.includes(userId)
     }
 
-    private async updateAllTimeScore(userId: string, latestEvent: Event): Promise<number> {
+    private async updateAllTimeScore(userId: string): Promise<number> {
         const currentTimeMillis = Date.now()
-        const extra = (currentTimeMillis - new Date(latestEvent.timestamp).getTime()) / 1000 / 10 //Every 5 seconds
-        const currentAllTimeScore = await this.repository.getAllTimeScore(userId)
+        const currentAllTimeScore = await this.repository.getAllTimeScore(userId) //This should include last updated time
+        const lastUpdatedTime = await this.repository.getLastUpdatedTime(userId) ?? currentTimeMillis
+        const extra = (currentTimeMillis - lastUpdatedTime) / 1000 / 10 //Every 10 seconds
+
         const finalAllTimeScore = currentAllTimeScore + extra
-        await this.repository.saveAllTimeScore(userId, finalAllTimeScore, latestEvent)
+        await this.repository.saveAllTimeScore(userId, finalAllTimeScore)
         return finalAllTimeScore
     }
 

@@ -54,29 +54,28 @@ describe('Main Resolver Integration tests', function () {
         assert.equal(user2Result.user?.followingCount, 0)
 
         //Check follows for user 1
-        const followingUser1 = await resolver.getFollowers(user1.userId)
-        const user1Follows = await resolver.getFollowedUsers(user1.userId)
-        assert.equal(followingUser1.users.length, 0)
-        assert.equal(user1Follows.users.length, 1)
-        const expected1: User = Object.assign(user2, {followerCount: 1})
-        const actual1: User = user1Follows.users[0]
-        assert.deepStrictEqual(actual1, expected1)
+        const user1Followers = await resolver.getFollowers(user1.userId, user1.userId)
+        const user1Followed = await resolver.getFollowedUsers(user1.userId, user1.userId)
+        assert.equal(user1Followers.users.length, 0)
+        assert.equal(user1Followed.users.length, 1)
+        assert.equal(user1Followed.users[0].isCurrentUserFollowing, true)
+        assert.equal(user1Followed.users[0].userId, user2.userId)
+
 
         //Check follows for user 2
-        const followingUser2 = await resolver.getFollowers(user2.userId)
-        const user2Follows = await resolver.getFollowedUsers(user2.userId)
-        assert.equal(followingUser2.users.length, 1)
+        const user2Followers = await resolver.getFollowers(user1.userId, user2.userId)
+        const user2Follows = await resolver.getFollowedUsers(user1.userId, user2.userId)
+        assert.equal(user2Followers.users.length, 1)
         assert.equal(user2Follows.users.length, 0)
-        const expected2: User = Object.assign(user1, {followingCount: 1})
-        const actual2: User = followingUser2.users[0]
-        assert.deepStrictEqual(actual2, expected2)
+        assert.equal(user2Followers.users[0].userId, user1.userId)
+        assert.equal(user2Followers.users[0].isCurrentUserFollowing, false)
 
         //User 1 unfollows user 2
         await resolver.unfollowUser(user1.userId, user2.userId)
-        assert.equal((await resolver.getFollowers(user1.userId)).users.length, 0)
-        assert.equal((await resolver.getFollowedUsers(user1.userId)).users.length, 0)
-        assert.equal((await resolver.getFollowers(user2.userId)).users.length, 0)
-        assert.equal((await resolver.getFollowedUsers(user2.userId)).users.length, 0)
+        assert.equal((await resolver.getFollowers(user1.userId, user1.userId)).users.length, 0)
+        assert.equal((await resolver.getFollowedUsers(user1.userId, user1.userId)).users.length, 0)
+        assert.equal((await resolver.getFollowers(user1.userId, user2.userId)).users.length, 0)
+        assert.equal((await resolver.getFollowedUsers(user1.userId, user2.userId)).users.length, 0)
         assert.equal((await resolver.getUser(currentUser.userId, user1.userId)).user?.followingCount, 0)
         assert.equal((await resolver.getUser(currentUser.userId, user1.userId)).user?.followerCount, 0)
         assert.equal((await resolver.getUser(currentUser.userId, user2.userId)).user?.followingCount, 0)
@@ -124,7 +123,7 @@ describe('Main Resolver Integration tests', function () {
         const searchResults = await resolver.searchUsers(user.userId, "billy", 1)
         assert.equal(searchResults.users.length, 1)
         assert.exists(searchResults.nextCursor)
-        const searchResults2 = await resolver.searchUsersWithCursor(searchResults.nextCursor as string)
+        const searchResults2 = await resolver.searchUsersWithCursor(user.userId, searchResults.nextCursor as string)
         assert.equal(searchResults2.users.length, 1)
         assert.notDeepEqual(searchResults2.users[0], searchResults.users[0])
     })
@@ -197,38 +196,39 @@ describe('Main Resolver Integration tests', function () {
         await resolver.createEvent(user2.userId, "AWAY")
         await resolver.createEvent(user3.userId, "HOME")
 
-        const result = await resolver.getLeaderboardRange(0, 10)
+        clock = sinon.useFakeTimers({now: 6000000})
+        await resolver.createEvent(user1.userId, "AWAY")
 
-        Object.assign(user1, {rank: 1, allTimeScore: 200})
-        Object.assign(user2, {rank: 1, allTimeScore: 200})
-        Object.assign(user3, {rank: 2, allTimeScore: 100})
+        const result = await resolver.getLeaderboardRange(user1.userId, 0, 10)
+        assert.equal(result.users[0].userId, user1.userId)
+        assert.equal(result.users[0].rank, 1)
+        assert.equal(result.users[0].allTimeScore, 300)
 
-        assert.deepStrictEqual(result.users[0], user2)
-        assert.deepStrictEqual(result.users[1], user1)
-        assert.deepStrictEqual(result.users[2], user3)
+        assert.equal(result.users[1].userId, user2.userId)
+        assert.equal(result.users[1].rank, 2)
+        assert.equal(result.users[1].allTimeScore, 200)
+
+        assert.equal(result.users[2].userId, user3.userId)
+        assert.equal(result.users[2].rank, 3)
+        assert.equal(result.users[2].allTimeScore, 100)
 
         clock = sinon.useFakeTimers({now: 10000000})
         await resolver.getCurrentUser(user1.userId)
         await resolver.getCurrentUser(user2.userId)
         await resolver.getCurrentUser(user3.userId)
-        const result2 = await resolver.getLeaderboardRange(0, 10)
+        const result2 = await resolver.getLeaderboardRange(user1.userId, 0, 10)
 
+        assert.equal(result2.users[0].userId, user3.userId)
+        assert.equal(result2.users[0].rank, 1)
+        assert.equal(result2.users[0].allTimeScore, 600)
 
-        assert.deepStrictEqual(result2.users[0], {
-            rank: 1,
-            score: 700,
-            user: user1
-        })
-        assert.deepStrictEqual(result2.users[1], {
-            rank: 2,
-            score: 600,
-            user: user3
-        })
-        assert.deepStrictEqual(result2.users[2], {
-            rank: 3,
-            score: 200,
-            user: user2
-        })
+        assert.equal(result2.users[1].userId, user1.userId)
+        assert.equal(result2.users[1].rank, 2)
+        assert.equal(result2.users[1].allTimeScore, 300)
+
+        assert.equal(result2.users[2].userId, user2.userId)
+        assert.equal(result2.users[2].rank, 3)
+        assert.equal(result2.users[2].allTimeScore, 200)
     })
 
     it('should not be able to follow yourself', async () => {
@@ -242,7 +242,7 @@ describe('Main Resolver Integration tests', function () {
         }
         assert.equal(user.followingCount, 0)
         assert.equal(user.followerCount, 0)
-        const followingUsers = await resolver.getFollowedUsers(userId)
+        const followingUsers = await resolver.getFollowedUsers(user.userId, userId)
         assert.equal(followingUsers.users.length, 0)
     })
 
@@ -255,48 +255,48 @@ describe('Main Resolver Integration tests', function () {
         } catch (error) {
             assert.ok("Following user that does not exist produced error")
         }
-        const followed = await resolver.getFollowedUsers(userId)
+        const followed = await resolver.getFollowedUsers(userId, userId)
         assert.equal(followed.users.length, 0)
-        const followers = await resolver.getFollowers(userId)
+        const followers = await resolver.getFollowers(userId, userId)
         assert.equal(followers.users.length, 0)
     })
 
     it('creating event should update all time score', async () => {
         const user = await repository.createUser(uuid(), uuid())
-        clock = sinon.useFakeTimers({now: 100})
+        clock = sinon.useFakeTimers({now: 1000000})
         await resolver.createEvent(user.userId, "HOME")
         let result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 0)
 
-        clock = sinon.useFakeTimers({now: 200});
+        clock = sinon.useFakeTimers({now: 2000000});
         await resolver.createEvent(user.userId, "AWAY")
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 0.000001)
+        assert.equal(result.user.allTimeScore, 100)
 
-        clock = sinon.useFakeTimers({now: 300});
+        clock = sinon.useFakeTimers({now: 3000000});
         await resolver.createEvent(user.userId, "HOME")
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 0.000001)
+        assert.equal(result.user.allTimeScore, 100)
 
-        clock = sinon.useFakeTimers({now: 500});
+        clock = sinon.useFakeTimers({now: 5000000});
         await resolver.createEvent(user.userId, "AWAY")
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 0.000003)
+        assert.equal(result.user.allTimeScore, 300)
 
         //Time elapses, score is the same because last event was AWAY
-        clock = sinon.useFakeTimers({now: 1000});
+        clock = sinon.useFakeTimers({now: 10000000});
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 0.000003)
+        assert.equal(result.user.allTimeScore, 300)
 
         //Now Home event comes in
-        clock = sinon.useFakeTimers({now: 1500});
+        clock = sinon.useFakeTimers({now: 15000000});
         await resolver.createEvent(user.userId, "HOME")
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 0.000003)
+        assert.equal(result.user.allTimeScore, 300)
 
         //Now recheck 500ms later
-        clock = sinon.useFakeTimers({now: 2000});
+        clock = sinon.useFakeTimers({now: 20000000});
         result = await resolver.getCurrentUser(user.userId)
-        assert.equal(result.user.allTimeScore, 0.000008)
+        assert.equal(result.user.allTimeScore, 800)
     })
 })
