@@ -1,12 +1,9 @@
-import sinon, {stubInterface} from "ts-sinon";
-import {Event, SearchResult, User} from '../../src/data/model/types';
-import {MainResolver} from '../../src/data/mainResolver';
-import {GetUserAndEventsResult} from '../../src/data/mainRepository';
-import {Repository} from '../../src/data/repository';
+import sinon from "ts-sinon";
+import {User} from '../../src/data/model/types';
 import * as faker from 'faker';
 import {v4 as uuid} from 'uuid';
 import {assert} from "chai";
-import {testRedis, testRepository, testResolver} from '../../src/data/testInjector';
+import {testRepository, testResolver} from '../../src/data/testInjector';
 
 let clock: sinon.SinonFakeTimers
 
@@ -19,338 +16,6 @@ const fakeUser: User = {
     score: 0,
     avatar: undefined
 }
-
-describe('Main Resolver Unit Tests', function () {
-    const redis = testRedis
-    beforeEach(async function () {
-        clock = sinon.useFakeTimers({
-            now: 24 * 60 * 60 * 1000
-        });
-        await redis.flushall()
-    })
-
-    afterEach(function () {
-        clock.restore();
-    })
-
-    const testRepository = stubInterface<Repository>()
-    const resolver = new MainResolver(testRepository)
-
-    it('should calculate score with first event Home', async () => {
-        const events: Event[] = [
-            {
-                timestamp: new Date(100000).toISOString(),
-                eventType: "HOME",
-                userId: "na"
-            },
-            {
-                timestamp: new Date(200000).toISOString(),
-                eventType: "AWAY",
-                userId: "na"
-            }]
-
-        const mockResult: GetUserAndEventsResult = {
-            events: events,
-            user: fakeUser
-        }
-        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await resolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score ?? assert.fail("No score found")
-        assert.equal(Math.fround(score), Math.fround(0.11574074074074073), "Scores do not match!")
-    })
-
-    it('should calculate score with first event Away', async () => {
-        const events: Event[] = [
-            {
-                timestamp: new Date(100000).toISOString(),
-                eventType: "AWAY",
-                userId: "na"
-            },
-            {
-                timestamp: new Date(200000).toISOString(),
-                eventType: "HOME",
-                userId: "na"
-            }
-        ]
-
-        const mockResult: GetUserAndEventsResult = {
-            events: events,
-            user: fakeUser
-        }
-        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await resolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score ?? assert.fail("No score found")
-        assert.equal(Math.fround(score), Math.fround(99.88426208496094), "Scores do not match!")
-    })
-
-    it('should calculate score with only one away event at time 100000', async () => {
-        const events: Event[] = [
-            {
-                timestamp: new Date(100000).toISOString(),
-                eventType: "AWAY",
-                userId: "na"
-            }
-        ]
-
-        const mockResult: GetUserAndEventsResult = {
-            events: events,
-            user: fakeUser
-        }
-        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await resolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score ?? assert.fail("No score found")
-        assert.equal(Math.fround(score), Math.fround(0.11574074074074073), "Scores do not match!")
-    })
-
-    it('should calculate score with only one away event at time 0', async () => {
-        const events: Event[] = [
-            {
-                timestamp: new Date(0).toISOString(),
-                eventType: "AWAY",
-                userId: "na"
-            }
-        ]
-        const mockResult: GetUserAndEventsResult = {
-            events: events,
-            user: fakeUser
-        }
-        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await resolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score ?? assert.fail("No score found")
-        assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
-    })
-
-    it('should calculate score with only one home event at time 0', async () => {
-        const events: Event[] = [
-            {
-                timestamp: new Date(0).toISOString(),
-                eventType: "HOME",
-                userId: "na"
-            }
-        ]
-
-        const mockResult: GetUserAndEventsResult = {
-            events: events,
-            user: fakeUser
-        }
-        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await resolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score ?? assert.fail("No score found")
-        assert.equal(Math.fround(score), Math.fround(100), "Scores do not match!")
-    })
-
-    it('should calculate score with single home event', async () => {
-        clock = sinon.useFakeTimers({
-            now: 24 * 60 * 60 * 1000 //2 days after 0
-        });
-
-        const events: Event[] = [
-            {
-                timestamp: new Date(100000).toISOString(),
-                eventType: "HOME",
-                userId: "na"
-            },
-        ]
-
-        const mockResult: GetUserAndEventsResult = {
-            events: events,
-            user: fakeUser
-        }
-        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await resolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score ?? assert.fail("No score found")
-        assert.equal(Math.fround(score), Math.fround(99.88426208496094), "Scores do not match!")
-    })
-
-
-    it('should calculate score with single away event', async () => {
-        clock = sinon.useFakeTimers({
-            now: 24 * 60 * 60 * 1000//2 days after 0
-        });
-        const events: Event[] = [
-            {
-                timestamp: new Date(0).toISOString(),
-                eventType: "AWAY",
-                userId: "na"
-            },
-        ]
-
-        const mockResult: GetUserAndEventsResult = {
-            events: events,
-            user: fakeUser
-        }
-        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await resolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score ?? assert.fail("No score found")
-        assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
-    })
-
-    it('should calculate score with multiple duplicate events', async () => {
-        const events: Event[] = [
-            {
-                timestamp: new Date(100000).toISOString(),
-                eventType: "HOME",
-                userId: "na"
-            },
-            {
-                timestamp: new Date(200000).toISOString(),
-                eventType: "HOME",
-                userId: "na"
-            },
-            {
-                timestamp: new Date(300000).toISOString(),
-                eventType: "AWAY",
-                userId: "na"
-            },
-            {
-                timestamp: new Date(400000).toISOString(),
-                eventType: "HOME",
-                userId: "na"
-            },
-            {
-                timestamp: new Date(500000).toISOString(),
-                eventType: "AWAY",
-                userId: "na"
-            },
-            {
-                timestamp: new Date(600000).toISOString(),
-                eventType: "AWAY",
-                userId: "na"
-            },
-            {
-                timestamp: new Date(700000).toISOString(),
-                eventType: "HOME",
-                userId: "na"
-            },
-            {
-                timestamp: new Date(800000).toISOString(),
-                eventType: "AWAY",
-                userId: "na"
-            },
-        ]
-
-        const mockResult: GetUserAndEventsResult = {
-            events: events,
-            user: fakeUser
-        }
-        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        const result = await resolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score ?? assert.fail("No score found")
-        assert.equal(Math.fround(score), Math.fround(0.4629629629629629), "Scores do not match!")
-    })
-
-    it('should calculate score with no events and last event was HOME', async () => {
-        clock = sinon.useFakeTimers({
-            now: 24 * 60 * 60 * 1000 * 2
-        });
-
-        const mockResult: GetUserAndEventsResult = {
-            events: [],
-            user: fakeUser
-        }
-        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-
-        const latestEventResult: Event = {
-            eventType: "HOME",
-            timestamp: new Date(0).toISOString(),
-            userId: fakeUser.userId
-        }
-        testRepository.getLatestEventForUser.resolves(latestEventResult)
-        const result = await resolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score ?? assert.fail("No score found")
-        assert.equal(Math.fround(score), Math.fround(100), "Scores do not match!")
-    })
-
-    it('should calculate score with no events and last event was AWAY', async () => {
-        clock = sinon.useFakeTimers({
-            now: 24 * 60 * 60 * 1000 * 2
-        });
-
-        const mockResult: GetUserAndEventsResult = {
-            events: [],
-            user: fakeUser
-        }
-        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-
-        const latestEventResult: Event = {
-            eventType: "AWAY",
-            timestamp: new Date(0).toISOString(),
-            userId: fakeUser.userId
-        }
-        testRepository.getLatestEventForUser.resolves(latestEventResult)
-        const result = await resolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score ?? assert.fail("No score found")
-        assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
-    })
-
-    it('should calculate score with no events at all', async () => {
-        const mockResult: GetUserAndEventsResult = {
-            events: [],
-            user: fakeUser
-        }
-        testRepository.getUserAndEventsFromStartTime.resolves(mockResult)
-        testRepository.getLatestEventForUser.resolves(undefined)
-        const result = await resolver.getCurrentUser(fakeUser.userId)
-        const score = result.user.score ?? assert.fail("No score found")
-        assert.equal(Math.fround(score), Math.fround(0), "Scores do not match!")
-    })
-
-
-    it('should search users', async () => {
-        testRepository.searchUsers.resolves({
-            users: [
-                {
-                    userId: 'user1',
-                    username: 'gertrude',
-                    allTimeScore: 0,
-                    followerCount: 0,
-                    followingCount: 0,
-                    score: 0,
-                    avatar: undefined
-                },
-                {
-                    userId: 'user2',
-                    username: 'gerbert',
-                    allTimeScore: 0,
-                    followerCount: 0,
-                    followingCount: 0,
-                    score: 0,
-                    avatar: undefined
-                }
-            ],
-            nextCursor: undefined
-        })
-
-        testRepository.getWhichUsersAreFollowed.resolves([
-            'user1'
-        ])
-
-        const result = await resolver.searchUsers(fakeUser.userId, 'g', 50)
-        const expectedResult: SearchResult = {
-            users: [{
-                userId: 'user1',
-                username: 'gertrude',
-                isCurrentUserFollowing: true,
-                followingCount: 0,
-                followerCount: 0,
-                score: 0,
-                allTimeScore: 0,
-                avatar: undefined
-            }, {
-                userId: 'user2',
-                username: 'gerbert',
-                isCurrentUserFollowing: false,
-                followingCount: 0,
-                followerCount: 0,
-                score: 0,
-                allTimeScore: 0,
-                avatar: undefined
-            }],
-            nextCursor: undefined
-        }
-        assert.deepStrictEqual(result, expectedResult, "Users do not match")
-    })
-})
 
 describe('Main Resolver Integration tests', function () {
     const repository = testRepository
@@ -427,7 +92,9 @@ describe('Main Resolver Integration tests', function () {
             isCurrentUserFollowing: false,
             followerCount: 0,
             followingCount: 0,
-            allTimeScore: 0
+            allTimeScore: 0,
+            rank: undefined,
+            score: undefined
         } as User)
         assert(searchResults1.length > 0)
         assert.deepStrictEqual(searchResults2[0], expected)
@@ -439,7 +106,9 @@ describe('Main Resolver Integration tests', function () {
             isCurrentUserFollowing: true,
             followerCount: 1,
             followingCount: 0,
-            allTimeScore: 0
+            allTimeScore: 0,
+            rank: undefined,
+            score: undefined
         } as User)
         const searchResults3 = (await resolver.searchUsers(user.userId, "someone" + userSuffix, 50)).users
         assert.deepStrictEqual(searchResults3[0], expected2)
@@ -506,24 +175,24 @@ describe('Main Resolver Integration tests', function () {
         const user2 = await repository.createUser("second-" + uuid(), uuid())
         const user3 = await repository.createUser("third-" + uuid(), uuid())
 
-        clock = sinon.useFakeTimers({now: 100})
+        clock = sinon.useFakeTimers({now: 1000000})
         await resolver.createEvent(user1.userId, "HOME")
 
-        clock = sinon.useFakeTimers({now: 200})
+        clock = sinon.useFakeTimers({now: 2000000})
         await resolver.createEvent(user1.userId, "AWAY")
         await resolver.createEvent(user2.userId, "HOME")
 
-        clock = sinon.useFakeTimers({now: 300})
+        clock = sinon.useFakeTimers({now: 3000000})
         await resolver.createEvent(user1.userId, "HOME")
         await resolver.createEvent(user2.userId, "AWAY")
         await resolver.createEvent(user3.userId, "HOME")
 
-        clock = sinon.useFakeTimers({now: 400})
+        clock = sinon.useFakeTimers({now: 4000000})
         await resolver.createEvent(user1.userId, "AWAY")
         await resolver.createEvent(user2.userId, "HOME")
         await resolver.createEvent(user3.userId, "AWAY")
 
-        clock = sinon.useFakeTimers({now: 500})
+        clock = sinon.useFakeTimers({now: 5000000})
         await resolver.createEvent(user1.userId, "HOME")
         await resolver.createEvent(user2.userId, "AWAY")
         await resolver.createEvent(user3.userId, "HOME")
@@ -538,11 +207,13 @@ describe('Main Resolver Integration tests', function () {
         assert.deepStrictEqual(result.users[1], user1)
         assert.deepStrictEqual(result.users[2], user3)
 
-        clock = sinon.useFakeTimers({now: 1000})
+        clock = sinon.useFakeTimers({now: 10000000})
         await resolver.getCurrentUser(user1.userId)
         await resolver.getCurrentUser(user2.userId)
         await resolver.getCurrentUser(user3.userId)
         const result2 = await resolver.getLeaderboardRange(0, 10)
+
+
         assert.deepStrictEqual(result2.users[0], {
             rank: 1,
             score: 700,

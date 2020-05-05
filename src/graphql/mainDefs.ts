@@ -5,7 +5,6 @@ import {
     CreateGeofenceEventPayloadGql,
     CreateUserPayloadGql,
     CurrentUserPayloadGql,
-    FollowedUsersPayloadGql,
     FollowingUsersPayloadGql,
     FollowUserPayloadGql,
     GetUserPayloadGql,
@@ -58,6 +57,14 @@ export const typeDef = gql`
         cursor: String!
     }
 
+    input GetFollowedUsersWithCursorInput {
+        cursor: String!
+    }
+
+    input GetFollowersWithCursorInput {
+        cursor: String!
+    }
+
     type SearchUsersPayload {
         users: [User!]!
         nextCursor: String
@@ -87,12 +94,22 @@ export const typeDef = gql`
         userId: ID
     }
 
-    type FollowedUsersPayload {
-        users: [User!]!
+    input GetFollowedUsersInput {
+        userId: ID!
     }
 
-    type FollowingUsersPayload {
+    input GetFollowersInput {
+        userId: ID!
+    }
+
+    type GetFollowedUsersPayload {
         users: [User!]!
+        nextCursor: String
+    }
+
+    type GetFollowersPayload {
+        users: [User!]!
+        nextCursor: String
     }
 
     input LeaderboardRangeInput {
@@ -144,8 +161,10 @@ export const typeDef = gql`
         searchUsers(input: SearchUsersInput!): SearchUsersPayload!
         searchUsersWithCursor(input: SearchUsersWithCursorInput!): SearchUsersPayload!
         getUser(input: GetUserInput!): GetUserPayload!
-        followedUsers: FollowedUsersPayload!
-        followers: FollowingUsersPayload!
+        getFollowedUsers(input: GetFollowedUsersInput!): GetFollowedUsersPayload!
+        getFollowedUsersWithCursor(input: GetFollowedUsersWithCursorInput!): GetFollowedUsersPayload!
+        getFollowers(input: GetFollowersInput!): GetFollowersPayload!
+        getFollowersWithCursor(input: GetFollowersWithCursorInput!): GetFollowersPayload!
         getLeaderboardRange(input: LeaderboardRangeInput!): LeaderboardRangePayload!
     }
 `
@@ -212,14 +231,24 @@ export function buildResolver(resolver: MainResolver): any {
                 return await resolver.getUser(currentUserId, userId)
             },
 
-            followers: async (parent: any, args: any, context: any): Promise<FollowedUsersPayloadGql> => {
+            getFollowedUsers: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
+                const userId = getUserIdFromContext(context)
+                return await resolver.getFollowedUsers(userId)
+            },
+
+            getFollowedUsersWithCursor: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
+                const cursor = args.input.cursor
+                return await resolver.getFollowedUsersWithCursor(cursor)
+            },
+
+            getFollowers: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
                 const userId = getUserIdFromContext(context)
                 return await resolver.getFollowers(userId)
             },
 
-            followedUsers: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
-                const userId = getUserIdFromContext(context)
-                return await resolver.getFollowedUsers(userId)
+            getFollowersWithCursor: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
+                const cursor = args.input.cursor
+                return await resolver.getFollowersWithCursor(cursor)
             },
 
             getLeaderboardRange: async (parent: any, args: any, context: any): Promise<LeaderboardRangePayloadGql> => {

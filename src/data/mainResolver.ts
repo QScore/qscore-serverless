@@ -1,4 +1,3 @@
-import {Repository} from "./repository"
 import {Event, EventType, User} from './model/types';
 import {ApolloError} from "apollo-server-lambda"
 import {
@@ -13,12 +12,10 @@ import {
     SearchUsersPayloadGql,
     UpdateUserInfoPayloadGql
 } from '../graphql/graphqlTypes';
-import {UserInfoParams} from "./mainRepository";
+import {MainRepository, UserInfoParams} from "./mainRepository";
 
 export class MainResolver {
-    private readonly repository: Repository
-
-    constructor(repository: Repository) {
+    constructor(private readonly repository: MainRepository) {
         this.repository = repository
     }
 
@@ -59,6 +56,7 @@ export class MainResolver {
             userId: user.userId,
             username: user.username,
             avatar: user.avatar,
+            score: user.score,
             followerCount: user.followerCount,
             followingCount: user.followingCount,
             isCurrentUserFollowing: isCurrentUserFollowing,
@@ -70,23 +68,20 @@ export class MainResolver {
         }
     }
 
-    private async isCurrentUserFollowing(currentUserId: string, userId: string) {
-        const followedUserIds = await this.repository.getWhichUsersAreFollowed(currentUserId, [userId])
-        return followedUserIds.includes(userId)
+    async getFollowers(userId: string): Promise<FollowingUsersPayloadGql> {
+        return await this.repository.getFollowers(userId)
     }
 
-    async getFollowers(userId: string): Promise<FollowingUsersPayloadGql> {
-        const users = await this.repository.getFollowers(userId)
-        return {
-            users: users
-        }
+    async getFollowersWithCursor(cursor: string): Promise<FollowedUsersPayloadGql> {
+        return await this.repository.getFollowedUsersWithCursor(cursor)
     }
 
     async getFollowedUsers(userId: string): Promise<FollowedUsersPayloadGql> {
-        const users = await this.repository.getFollowedUsers(userId)
-        return {
-            users: users
-        }
+        return await this.repository.getFollowedUsers(userId)
+    }
+
+    async getFollowedUsersWithCursor(cursor: string): Promise<FollowedUsersPayloadGql> {
+        return await this.repository.getFollowedUsersWithCursor(cursor)
     }
 
     async unfollowUser(currentUserId: string, userIdToUnfollow: string): Promise<FollowUserPayloadGql> {
@@ -120,7 +115,6 @@ export class MainResolver {
         const event = await this.repository.createEvent(input)
 
         if (previousEvent && event?.eventType == "AWAY") {
-            console.log(">>UPDate all time score")
             await this.updateAllTimeScore(userId, previousEvent)
         }
         return {
@@ -129,11 +123,11 @@ export class MainResolver {
     }
 
     async searchUsersWithCursor(cursor: string): Promise<SearchUsersPayloadGql> {
-        return await this.repository.searchUsersWithCursor(cursor)
+        return await this.repository.searchQueryWithCursor(cursor)
     }
 
     async searchUsers(currentUserId: string, searchQuery: string, limit: number): Promise<SearchUsersPayloadGql> {
-        const searchResult = await this.repository.searchUsers(searchQuery, limit)
+        const searchResult = await this.repository.searchUsers(searchQuery, currentUserId, limit)
         const searchUserIds = searchResult.users.map(user => {
             return user.userId
         })
@@ -174,6 +168,9 @@ export class MainResolver {
 
         const latestEvent = await this.repository.getLatestEventForUser(userId)
         const score24 = this.calculate24HourScore(events, latestEvent)
+        //Save 24 hour score
+        await this.repository.save24HourScore(userId, score24)
+
         let allTimeScore = 0
         if (latestEvent?.eventType == "HOME") {
             allTimeScore = await this.updateAllTimeScore(userId, latestEvent)
@@ -191,6 +188,11 @@ export class MainResolver {
         return {
             user: result
         }
+    }
+
+    private async isCurrentUserFollowing(currentUserId: string, userId: string) {
+        const followedUserIds = await this.repository.getWhichUsersAreFollowed(currentUserId, [userId])
+        return followedUserIds.includes(userId)
     }
 
     private async updateAllTimeScore(userId: string, latestEvent: Event): Promise<number> {

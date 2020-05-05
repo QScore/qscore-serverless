@@ -24,8 +24,8 @@ for (let i = 0; i < numUsers; i++) {
     const userDynamo: UserDynamo = {
         PK: `USER#${userId}`,
         SK: `EVENT#9999`,
-        GS1PK: `SCORE#ALL_TIME`,
-        GS1SK: allTimeScore.toString(),
+        GS1PK: `SEARCH`,
+        GS1SK: username.toLowerCase(),
         itemType: `User`,
         userId: userId,
         username: username,
@@ -34,17 +34,7 @@ for (let i = 0; i < numUsers; i++) {
         allTimeScore: allTimeScore
     }
     users.push(userDynamo)
-
-    //Add searches
-    const searchDynamo: SearchDynamo = {
-        PK: `SEARCH`,
-        SK: username.toLowerCase(),
-        username: username,
-        userId: userId,
-        itemType: "Search"
-    }
-    searches.push(searchDynamo)
-
+    
     //Add events for each user
     const twoDays = 2 * 24 * 60 * 60 * 1000
     const maxEvents = faker.random.number(maxEventsPerUser)

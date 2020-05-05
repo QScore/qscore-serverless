@@ -42,11 +42,11 @@ describe("Main repository tests", () => {
 
         //Verify that getFollowedUsers returns our newly followed user
         const followedUsers = await repository.getFollowedUsers(user.userId)
-        assert.deepStrictEqual(followedUsers[0], userToFollow, "Followed user does not match")
+        assert.deepStrictEqual(followedUsers.users[0], userToFollow, "Followed user does not match")
 
         //Verify that getFollowers on target user returns our user
         const followingUsers = await repository.getFollowers(userToFollow.userId)
-        assert.deepStrictEqual(followingUsers[0], user, "Following user does not match")
+        assert.deepStrictEqual(followingUsers.users[0], user, "Following user does not match")
 
         const userIds = await repository.getWhichUsersAreFollowed(user.userId, [userToFollow.userId, 'b8f05ac0-90be-4246-8355-d80a8132e57a'])
         assert.equal(userIds.length, 1)
@@ -64,19 +64,11 @@ describe("Main repository tests", () => {
 
         //Get followed users
         const followedUsers2 = await repository.getFollowers(user.userId)
-        assert.equal(followedUsers2.length, 0)
+        assert.equal(followedUsers2.users.length, 0)
 
         //Get following users
         const followingUsers2 = await repository.getFollowers(userToFollow.userId)
-        assert.equal(followingUsers2.length, 0)
-    })
-
-    it('Should search for users', async () => {
-        const results = await repository.searchUsers('t', 50)
-        assert.equal(results.users.length, 1)
-
-        const results2 = await repository.searchUsers(uuid(), 50)
-        assert.equal(results2.users.length, 0)
+        assert.equal(followingUsers2.users.length, 0)
     })
 
     it('Should not create event if same event type as previous ', async () => {
@@ -154,12 +146,12 @@ describe("Main repository tests", () => {
     });
 
     it('Should update leaderboards', async () => {
-        const user1 = await createFakeUser("a")
-        const user2 = await createFakeUser("b")
-        const user3 = await createFakeUser("c")
-        const user4 = await createFakeUser("d")
-        const user5 = await createFakeUser("e")
-        const user6 = await createFakeUser("f")
+        const user1 = await createFakeUser("f")
+        const user2 = await createFakeUser("e")
+        const user3 = await createFakeUser("d")
+        const user4 = await createFakeUser("c")
+        const user5 = await createFakeUser("b")
+        const user6 = await createFakeUser("a")
         await repository.saveAllTimeScore(user1.userId, 900)
         await repository.saveAllTimeScore(user2.userId, 700)
         await repository.saveAllTimeScore(user3.userId, 700)
@@ -173,16 +165,16 @@ describe("Main repository tests", () => {
 
         Object.assign(user1, {allTimeScore: 900, rank: 1})
         Object.assign(user2, {allTimeScore: 700, rank: 2})
-        Object.assign(user3, {allTimeScore: 700, rank: 2})
-        Object.assign(user4, {allTimeScore: 400, rank: 3})
-        Object.assign(user5, {allTimeScore: 400, rank: 3})
-        Object.assign(user6, {allTimeScore: 200, rank: 4})
+        Object.assign(user3, {allTimeScore: 700, rank: 3})
+        Object.assign(user4, {allTimeScore: 400, rank: 4})
+        Object.assign(user5, {allTimeScore: 400, rank: 5})
+        Object.assign(user6, {allTimeScore: 200, rank: 6})
 
         assert.deepStrictEqual(scores[0], user1, "First user is incorrect")
-        assert.deepStrictEqual(scores[1], user3, "Second user is incorrect")
-        assert.deepStrictEqual(scores[2], user2, "Third user is incorrect")
-        assert.deepStrictEqual(scores[3], user5, "Fourth user is incorrect")
-        assert.deepStrictEqual(scores[4], user4, "Fifth user is incorrect")
+        assert.deepStrictEqual(scores[1], user2, "Second user is incorrect")
+        assert.deepStrictEqual(scores[2], user3, "Third user is incorrect")
+        assert.deepStrictEqual(scores[3], user4, "Fourth user is incorrect")
+        assert.deepStrictEqual(scores[4], user5, "Fifth user is incorrect")
         assert.deepStrictEqual(scores[5], user6, "Sixth user is incorrect")
     });
 

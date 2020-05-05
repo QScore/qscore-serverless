@@ -18,7 +18,7 @@ export interface User {
     readonly rank?: number
 }
 
-export interface SearchResult {
+export interface UserListResult {
     readonly users: User[]
     readonly nextCursor: (string | undefined)
 }

@@ -1,8 +1,7 @@
 import * as AWS from "aws-sdk"
-import {Repository} from "./repository"
-import {Event, Follow, SearchResult, User} from './model/types'
-import {EventDynamo, FollowDynamo, SearchDynamo, UserDynamo} from "./model/dynamoTypes";
-import {LeaderboardScoreRedis, RedisCache} from './redisCache';
+import {Event, User, UserListResult} from './model/types'
+import {EventDynamo, FollowDynamo, UserDynamo} from "./model/dynamoTypes";
+import {RedisCache} from './redisCache';
 import {decrypt, encrypt} from "../util/encryption/encryptor";
 
 const mainTable = process.env.MAIN_TABLE as string
@@ -13,7 +12,17 @@ export interface UserInfoParams {
     readonly avatar?: string
 }
 
-export class MainRepository implements Repository {
+export interface PrimaryKey {
+    readonly PK: string
+    readonly SK: string
+}
+
+export interface QueryInputAndOutput {
+    readonly queryInput: AWS.DynamoDB.DocumentClient.QueryInput
+    readonly queryOutput: AWS.DynamoDB.DocumentClient.QueryOutput
+}
+
+export class MainRepository {
     private documentClient: AWS.DynamoDB.DocumentClient
     private redisCache: RedisCache
 
@@ -42,126 +51,76 @@ export class MainRepository implements Repository {
     }
 
     async getLeaderboardScoreRange(min: number, max: number): Promise<User[]> {
+        //Get leaderboard scores from redis
         const scores = await this.redisCache.getLeaderboardScoreRange(min, max)
-        const userIds = scores.map(score => {
-            return score.userId
-        })
 
-        if (userIds.length == 0) {
+        //If no scores, early return
+        if (scores.length == 0) {
             return []
         }
-        const users = await this.batchGetUsers(userIds)
-        const userMap = new Map(users.map(user => [user.userId, user]));
 
-        //Filter scores that do not have a corresponding user 
-        const sortedScores: LeaderboardScoreRedis[] = scores.sort((a, b) => (a.rank > b.rank) ? 1 : -1)
-
-        const filteredUsers = sortedScores.reduce((output, score) => {
-            const user = userMap.get(score.userId)
-            if (user) {
-                console.log(">>UPDATED USER: " + JSON.stringify(score.score))
-                const updatedUser: User =
-                    Object.assign(user, {allTimeScore: score.score, rank: score.rank})
-                //array push
-                output.push(updatedUser)
-            }
-            return output
-        }, [] as User[]);
-
-        //Handle duplicate scores and assign the same rank
-        let newRank = 0
-        const finalResult: User[] = filteredUsers.map((user, index) => {
-            const previousItem = sortedScores[index - 1]
-            if (!previousItem) {
-                newRank = 1
-            } else if (user.allTimeScore && previousItem.score > user.allTimeScore) {
-                newRank++
-            }
-            return {
-                userId: user.userId,
-                username: user.username,
-                followerCount: user.followerCount,
-                followingCount: user.followingCount,
-                allTimeScore: user.allTimeScore,
-                avatar: user.avatar,
-                rank: newRank
-            }
+        //Get users for scores
+        const leaderboardUserIds = scores.map(score => {
+            return score.userId
         })
-        return finalResult
+        const users = await this.batchGetUsers(leaderboardUserIds)
+
+        //Convert leaderboard scores to a map of userId -> Score
+        const userIdToScoreMap = new Map(scores.map(score => [score.userId, score]));
+
+        //Assign scores to each user
+        users.forEach(user => {
+            const scoreForUser = userIdToScoreMap.get(user.userId)
+            Object.assign(user, {allTimeScore: scoreForUser?.score, rank: scoreForUser?.rank})
+        })
+
+        users.sort((a: User, b: User) => {
+            return (b.allTimeScore ?? 0) - (a.allTimeScore ?? 0)
+        })
+
+        //Return users
+        return users
     }
 
-    //TODO: Paginate this
     async getWhichUsersAreFollowed(currentUserId: string, userIdsToCheck: string[]): Promise<string[]> {
-        const keys = userIdsToCheck.map(userId => {
+        const keys: PrimaryKey[] = userIdsToCheck.map(userId => {
             return {
                 PK: `USER#${currentUserId}`,
                 SK: `FOLLOWING#${userId}`
             }
         })
 
-        const batchGetParams: AWS.DynamoDB.DocumentClient.BatchGetItemInput = {
-            RequestItems: {
-                [mainTable]: {
-                    Keys: keys
-                }
-            }
-        }
-        const results = await this.documentClient.batchGet(batchGetParams).promise()
-        return results.Responses?.[mainTable].map((user: FollowDynamo) => {
+        const results = await this.batchGet(keys)
+        return results?.map((user: FollowDynamo) => {
             return user.followingUserId
         }) ?? []
     }
 
-    async searchUsersWithCursor(cursor: string): Promise<SearchResult> {
+    async getFollowedUsersWithCursor(cursor: string): Promise<UserListResult> {
         const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
-        return await this.doSearch(queryInput)
+        return await this.fetchUsers(queryInput, "followingUserId")
     }
 
-    async searchUsers(searchQuery: string, limit: number): Promise<SearchResult> {
-        const queryInput: AWS.DynamoDB.DocumentClient.QueryInput = {
-            TableName: mainTable,
-            KeyConditionExpression: '#PK = :PK And begins_with(#SK, :SK)',
-            ExpressionAttributeNames: {
-                '#PK': "PK",
-                '#SK': "SK"
-            },
-            ExpressionAttributeValues: {
-                ':PK': `SEARCH`,
-                ':SK': searchQuery.toLowerCase(),
-            },
-            Limit: limit
-        }
-        return await this.doSearch(queryInput)
+    async getFollowersWithCursor(cursor: string): Promise<UserListResult> {
+        const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
+        return await this.fetchUsers(queryInput, "userId")
     }
 
-    private async doSearch(queryInput: AWS.DynamoDB.DocumentClient.QueryInput): Promise<SearchResult> {
-        const queryResult = await this.documentClient.query(queryInput).promise()
-        if (!queryResult.Items || queryResult.Items.length == 0) {
+    async searchQueryWithCursor(cursor: string): Promise<UserListResult> {
+        const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
+        return await this.fetchUsers(queryInput, "userId")
+    }
+
+    async searchUsers(searchQuery: string, currentUserId: string, limit: number): Promise<UserListResult> {
+        const searchResult = await this.querySearchItems(searchQuery, limit)
+        if (searchResult.users.length == 0) {
             return {
                 users: [],
                 nextCursor: undefined
             }
         }
-
-        //Batch get users
-        const userIds = queryResult.Items.map(user => {
-            return user.userId
-        })
-
-        const users = await this.batchGetUsers(userIds)
-        return {
-            users: users,
-            nextCursor: ((): string | undefined => {
-                const lastKey = queryResult?.LastEvaluatedKey
-                if (!lastKey) {
-                    return undefined
-                }
-
-                const newQuery = queryInput
-                newQuery.ExclusiveStartKey = queryResult?.LastEvaluatedKey
-                return encrypt(JSON.stringify(newQuery))
-            })()
-        }
+        await this.setCurrentUserFollowingStatus(currentUserId, searchResult.users)
+        return searchResult
     }
 
     async unfollowUser(currentUserId: string, targetUserId: string): Promise<void> {
@@ -269,7 +228,7 @@ export class MainRepository implements Repository {
         await this.documentClient.transactWrite(params).promise()
     }
 
-    async getFollowedUsers(currentUserId: string): Promise<User[]> {
+    async getFollowedUsers(currentUserId: string): Promise<UserListResult> {
         //Run the query
         const queryParams: AWS.DynamoDB.DocumentClient.QueryInput = {
             TableName: mainTable,
@@ -284,54 +243,10 @@ export class MainRepository implements Repository {
             },
             ScanIndexForward: false
         }
-        const queryResult = await this.documentClient.query(queryParams).promise()
-        const users: Follow[] = queryResult.Items?.map(item => {
-            return {
-                userId: item.userId,
-                followingUserId: item.followingUserId
-            }
-        }) ?? []
-        if (users.length == 0) {
-            return []
-        }
-
-        const userIds = users.map((user) => {
-            return user.followingUserId
-        })
-
-        return await this.batchGetUsers(userIds)
+        return await this.fetchUsers(queryParams, "followingUserId")
     }
 
-    private async batchGetUsers(userIds: string[]): Promise<User[]> {
-        //Batch get users
-        const keys = userIds.map(userId => {
-            return {
-                PK: `USER#${userId}`,
-                SK: `EVENT#9999`
-            }
-        })
-
-        const batchGetParams: AWS.DynamoDB.DocumentClient.BatchGetItemInput = {
-            RequestItems: {
-                [mainTable]: {
-                    Keys: keys
-                }
-            }
-        }
-        const results = await this.documentClient.batchGet(batchGetParams).promise()
-        return results.Responses?.[mainTable].map((user: UserDynamo) => {
-            return {
-                userId: user.userId,
-                username: user.username,
-                followerCount: user.followerCount,
-                followingCount: user.followingCount,
-                allTimeScore: user.allTimeScore,
-                avatar: user.avatar
-            }
-        }) ?? []
-    }
-
-    async getFollowers(userId: string): Promise<User[]> {
+    async getFollowers(userId: string): Promise<UserListResult> {
         //Run the query
         const queryParams: AWS.DynamoDB.DocumentClient.QueryInput = {
             TableName: mainTable,
@@ -347,24 +262,7 @@ export class MainRepository implements Repository {
             },
             ScanIndexForward: false
         }
-        const queryResult = await this.documentClient.query(queryParams).promise()
-        const followerUsers: Follow[] = queryResult.Items?.map(item => {
-            return {
-                userId: item.userId,
-                followingUserId: item.followingUserId
-            }
-        }) ?? []
-
-        if (followerUsers.length == 0) {
-            return []
-        }
-
-        //Batch get users
-        const keys = followerUsers.map(user => {
-            return user.userId
-        })
-
-        return await this.batchGetUsers(keys)
+        return await this.fetchUsers(queryParams, "userId")
     }
 
     async createEvent(event: Event): Promise<Event> {
@@ -416,6 +314,7 @@ export class MainRepository implements Repository {
                     let setExpressions: string[] = []
                     if (username) {
                         setExpressions.push("username = :username")
+                        setExpressions.push("GS1SK = :GS1SK")
                     }
                     if (avatar) {
                         setExpressions.push("avatar = :avatar")
@@ -429,36 +328,12 @@ export class MainRepository implements Repository {
                     const result: AWS.DynamoDB.DocumentClient.ExpressionAttributeValueMap = {}
                     result[":username"] = username
                     result[":avatar"] = avatar
+                    result[":GS1SK"] = username?.toLowerCase()
                     return result
                 })()
             }
         }
         transactItems.push(update)
-
-        if (username && existingUser?.username != username) {
-            //Username changed, update it
-            transactItems.push({
-                Delete: {
-                    TableName: mainTable,
-                    Key: {
-                        "PK": `SEARCH`,
-                        "SK": existingUser?.username.toLowerCase()
-                    }
-                }
-            })
-            transactItems.push({
-                Put: {
-                    TableName: mainTable,
-                    Item: {
-                        PK: `SEARCH`,
-                        SK: username.toLowerCase(),
-                        username: username,
-                        userId: userId,
-                        itemType: "Search"
-                    }
-                }
-            })
-        }
 
         const params: AWS.DynamoDB.DocumentClient.TransactWriteItemsInput = {
             TransactItems: transactItems
@@ -470,8 +345,8 @@ export class MainRepository implements Repository {
         const userItem: UserDynamo = {
             PK: `USER#${userId}`,
             SK: `EVENT#9999`,
-            GS1PK: `SCORE#ALL_TIME`,
-            GS1SK: "0",
+            GS1PK: `SEARCH`,
+            GS1SK: username.toLowerCase(),
             itemType: `User`,
             avatar: avatar,
             userId: userId,
@@ -481,30 +356,12 @@ export class MainRepository implements Repository {
             allTimeScore: 0,
         }
 
-        const searchItem: SearchDynamo = {
-            PK: `SEARCH`,
-            SK: username.toLowerCase(),
-            username: username,
-            userId: userId,
-            itemType: "Search"
-        }
-
         const params: AWS.DynamoDB.DocumentClient.TransactWriteItemsInput = {
             TransactItems: [
                 {
                     Put: {
                         TableName: mainTable,
                         Item: userItem,
-                        ConditionExpression: "attribute_not_exists(#PK)",
-                        ExpressionAttributeNames: {
-                            "#PK": "PK"
-                        }
-                    }
-                },
-                {
-                    Put: {
-                        TableName: mainTable,
-                        Item: searchItem,
                         ConditionExpression: "attribute_not_exists(#PK)",
                         ExpressionAttributeNames: {
                             "#PK": "PK"
@@ -619,6 +476,174 @@ export class MainRepository implements Repository {
             allTimeScore: result.Item.allTimeScore,
             avatar: result.Item.avatar
         }
+    }
+
+    async save24HourScore(userId: string, score24: number): Promise<void> {
+        const params: AWS.DynamoDB.DocumentClient.UpdateItemInput = {
+            TableName: mainTable,
+            Key: {
+                PK: `USER#${userId}`,
+                SK: 'EVENT#9999'
+            },
+            UpdateExpression: 'set score24 = :score24',
+            ExpressionAttributeValues: {
+                ":score24": score24
+            }
+        }
+        this.documentClient.update(params)
+    }
+
+    private async batchGet(keys: PrimaryKey[]) {
+        const batchGetParams: AWS.DynamoDB.DocumentClient.BatchGetItemInput = {
+            RequestItems: {
+                [mainTable]: {
+                    Keys: keys
+                }
+            }
+        }
+        const results = await this.documentClient.batchGet(batchGetParams).promise()
+        return results.Responses?.[mainTable]
+    }
+
+    private async setCurrentUserFollowingStatus(currentUserId: string, users: User[]) {
+        const userIdsToCheck: string[] = this.mapUsersToUserIds(users)
+        const followedUserIds = await this.getWhichUsersAreFollowed(currentUserId, userIdsToCheck)
+        const followedMap = this.convertUserIdsToMap(followedUserIds)
+        users.forEach(user => {
+            Object.assign(user, {isCurrentUserFollowing: followedMap.get(user.userId) ?? false})
+        })
+    }
+
+    private convertUserIdsToMap(userIds: string[]) {
+        return new Map(userIds.map(userId => [userId, true]));
+    }
+
+    private mapUsersToUserIds(users: User[]) {
+        return users.map(item => {
+            return item.userId
+        })
+    }
+
+    private async querySearchItems(searchQuery: string, limit: number): Promise<UserListResult> {
+        const result = await this.queryGs1BeginsWith('SEARCH', searchQuery.toLowerCase(), limit)
+        const users = this.mapItemsToUsers(result.queryOutput.Items)
+        return {
+            users: users,
+            nextCursor: this.buildCursorFromQuery(result.queryInput, result.queryOutput)
+        }
+    }
+
+    private async queryGs1BeginsWith(gs1Pk: String, gs1Sk: String, limit: number): Promise<QueryInputAndOutput> {
+        const queryInput: AWS.DynamoDB.DocumentClient.QueryInput = {
+            TableName: mainTable,
+            IndexName: "GS1",
+            KeyConditionExpression: '#GS1PK = :GS1PK And begins_with(#GS1SK, :GS1SK)',
+            ExpressionAttributeNames: {
+                '#GS1PK': "GS1PK",
+                '#GS1SK': "GS1SK"
+            },
+            ExpressionAttributeValues: {
+                ':GS1PK': gs1Pk,
+                ':GS1SK': gs1Sk,
+            },
+            Limit: limit
+        }
+        const queryOutput = await this.documentClient.query(queryInput).promise()
+        return {
+            queryInput: queryInput,
+            queryOutput: queryOutput
+        }
+    }
+
+    private buildCursorFromQuery(queryInput: AWS.DynamoDB.DocumentClient.QueryInput,
+                                 queryOutput: AWS.DynamoDB.DocumentClient.QueryOutput): string | undefined {
+        const lastKey = queryOutput?.LastEvaluatedKey
+        if (!lastKey) {
+            return undefined
+        }
+
+        const newQuery = queryInput
+        newQuery.ExclusiveStartKey = queryOutput?.LastEvaluatedKey
+        return encrypt(JSON.stringify(newQuery))
+    }
+
+    private mapItemsToUsers(items?: AWS.DynamoDB.DocumentClient.ItemList): User[] {
+        return items?.map((item: User) => {
+            return {
+                userId: item.userId,
+                username: item.username,
+                allTimeScore: item.allTimeScore,
+                avatar: item.avatar,
+                followerCount: item.followerCount,
+                followingCount: item.followingCount,
+                score: item.score,
+                rank: item.rank
+            }
+        }) ?? []
+    }
+
+    private async fetchUsers(queryInput: AWS.DynamoDB.DocumentClient.QueryInput, userIdProperty: string): Promise<UserListResult> {
+        const queryResult = await this.documentClient.query(queryInput).promise()
+        if (!queryResult.Items || queryResult.Items.length == 0) {
+            return {
+                users: [],
+                nextCursor: undefined
+            }
+        }
+
+        //Batch get users
+        const userIds = queryResult.Items.map(item => {
+            return item[userIdProperty]
+        })
+
+        const users = await this.batchGetUsers(userIds)
+
+        return {
+            users: users,
+            nextCursor: ((): string | undefined => {
+                const lastKey = queryResult?.LastEvaluatedKey
+                if (!lastKey) {
+                    return undefined
+                }
+
+                const newQuery = queryInput
+                newQuery.ExclusiveStartKey = queryResult?.LastEvaluatedKey
+                return encrypt(JSON.stringify(newQuery))
+            })()
+        }
+    }
+
+    private async batchGetUsers(userIds: string[]): Promise<User[]> {
+        //Batch get users
+        const keys = userIds.map(userId => {
+            return {
+                PK: `USER#${userId}`,
+                SK: `EVENT#9999`
+            }
+        })
+
+        const batchGetParams: AWS.DynamoDB.DocumentClient.BatchGetItemInput = {
+            RequestItems: {
+                [mainTable]: {
+                    Keys: keys
+                }
+            }
+        }
+        const results = await this.documentClient.batchGet(batchGetParams).promise()
+        return results.Responses?.[mainTable].map((user: UserDynamo) => {
+            return {
+                userId: user.userId,
+                username: user.username,
+                followerCount: user.followerCount,
+                followingCount: user.followingCount,
+                allTimeScore: user.allTimeScore,
+                avatar: user.avatar
+            }
+        }) ?? []
+    }
+
+    private convertUsersToMap(users: User[]) {
+        return new Map(users.map(user => [user.userId, user]));
     }
 }
 

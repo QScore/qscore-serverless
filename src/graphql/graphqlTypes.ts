@@ -34,10 +34,12 @@ export interface GetUserPayloadGql {
 
 export interface FollowedUsersPayloadGql {
     readonly users: User[]
+    readonly nextCursor: (string | undefined)
 }
 
 export interface FollowingUsersPayloadGql {
     readonly users: User[]
+    readonly nextCursor: (string | undefined)
 }
 
 export interface LeaderboardRangePayloadGql {
