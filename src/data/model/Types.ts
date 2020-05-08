@@ -16,6 +16,7 @@ export interface User {
     readonly avatar: (string | undefined)
     readonly isCurrentUserFollowing?: boolean
     readonly rank?: number
+    readonly geofenceStatus?: EventType
 }
 
 export interface UserListResult {

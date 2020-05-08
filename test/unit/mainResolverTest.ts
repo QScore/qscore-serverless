@@ -229,6 +229,18 @@ describe('Main Resolver Integration tests', function () {
         assert.equal(result2.users[2].userId, user2.userId)
         assert.equal(result2.users[2].rank, 3)
         assert.equal(result2.users[2].allTimeScore, 200)
+
+        //Test social leaderboard
+        await resolver.followUser(user1.userId, user3.userId)
+        const socialLeaderboard = await resolver.getSocialLeaderboardRange(user1.userId, 0, 100)
+        assert.equal(socialLeaderboard.users.length, 2, "lengths are not equal")
+        assert.equal(socialLeaderboard.users[0].userId, user3.userId)
+        assert.equal(socialLeaderboard.users[0].rank, 1)
+        assert.equal(socialLeaderboard.users[0].allTimeScore, 600)
+
+        assert.equal(socialLeaderboard.users[1].userId, user1.userId)
+        assert.equal(socialLeaderboard.users[1].rank, 2)
+        assert.equal(socialLeaderboard.users[1].allTimeScore, 300)
     })
 
     it('should not be able to follow yourself', async () => {

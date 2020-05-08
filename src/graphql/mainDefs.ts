@@ -31,6 +31,7 @@ export const typeDef = gql`
         isCurrentUserFollowing: Boolean
         followingCount: Int
         followerCount: Int
+        geofenceStatus: String
     }
 
     input UpdateUserInfoInput {
@@ -166,6 +167,7 @@ export const typeDef = gql`
         getFollowers(input: GetFollowersInput!): GetFollowersPayload!
         getFollowersWithCursor(input: GetFollowersWithCursorInput!): GetFollowersPayload!
         getLeaderboardRange(input: LeaderboardRangeInput!): LeaderboardRangePayload!
+        getSocialLeaderboardRange(input: LeaderboardRangeInput!): LeaderboardRangePayload!
     }
 `
 
@@ -261,6 +263,13 @@ export function buildResolver(resolver: MainResolver): any {
                 const start: number = args.input.start
                 const end: number = args.input.end
                 return await resolver.getLeaderboardRange(currentUserId, start, end)
+            },
+
+            getSocialLeaderboardRange: async (parent: any, args: any, context: any): Promise<LeaderboardRangePayloadGql> => {
+                const currentUserId = getUserIdFromContext(context)
+                const start: number = args.input.start
+                const end: number = args.input.end
+                return await resolver.getSocialLeaderboardRange(currentUserId, start, end)
             },
         }
     }

@@ -41,14 +41,7 @@ export class MainResolver {
 
         //Calculate all time score
         const latestEvent = await this.repository.getLatestEventForUser(userId)
-        let allTimeScore = 0
-        if (latestEvent?.eventType == "HOME") {
-            allTimeScore = await this.updateAllTimeScore(userId)
-        } else {
-            allTimeScore = await this.repository.getAllTimeScore(userId)
-        }
-        await this.repository.updateLastUpdatedTime(userId)
-        const rank = await this.repository.getAllTimeLeaderboardRank(userId)
+        let {allTimeScore, rank} = await this.setupScoreForUser(latestEvent, userId)
 
         //Check if current user is following
         const isCurrentUserFollowing = await this.isCurrentUserFollowing(currentUserId, userId)
@@ -181,6 +174,28 @@ export class MainResolver {
         //Save 24 hour score
         await this.repository.save24HourScore(userId, score24)
 
+        let {allTimeScore, rank} = await this.setupScoreForUser(latestEvent, userId)
+
+        const result: User = Object.assign(user, {
+            allTimeScore: allTimeScore,
+            score: score24,
+            rank: rank,
+            geofenceStatus: latestEvent?.eventType
+        })
+
+        return {
+            user: result
+        }
+    }
+
+    async getSocialLeaderboardRange(currentUserId: string, start: number, end: number): Promise<LeaderboardRangePayloadGql> {
+        const users = await this.repository.getSocialLeaderboard(currentUserId, start, end)
+        return {
+            users: users
+        }
+    }
+
+    private async setupScoreForUser(latestEvent: Event | undefined, userId: string) {
         let allTimeScore = 0
         if (latestEvent?.eventType == "HOME") {
             allTimeScore = await this.updateAllTimeScore(userId)
@@ -189,16 +204,7 @@ export class MainResolver {
         }
         await this.repository.updateLastUpdatedTime(userId)
         const rank = await this.repository.getAllTimeLeaderboardRank(userId)
-
-        const result: User = Object.assign(user, {
-            allTimeScore: allTimeScore,
-            score: score24,
-            rank: rank
-        })
-
-        return {
-            user: result
-        }
+        return {allTimeScore, rank};
     }
 
     private async isCurrentUserFollowing(currentUserId: string, userId: string) {

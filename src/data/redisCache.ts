@@ -23,18 +23,13 @@ export class RedisCache {
         this.redis = redis
     }
 
-    private getLastUpdatedKey(userId: String) {
-        return `${lastUpdatedPartialKey}:${userId}`
-    }
-
-
     async getAllTimeScore(userId: string): Promise<number> {
-        const result = await this.redis.zscore(leaderboardAllTimeKey, `USER:${userId}`) ?? "0"
+        const result = await this.redis.zscore(leaderboardAllTimeKey, this.getLeaderboardKey(userId)) ?? "0"
         return parseInt(result)
     }
 
     async getLeaderboardRank(userId: string): Promise<number> {
-        const rank = await this.redis.zrevrank(leaderboardAllTimeKey, `USER:${userId}`) ?? -1
+        const rank = await this.redis.zrevrank(leaderboardAllTimeKey, this.getLeaderboardKey(userId)) ?? -1
         return rank
     }
 
@@ -47,33 +42,13 @@ export class RedisCache {
     }
 
     async saveScoreToLeaderboard(userId: string, score: number): Promise<void> {
-        await this.redis.zadd(leaderboardAllTimeKey, score.toString(), `USER:${userId}`)
+        await this.redis.zadd(leaderboardAllTimeKey, score.toString(), this.getLeaderboardKey(userId))
     }
 
     async getLeaderboardScoreRange(min: number, max: number): Promise<LeaderboardScoreRedis[]> {
         //Get scores from redis
         const result = await this.redis.zrevrange(leaderboardAllTimeKey, min, max, 'WITHSCORES')
-
-        //Separate user ids and scores
-        const userIds = result
-            .filter((_, index) => {
-                return index % 2 === 0;
-            })
-            .map((key) => {
-                return key.split(":")[1]
-            })
-        const scores = result
-            .filter((_, index) => {
-                return index % 2 != 0;
-            })
-
-        return userIds.map((userId, index) => {
-            return {
-                userId: userId,
-                score: parseInt(scores[index]),
-                rank: index + 1
-            }
-        })
+        return this.convertToLeaderboardScoreRedis(result)
     }
 
     async setLatestEvent(event: Event): Promise<string> {
@@ -96,11 +71,64 @@ export class RedisCache {
         }
     }
 
+    async updateLastUpdatedTime(userId: string) {
+        await this.redis.set(this.getLastUpdatedKey(userId), Date.now().toString())
+    }
+
+    async removeScore(userId: string) {
+        await this.redis.zrem(leaderboardAllTimeKey, this.getLeaderboardKey(userId))
+    }
+
+    async saveSocialScore(currentUserId: string, followedUserId: string, score: number) {
+        await this.redis.zadd(this.getSocialScoresKey(currentUserId), score.toString(), this.getLeaderboardKey(followedUserId))
+    }
+
+    async getSocialLeaderboardScoreRange(userId: string, min: number, max: number): Promise<LeaderboardScoreRedis[]> {
+        //Get scores from redis
+        const result = await this.redis.zrevrange(this.getSocialScoresKey(userId), min, max, 'WITHSCORES')
+        return this.convertToLeaderboardScoreRedis(result)
+    }
+
+    async setSocialLeaderboardExpiration(userId: string, seconds: number) {
+        await this.redis.expire(this.getSocialScoresKey(userId), seconds)
+    }
+
+    private convertToLeaderboardScoreRedis(items: string[]): LeaderboardScoreRedis[] {
+        //Separate user ids and scores
+        const userIds = items
+            .filter((_, index) => {
+                return index % 2 === 0;
+            })
+            .map((key) => {
+                return key.split(":")[1]
+            })
+        const scores = items
+            .filter((_, index) => {
+                return index % 2 != 0;
+            })
+
+        return userIds.map((userId, index) => {
+            return {
+                userId: userId,
+                score: parseInt(scores[index]),
+                rank: index + 1
+            }
+        })
+    }
+
+    private getLastUpdatedKey(userId: String) {
+        return `${lastUpdatedPartialKey}:${userId}`
+    }
+
+    private getLeaderboardKey(userId: string): string {
+        return `USER:${userId}`
+    }
+
     private getLatestEventKey(userId: string): string {
         return `USER:${userId}:latestEvent`
     }
 
-    async updateLastUpdatedTime(userId: string) {
-        await this.redis.set(this.getLastUpdatedKey(userId), Date.now().toString())
+    private getSocialScoresKey(userId: string): string {
+        return `USER:${userId}:socialScores`
     }
 }
