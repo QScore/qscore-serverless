@@ -120,4 +120,6 @@ dist
 dump.rdb
 
 #test json
-test/scratch.json
+/test/scratch.json
+/.idea/
+/.vscode/
