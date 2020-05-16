@@ -2,9 +2,10 @@
  * USAGE: npx ts-node ./scripts/generateSeed.ts
  */
 
-import { UserDynamo, EventDynamo, EventType, FollowDynamo, SearchDynamo } from '../src/data/model/Types';
-import * as faker from 'faker'
-import * as fs from 'fs';
+import {EventType} from '../src/data/model/types';
+import {EventDynamo, FollowDynamo, SearchDynamo, UserDynamo} from "../src/data/model/dynamoTypes";
+import faker from 'faker'
+import fs from 'fs';
 
 faker.seed(123);
 const numUsers = 8
@@ -23,8 +24,8 @@ for (let i = 0; i < numUsers; i++) {
     const userDynamo: UserDynamo = {
         PK: `USER#${userId}`,
         SK: `EVENT#9999`,
-        GS1PK: `SCORE#ALL_TIME`,
-        GS1SK: allTimeScore.toString(),
+        GS1PK: `SEARCH`,
+        GS1SK: username.toLowerCase(),
         itemType: `User`,
         userId: userId,
         username: username,
@@ -33,16 +34,7 @@ for (let i = 0; i < numUsers; i++) {
         allTimeScore: allTimeScore
     }
     users.push(userDynamo)
-
-    //Add searches
-    const searchDynamo: SearchDynamo = {
-        PK: `SEARCH`,
-        SK: username.toLowerCase(),
-        username: username,
-        userId: userId
-    }
-    searches.push(searchDynamo)
-
+    
     //Add events for each user
     const twoDays = 2 * 24 * 60 * 60 * 1000
     const maxEvents = faker.random.number(maxEventsPerUser)

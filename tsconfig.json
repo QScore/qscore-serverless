@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "lib": [
-            "es2020"
+            "es2019"
         ],
         "removeComments": true,
         "moduleResolution": "node",
@@ -11,8 +11,10 @@
         "sourceMap": true,
         "target": "es2019",
         "outDir": "lib",
+        "module": "commonjs",
         "strictNullChecks": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "esModuleInterop": true
     },
     "include": [
         "./**/*.ts"

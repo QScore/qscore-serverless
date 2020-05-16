@@ -1,24 +1,21 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ApolloServer } from "apollo-server-lambda";
-import { makeExecutableSchema, mergeSchemas } from "graphql-tools"
-import { typeDef as geofenceEventTypeDef, resolvers as geofenceEventResolvers} from './types/geofenceEvent';
-import { typeDef as userTypeDef, resolvers as userResolvers} from './types/user';
+import { typeDef as userTypeDef, buildResolver } from './mainDefs';
 import { Context, Callback } from 'aws-lambda';
+import { mainResolver } from '../data/injector';
+import { localResolver } from '../data/testInjector';
 
-const schema = mergeSchemas({
-  schemas: [
-      makeExecutableSchema({
-          typeDefs: geofenceEventTypeDef,
-          resolvers: geofenceEventResolvers
-      }),
-      makeExecutableSchema({
-          typeDefs: userTypeDef,
-          resolvers: userResolvers
-      })
-  ]
-})
+let resolver
+if (process.env.SLS_OFFLINE) {
+  resolver = buildResolver(localResolver)
+} else {
+  resolver = buildResolver(mainResolver)
+}
 
 const server = new ApolloServer({
-  schema: schema,
+  typeDefs: userTypeDef,
+  resolvers: resolver,
   context: ({ event, context }) => ({
     headers: event.headers,
     functionName: context.functionName,
@@ -35,6 +32,6 @@ exports.graphqlHandler = (event: any, context: Context, callback: Callback) => {
       methods: ["POST", "GET"],
       allowedHeaders: ["Content-Type", "Origin", "Accept"]
     }
-  });
-  return handler(event, context, callback);
+  })
+  return handler(event, context, callback)
 }
