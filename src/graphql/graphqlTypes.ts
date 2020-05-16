@@ -46,6 +46,10 @@ export interface LeaderboardRangePayloadGql {
     readonly users: User[]
 }
 
+export interface CheckUsernameExistsPayloadGql {
+    readonly exists: boolean
+}
+
 export interface GeofenceEventGql {
     readonly timestamp: string
     readonly userId: string

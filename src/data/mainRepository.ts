@@ -56,14 +56,14 @@ export class MainRepository {
     async getSocialLeaderboard(currentUserId: string, start: number, end: number): Promise<User[]> {
         //Check for redis sorted set
         let scores = await this.redisCache.getSocialLeaderboardScoreRange(currentUserId, start, end)
-        if (scores.length > 0) {
+        if (scores.length > 1) {
             //Update all social scores
             for (const score of scores) {
                 const updated = await this.redisCache.getAllTimeScore(score.userId)
-                await this.redisCache.saveSocialScore(currentUserId, score.userId, score.score)
+                await this.redisCache.saveSocialScore(currentUserId, score.userId, updated)
             }
         } else {
-            //Build a new sorted set with info from dynamodb
+            //Not following anyone or scores are empty. Build a new sorted set with info from dynamodb
             //Get all followed userIds
             const allUserIds: string[] = []
             let startKey: AWS.DynamoDB.Key | undefined = undefined
@@ -571,6 +571,28 @@ export class MainRepository {
 
     async updateLastUpdatedTime(userId: string) {
         return await this.redisCache.updateLastUpdatedTime(userId)
+    }
+
+    async checkUsernameExists(username: string): Promise<boolean> {
+        const queryInput: AWS.DynamoDB.DocumentClient.QueryInput = {
+            TableName: mainTable,
+            IndexName: "GS1",
+            KeyConditionExpression: '#GS1PK = :GS1PK And #GS1SK = :GS1SK',
+            ExpressionAttributeNames: {
+                '#GS1PK': "GS1PK",
+                '#GS1SK': "GS1SK"
+            },
+            ExpressionAttributeValues: {
+                ':GS1PK': 'SEARCH',
+                ':GS1SK': username.toLowerCase(),
+            }
+        }
+
+        const queryOutput = await this.documentClient.query(queryInput).promise()
+        if (!queryOutput.Items) {
+            return false
+        }
+        return queryOutput.Items.length > 0
     }
 
     private async assignScoresToUsers(users: User[], userIdToScoreMap: Map<string, LeaderboardScoreRedis>, currentUserId: string) {

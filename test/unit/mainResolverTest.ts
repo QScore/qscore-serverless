@@ -311,4 +311,12 @@ describe('Main Resolver Integration tests', function () {
         result = await resolver.getCurrentUser(user.userId)
         assert.equal(result.user.allTimeScore, 800)
     })
+
+    it('should check if username exists', async () => {
+        const user1 = await resolver.createUser(uuid(), uuid())
+        const result = await resolver.checkUsernameExists(user1.user.username)
+        assert.deepStrictEqual(result, {exists: true})
+        const result2 = await resolver.checkUsernameExists(uuid())
+        assert.deepStrictEqual(result2, {exists: false})
+    })
 })

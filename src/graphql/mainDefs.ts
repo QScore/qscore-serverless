@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {gql} from 'apollo-server-lambda';
 import {
+    CheckUsernameExistsPayloadGql,
     CreateGeofenceEventPayloadGql,
     CreateUserPayloadGql,
     CurrentUserPayloadGql,
@@ -138,6 +139,14 @@ export const typeDef = gql`
         user: User!
     }
 
+    input CheckUsernameExistsInput {
+        username: String!
+    }
+
+    type CheckUsernameExistsPayload {
+        exists: Boolean!
+    }
+
     enum GeofenceEventType {
         HOME
         AWAY
@@ -168,6 +177,7 @@ export const typeDef = gql`
         getFollowersWithCursor(input: GetFollowersWithCursorInput!): GetFollowersPayload!
         getLeaderboardRange(input: LeaderboardRangeInput!): LeaderboardRangePayload!
         getSocialLeaderboardRange(input: LeaderboardRangeInput!): LeaderboardRangePayload!
+        checkUsernameExists(input: CheckUsernameExistsInput!): CheckUsernameExistsPayload!
     }
 `
 
@@ -270,6 +280,10 @@ export function buildResolver(resolver: MainResolver): any {
                 const start: number = args.input.start
                 const end: number = args.input.end
                 return await resolver.getSocialLeaderboardRange(currentUserId, start, end)
+            },
+            checkUsernameExists: async (parent: any, args: any, context: any): Promise<CheckUsernameExistsPayloadGql> => {
+                const username: string = args.input.username
+                return await resolver.checkUsernameExists(username)
             },
         }
     }

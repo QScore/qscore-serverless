@@ -1,6 +1,7 @@
 import {Event, EventType, User} from './model/types';
 import {ApolloError} from "apollo-server-lambda"
 import {
+    CheckUsernameExistsPayloadGql,
     CreateGeofenceEventPayloadGql,
     CreateUserPayloadGql,
     CurrentUserPayloadGql,
@@ -192,6 +193,18 @@ export class MainResolver {
         const users = await this.repository.getSocialLeaderboard(currentUserId, start, end)
         return {
             users: users
+        }
+    }
+
+    async checkUsernameExists(username: string): Promise<CheckUsernameExistsPayloadGql> {
+        if (!username) {
+            return {
+                exists: false
+            }
+        }
+        const exists = await this.repository.checkUsernameExists(username)
+        return {
+            exists: exists
         }
     }
 
