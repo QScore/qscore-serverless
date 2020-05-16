@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin'
-import { Context } from 'aws-lambda';
+import {Context} from 'aws-lambda';
 
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT as string
 
