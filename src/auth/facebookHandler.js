@@ -23,7 +23,6 @@ export const facebookLoginHandler = async (event, context, callback) => {
         const avatar = fbInfo.picture.data.url
         const userExists = await checkUserExists(email, userId)
         if (userExists) {
-            console.log(`>>User exists, setting password ${password} for username: ${userId}`)
             await setPassword(email, password)
         } else {
             const tempPassword = "L5oKeM0mmG1SIa"

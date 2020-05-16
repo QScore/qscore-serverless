@@ -6,7 +6,7 @@ dotenv.config()
 
 import * as AWS from "aws-sdk"
 import { MainRepository } from "../src/data/mainRepository"
-import { User, Event } from "../src/data/model/Types"
+import { User, Event } from "../src/data/model/types"
 import * as Redis from 'ioredis-mock';
 
 AWS.config.getCredentials(function (err) {
