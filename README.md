@@ -19,19 +19,10 @@ First, add in a `./environment.json` file with the following information.  `SECR
 {
   "FIREBASE_DATABASE_URL": "[FIREBASE_DATABASE_URL]",
   "SECRET_KEY": "[SECRET_KEY]",
-  "FIREBASE_SERVICE_ACCOUNT": {
-    "type": "service_account",
-    "project_id": "[PROJECT_ID]",
-    "private_key_id": "[PRIVATE_KEY_ID]",
-    "private_key": "[PRIVATE_KEY]",
-    "client_id": "[CLIENT_ID]",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": "[CLIENT_X509]"
-  }
 }
 ```
+
+Next, add your `serviceAccount.json` file to `src/auth` directory.
 
 ## Running the server locally
 Install serverless framework:
