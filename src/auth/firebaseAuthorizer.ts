@@ -1,13 +1,12 @@
 import * as admin from 'firebase-admin'
 import {Context} from 'aws-lambda';
-
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT as string
+import * as serviceAccount from './serviceAccount.json'
 
 const initializeSdk = function (): void {
     // Check if Firebase Admin SDK is already initialized, if not, then do it
     if (admin.apps.length == 0) {
         admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+            credential: admin.credential.cert(serviceAccount.FIREBASE_SERVICE_ACCOUNT as admin.ServiceAccount),
             databaseURL: process.env.FIREBASE_DATABASE_URL
         });
     }
@@ -49,6 +48,9 @@ export const handler = async (event: any, context: Context): Promise<any> => {
             });
         }
 
+        // Prepare for validating Firebase JWT token by initializing SDK
+        initializeSdk();
+
         // Return from function if no authorizationToken present in header
         // context.fail('Unauthorized') will trigger API Gateway to return 401 response
         if (!event.authorizationToken) {
@@ -65,9 +67,6 @@ export const handler = async (event: any, context: Context): Promise<any> => {
             console.log("Header not formatted properly")
             return context.fail('Unauthorized');
         }
-
-        // Prepare for validating Firebase JWT token by initializing SDK
-        initializeSdk();
 
         // Call the firebase-admin provided token verification function with
         // the token provided by the client
