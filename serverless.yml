@@ -28,7 +28,7 @@ provider:
         - dynamodb:GetShardIterator
         - dynamodb:DescribeStream
         - dynamodb:ListStreams
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:*" 
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:*"
     - Effect: Allow
       Action:
         - cognito-idp:adminGetUser
@@ -43,45 +43,35 @@ provider:
     FIREBASE_DATABASE_URL: ${self:custom.secrets.FIREBASE_DATABASE_URL}
     FIREBASE_SERVICE_ACCOUNT: ${self:custom.secrets.FIREBASE_SERVICE_ACCOUNT}
     SECRET_KEY: ${self:custom.secrets.SECRET_KEY}
-    REDIS_HOST: 
+    REDIS_HOST:
       "Fn::GetAtt": [ElasticacheCluster, RedisEndpoint.Address]
 
 functions:
   graphql:
     handler: src/graphql/handler.graphqlHandler
     events:
-    - http:
-        path: graphql
-        method: post
-        cors: true
-        authorizer:
-          name: firebaseAuthorizer
-    - http:
-        path: graphql
-        method: get
-        cors: true
+      - http:
+          path: graphql
+          method: post
+          cors: true
+          authorizer:
+            name: firebaseAuthorizer
+      - http:
+          path: graphql
+          method: get
+          cors: true
     vpc:
       securityGroupIds:
         - "Fn::GetAtt": SecurityGroup.GroupId
       subnetIds:
         - Ref: PrivateSubnetA
-        
+
   firebaseAuthorizer:
     handler: src/auth/firebaseAuthorizer.handler
     cors: true
 
-  # updateScore:
-  #   handler: score/updateScore.handler
-  #   events:
-  #   - stream:
-  #       type: dynamodb
-  #       arn:
-  #         Fn::GetAtt:
-  #           - GeofenceEventsTable
-  #           - StreamArn
-
 custom:
-  secrets: ${file(environment.json)}
+  secrets: ${file(./environment.json)}
   accountId: { Ref: AWS::AccountId }
   stage: ${opt:stage, self:provider.stage}
   geofenceEventsTableName: ${self:custom.stage}-GeofenceEvents
@@ -94,8 +84,9 @@ custom:
     includeModules:
       forceExclude:
         - aws-sdk
+        - ioredis-mock
   serverless-offline:
-     useChildProcesses: true
+    useChildProcesses: true
   dynamodb:
     stages:
       - dev
@@ -163,7 +154,7 @@ resources:
       Properties:
         Description: "Cache Subnet Group"
         SubnetIds:
-        - Ref: PrivateSubnetA
+          - Ref: PrivateSubnetA
     SecurityGroup:
       DependsOn: VPC
       Type: AWS::EC2::SecurityGroup
@@ -179,11 +170,11 @@ resources:
         VpcId:
           Ref: VPC
         SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: '6379'
-          ToPort: '6379'
-          SourceSecurityGroupId: 
-            Ref: SecurityGroup
+          - IpProtocol: tcp
+            FromPort: '6379'
+            ToPort: '6379'
+            SourceSecurityGroupId:
+              Ref: SecurityGroup
     ElasticacheCluster:
       DependsOn: StorageSecurityGroup
       Type: AWS::ElastiCache::CacheCluster
@@ -193,7 +184,7 @@ resources:
         CacheNodeType: cache.t2.micro
         NumCacheNodes: 1
         VpcSecurityGroupIds:
-        - "Fn::GetAtt": StorageSecurityGroup.GroupId
+          - "Fn::GetAtt": StorageSecurityGroup.GroupId
         CacheSubnetGroupName:
           Ref: ElasticacheSubnetGroup
   
