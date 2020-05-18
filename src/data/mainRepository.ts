@@ -3,12 +3,13 @@ import {Event, User, UserListResult} from './model/types'
 import {EventDynamo, FollowDynamo, UserDynamo} from "./model/dynamoTypes";
 import {LeaderboardScoreRedis, RedisCache} from './redisCache';
 import {decrypt, encrypt} from "../util/encryption/encryptor";
+import {map, mergeRight} from "ramda"
 
 const mainTable = process.env.MAIN_TABLE as string
 
 export interface UserInfoParams {
-    readonly userId: string,
-    readonly username?: string,
+    readonly userId: string
+    readonly username?: string
     readonly avatar?: string
 }
 
@@ -21,8 +22,6 @@ export interface QueryInputAndOutput {
     readonly queryInput: AWS.DynamoDB.DocumentClient.QueryInput
     readonly queryOutput: AWS.DynamoDB.DocumentClient.QueryOutput
 }
-
-export type LeaderboardType = "SOCIAL" | "GLOBAL"
 
 export class MainRepository {
     private documentClient: AWS.DynamoDB.DocumentClient
@@ -40,9 +39,9 @@ export class MainRepository {
         return await this.redisCache.getAllTimeScore(userId)
     }
 
-    async saveAllTimeScore(userId: string, score: number, latestEvent?: Event): Promise<void> {
+    async saveAllTimeScore(userId: string, score: number, updatedTime: number, latestEvent?: Event): Promise<void> {
         if (latestEvent) {
-            const updatedEvent = Object.assign(latestEvent, {timestamp: Date.now()})
+            const updatedEvent = mergeRight(latestEvent, {timestamp: updatedTime.toString()})
             await this.redisCache.setLatestEvent(updatedEvent)
         }
         await this.redisCache.saveScoreToLeaderboard(userId, score)
@@ -55,89 +54,14 @@ export class MainRepository {
 
     async getSocialLeaderboard(currentUserId: string, start: number, end: number): Promise<User[]> {
         //Check for redis sorted set
-        let scores = await this.redisCache.getSocialLeaderboardScoreRange(currentUserId, start, end)
-        if (scores.length > 1) {
-            //Update all social scores
-            for (const score of scores) {
-                const updated = await this.redisCache.getAllTimeScore(score.userId)
-                await this.redisCache.saveSocialScore(currentUserId, score.userId, updated)
-            }
-        } else {
-            //Not following anyone or scores are empty. Build a new sorted set with info from dynamodb
-            //Get all followed userIds
-            const allUserIds: string[] = []
-            let startKey: AWS.DynamoDB.Key | undefined = undefined
-            do {
-                const queryInput = this.getFollowedUsersQuery(currentUserId, 100, startKey)
-                const result = await this.documentClient.query(queryInput).promise()
-                startKey = result.LastEvaluatedKey
-                const followedUserIds = result.Items?.map((item: FollowDynamo) => item.followingUserId) ?? []
-                allUserIds.push(...followedUserIds)
-            } while (startKey)
-            allUserIds.push(currentUserId)
-
-            //Update all items to sorted set
-            for (const followedUserId of allUserIds) {
-                const score = await this.redisCache.getAllTimeScore(followedUserId)
-                await this.redisCache.saveSocialScore(currentUserId, followedUserId, score)
-            }
-
-            //Query scores again
-            scores = await this.redisCache.getSocialLeaderboardScoreRange(currentUserId, start, end)
-        }
-
-        //Set 5 minute expiration on the scores
-        await this.redisCache.setSocialLeaderboardExpiration(currentUserId, 300)
-
-        if (scores.length == 0) {
-            return []
-        }
-
-        //Convert leaderboard scores to a map of userId -> Score
-        const userIdToScoreMap = new Map(scores.map(score => [score.userId, score]));
-
-        const leaderboardUserIds = scores.map(score => score.userId)
-        const users = await this.batchGetUsers(leaderboardUserIds)
-
-        //Assign scores to each user
-        await this.assignScoresToUsers(users, userIdToScoreMap, currentUserId);
-
-        //Return users
-        return users
+        const leaderboard = await this.redisCache.getSocialLeaderboardScoreRange(currentUserId, start, end)
+        return this.buildUsersForLeaderboard(currentUserId, leaderboard)
     }
 
     async getLeaderboardScoreRange(currentUserId: string, min: number, max: number): Promise<User[]> {
         //Get leaderboard scores from redis
-        let scores = await this.redisCache.getLeaderboardScoreRange(min, max)
-
-        //If no scores, early return
-        if (scores.length == 0) {
-            return []
-        }
-
-        //Get users for scores
-        const leaderboardUserIds = scores.map(score => {
-            return score.userId
-        })
-        const users = await this.batchGetUsers(leaderboardUserIds)
-
-        //If any users are missing from scores, remove their score
-        for (const leaderboardId of leaderboardUserIds) {
-            const userIds = users.map(user => user.userId)
-            if (!userIds.includes(leaderboardId)) {
-                await this.redisCache.removeScore(leaderboardId)
-                scores = await this.redisCache.getLeaderboardScoreRange(min, max)
-            }
-        }
-
-        //Convert leaderboard scores to a map of userId -> Score
-        const userIdToScoreMap = new Map(scores.map(score => [score.userId, score]))
-
-        //Assign scores to each user
-        await this.assignScoresToUsers(users, userIdToScoreMap, currentUserId)
-
-        //Return users
-        return users
+        const leaderboard = await this.redisCache.getLeaderboardScoreRange(min, max)
+        return this.buildUsersForLeaderboard(currentUserId, leaderboard)
     }
 
     async getWhichUsersAreFollowed(currentUserId: string, userIdsToCheck: string[]): Promise<string[]> {
@@ -160,22 +84,22 @@ export class MainRepository {
     async getFollowedUsersWithCursor(currentUserId: string, cursor: string): Promise<UserListResult> {
         const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
         const result = await this.fetchUsers(queryInput, "followingUserId")
-        await this.setCurrentUserFollowingStatus(currentUserId, result.users)
-        return result
+        const users = await this.updateAllUserInfo(currentUserId, result.users)
+        return mergeRight(result, {users: users} as UserListResult)
     }
 
     async getFollowersWithCursor(currentUserId: string, cursor: string): Promise<UserListResult> {
         const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
         const result = await this.fetchUsers(queryInput, "userId")
-        await this.setCurrentUserFollowingStatus(currentUserId, result.users)
-        return result
+        const users = await this.updateAllUserInfo(currentUserId, result.users)
+        return mergeRight(result, {users: users} as UserListResult)
     }
 
     async searchQueryWithCursor(currentUserId: string, cursor: string): Promise<UserListResult> {
         const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
         const result = await this.fetchUsers(queryInput, "userId")
-        await this.setCurrentUserFollowingStatus(currentUserId, result.users)
-        return result
+        const users = await this.updateAllUserInfo(currentUserId, result.users)
+        return mergeRight(result, {users: users} as UserListResult)
     }
 
     async searchUsers(searchQuery: string, currentUserId: string, limit: number): Promise<UserListResult> {
@@ -186,18 +110,8 @@ export class MainRepository {
                 nextCursor: undefined
             }
         }
-        await this.setCurrentUserFollowingStatus(currentUserId, searchResult.users)
-        await this.setRankOnUsers(searchResult.users)
-        return searchResult
-    }
-
-    async setRankOnUsers(users: User[]) {
-        for (const user of users) {
-            const rank = await this.redisCache.getLeaderboardRank(user.userId)
-            if (rank > 0) {
-                Object.assign(user, {rank: rank})
-            }
-        }
+        const users = await this.updateAllUserInfo(currentUserId, searchResult.users)
+        return mergeRight(searchResult, {users: users} as UserListResult)
     }
 
     async unfollowUser(currentUserId: string, targetUserId: string): Promise<void> {
@@ -309,13 +223,12 @@ export class MainRepository {
         await this.redisCache.saveSocialScore(currentUserId, targetUserId, score)
     }
 
-    //TODO: this needs pagination
     async getFollowedUsers(currentUserId: string, userId: string): Promise<UserListResult> {
         //Run the query
         const queryInput = this.getFollowedUsersQuery(userId, 30)
-        const result = await this.fetchUsers(queryInput, "followingUserId")
-        await this.setCurrentUserFollowingStatus(currentUserId, result.users)
-        return result
+        const userResult = await this.fetchUsers(queryInput, "followingUserId")
+        const updatedUsers = await this.updateAllUserInfo(currentUserId, userResult.users)
+        return mergeRight(userResult, {users: updatedUsers} as UserListResult)
     }
 
     async getFollowers(currentUserId: string, userId: string): Promise<UserListResult> {
@@ -335,8 +248,8 @@ export class MainRepository {
             ScanIndexForward: false
         }
         const result = await this.fetchUsers(queryParams, "userId")
-        await this.setCurrentUserFollowingStatus(currentUserId, result.users)
-        return result
+        const updatedUsers = await this.updateAllUserInfo(currentUserId, result.users)
+        return mergeRight(result, {users: updatedUsers} as UserListResult)
     }
 
     async createEvent(event: Event): Promise<Event> {
@@ -368,8 +281,6 @@ export class MainRepository {
     async updateUserInfo(userInfoParams: UserInfoParams): Promise<void> {
         //Check for existing user:
         const {userId, avatar, username} = userInfoParams
-        const existingUser = await this.getUser(userId)
-
         const transactItems: AWS.DynamoDB.DocumentClient.TransactWriteItemList = []
         const update: AWS.DynamoDB.DocumentClient.TransactWriteItem = {
             Update: {
@@ -379,7 +290,7 @@ export class MainRepository {
                     "SK": `EVENT#9999`
                 },
                 UpdateExpression: ((): string => {
-                    let setExpressions: string[] = []
+                    const setExpressions: string[] = []
                     if (username) {
                         setExpressions.push("username = :username")
                         setExpressions.push("GS1SK = :GS1SK")
@@ -524,7 +435,7 @@ export class MainRepository {
         }
     }
 
-    async getUser(userId: string): Promise<User | undefined> {
+    async getUser(currentUserId: string, userId: string): Promise<User | undefined> {
         const params: AWS.DynamoDB.DocumentClient.GetItemInput = {
             TableName: mainTable,
             Key: {
@@ -536,7 +447,8 @@ export class MainRepository {
         if (!result.Item) {
             return undefined
         }
-        return {
+
+        const user = {
             userId: result.Item.userId,
             username: result.Item.username,
             followerCount: result.Item.followerCount,
@@ -544,6 +456,7 @@ export class MainRepository {
             allTimeScore: result.Item.allTimeScore,
             avatar: result.Item.avatar
         }
+        return await this.updateAllUserInfoSingleUser(currentUserId, user)
     }
 
     async save24HourScore(userId: string, score24: number): Promise<void> {
@@ -558,18 +471,14 @@ export class MainRepository {
                 ":score24": score24
             }
         }
-        this.documentClient.update(params)
-    }
-
-    async saveLatestEvent(input: Event) {
-        await this.redisCache.setLatestEvent(input)
+        await this.documentClient.update(params).promise()
     }
 
     async getLastUpdatedTime(userId: string): Promise<number | undefined> {
         return await this.redisCache.getLastUpdatedTime(userId)
     }
 
-    async updateLastUpdatedTime(userId: string) {
+    async updateLastUpdatedTime(userId: string): Promise<void> {
         return await this.redisCache.updateLastUpdatedTime(userId)
     }
 
@@ -595,17 +504,34 @@ export class MainRepository {
         return queryOutput.Items.length > 0
     }
 
-    private async assignScoresToUsers(users: User[], userIdToScoreMap: Map<string, LeaderboardScoreRedis>, currentUserId: string) {
-        users.forEach(user => {
-            const scoreForUser = userIdToScoreMap.get(user.userId)
-            Object.assign(user, {allTimeScore: scoreForUser?.score, rank: scoreForUser?.rank})
-        })
+    private async buildUsersForLeaderboard(currentUserId: string, leaderboard: LeaderboardScoreRedis[]) {
+        //If no scores, early return
+        if (leaderboard.length == 0) return []
 
-        users.sort((a: User, b: User) => {
-            return (a.rank ?? 0) - (b.rank ?? 0)
-        })
+        //Get users for scores
+        const leaderboardUserIds = map(item => item.userId, leaderboard)
+        const leaderboardUsers = await this.batchGetUsers(leaderboardUserIds)
 
-        await this.setCurrentUserFollowingStatus(currentUserId, users)
+        //Assign scores and ranks to each user
+        return await this.updateAllUserInfo(currentUserId, leaderboardUsers)
+    }
+
+    private async updateAllUserInfo(currentUserId: string, users: User[]): Promise<User[]> {
+        //Update current user following status
+        const userIdsToCheck: string[] = this.mapUsersToUserIds(users)
+        const followedUserIds = await this.getWhichUsersAreFollowed(currentUserId, userIdsToCheck)
+        const followedMap = this.convertUserIdsToMap(followedUserIds)
+        const updated = map(async user => mergeRight(user, {
+            isCurrentUserFollowing: followedMap.get(user.userId) ?? false,
+            allTimeScore: await this.redisCache.getAllTimeScore(user.userId),
+            rank: await this.redisCache.getLeaderboardRank(user.userId)
+        } as User), users)
+        return Promise.all(updated)
+    }
+
+    private async updateAllUserInfoSingleUser(currentUserId: string, user: User): Promise<User> {
+        const result = await this.updateAllUserInfo(currentUserId, [user])
+        return result[0]
     }
 
     private getFollowedUsersQuery(userId: string, limit: number, startKey: AWS.DynamoDB.Key | undefined = undefined): AWS.DynamoDB.DocumentClient.QueryInput {
@@ -641,15 +567,6 @@ export class MainRepository {
         return results.Responses?.[mainTable]
     }
 
-    private async setCurrentUserFollowingStatus(currentUserId: string, users: User[]) {
-        const userIdsToCheck: string[] = this.mapUsersToUserIds(users)
-        const followedUserIds = await this.getWhichUsersAreFollowed(currentUserId, userIdsToCheck)
-        const followedMap = this.convertUserIdsToMap(followedUserIds)
-        users.forEach(user => {
-            Object.assign(user, {isCurrentUserFollowing: followedMap.get(user.userId) ?? false})
-        })
-    }
-
     private convertUserIdsToMap(userIds: string[]) {
         return new Map(userIds.map(userId => [userId, true]));
     }
@@ -669,7 +586,7 @@ export class MainRepository {
         }
     }
 
-    private async queryGs1BeginsWith(gs1Pk: String, gs1Sk: String, limit: number): Promise<QueryInputAndOutput> {
+    private async queryGs1BeginsWith(gs1Pk: string, gs1Sk: string, limit: number): Promise<QueryInputAndOutput> {
         const queryInput: AWS.DynamoDB.DocumentClient.QueryInput = {
             TableName: mainTable,
             IndexName: "GS1",
@@ -776,10 +693,6 @@ export class MainRepository {
                 avatar: user.avatar
             }
         }) ?? []
-    }
-
-    private convertUsersToMap(users: User[]) {
-        return new Map(users.map(user => [user.userId, user]));
     }
 }
 

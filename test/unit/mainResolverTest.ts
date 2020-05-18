@@ -3,7 +3,8 @@ import {User} from '../../src/data/model/types';
 import * as faker from 'faker';
 import {v4 as uuid} from 'uuid';
 import {assert} from "chai";
-import {testRepository, testResolver} from '../../src/data/testInjector';
+import {testInjector} from "../../src/data/testInjector";
+import {mergeDeepRight, mergeRight} from "ramda";
 
 let clock: sinon.SinonFakeTimers
 
@@ -18,8 +19,8 @@ const fakeUser: User = {
 }
 
 describe('Main Resolver Integration tests', function () {
-    const repository = testRepository
-    const resolver = testResolver
+    const repository = testInjector.testRepository
+    const resolver = testInjector.testResolver
 
     it('should create new user', async () => {
         const username = uuid()
@@ -31,8 +32,12 @@ describe('Main Resolver Integration tests', function () {
 
     it('should get user', async () => {
         const user = await repository.createUser(uuid(), uuid())
-        const result = await repository.getUser(user.userId)
-        assert.deepStrictEqual(result, user)
+        const result = await repository.getUser(user.userId, user.userId)
+        const expected = mergeRight(user, {
+            isCurrentUserFollowing: false,
+            rank: -1
+        })
+        assert.deepStrictEqual(expected, result)
     })
 
     it('should follow and unfollow user', async () => {
@@ -87,7 +92,7 @@ describe('Main Resolver Integration tests', function () {
         const user = await repository.createUser(uuid(), "Billy" + userSuffix)
         const searchResults1 = (await resolver.searchUsers(user.userId, "billy", 50)).users
         const searchResults2 = (await resolver.searchUsers(user.userId, "billy" + userSuffix, 50)).users
-        const expected: User = Object.assign(user, {
+        const expected: User = mergeDeepRight(user, {
             isCurrentUserFollowing: false,
             followerCount: 0,
             followingCount: 0,

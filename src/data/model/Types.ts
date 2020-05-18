@@ -28,4 +28,3 @@ export interface Follow {
     readonly userId: string
     readonly followingUserId: string
 }
-

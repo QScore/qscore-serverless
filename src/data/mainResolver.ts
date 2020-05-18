@@ -14,6 +14,7 @@ import {
     UpdateUserInfoPayloadGql
 } from '../graphql/graphqlTypes';
 import {MainRepository, UserInfoParams} from "./mainRepository";
+import {map, mergeRight} from "ramda";
 
 export class MainResolver {
     constructor(private readonly repository: MainRepository) {
@@ -35,31 +36,12 @@ export class MainResolver {
     }
 
     async getUser(currentUserId: string, userId: string): Promise<GetUserPayloadGql> {
-        const user = await this.repository.getUser(userId)
+        const user = await this.repository.getUser(currentUserId, userId)
         if (!user) {
             throw new ApolloError("User could not be resolved for id: " + userId)
         }
-
-        //Calculate all time score
-        const latestEvent = await this.repository.getLatestEventForUser(userId)
-        let {allTimeScore, rank} = await this.setupScoreForUser(latestEvent, userId)
-
-        //Check if current user is following
-        const isCurrentUserFollowing = await this.isCurrentUserFollowing(currentUserId, userId)
-
-        const result: User = {
-            userId: user.userId,
-            username: user.username,
-            avatar: user.avatar,
-            score: user.score,
-            followerCount: user.followerCount,
-            followingCount: user.followingCount,
-            isCurrentUserFollowing: isCurrentUserFollowing,
-            allTimeScore: allTimeScore,
-            rank: rank
-        }
         return {
-            user: result
+            user: user
         }
     }
 
@@ -142,13 +124,19 @@ export class MainResolver {
             }
         }
         const followedUserIds = await this.repository.getWhichUsersAreFollowed(currentUserId, searchUserIds)
+
+        const updateUser = async (user: User): Promise<User> => {
+            return mergeRight(user, {
+                isCurrentUserFollowing: followedUserIds.includes(user.userId),
+                allTimeScore: await this.repository.getAllTimeScore(user.userId),
+                rank: await this.repository.getAllTimeLeaderboardRank(user.userId)
+            } as User)
+        }
+
+        const users = await Promise.all(map(updateUser, searchResult.users))
+
         return {
-            users: searchResult.users.map(user => {
-                const result: User = Object.assign(user, {
-                    isCurrentUserFollowing: followedUserIds.includes(user.userId)
-                })
-                return result
-            }),
+            users: users,
             nextCursor: searchResult.nextCursor
         }
     }
@@ -175,14 +163,14 @@ export class MainResolver {
         //Save 24 hour score
         await this.repository.save24HourScore(userId, score24)
 
-        let {allTimeScore, rank} = await this.setupScoreForUser(latestEvent, userId)
+        const {allTimeScore, rank} = await this.setupScoreForUser(latestEvent, userId)
 
-        const result: User = Object.assign(user, {
+        const result: User = mergeRight(user, {
             allTimeScore: allTimeScore,
             score: score24,
             rank: rank,
             geofenceStatus: latestEvent?.eventType
-        })
+        } as User)
 
         return {
             user: result
@@ -232,7 +220,7 @@ export class MainResolver {
         const extra = (currentTimeMillis - lastUpdatedTime) / 1000 / 10 //Every 10 seconds
 
         const finalAllTimeScore = currentAllTimeScore + extra
-        await this.repository.saveAllTimeScore(userId, finalAllTimeScore)
+        await this.repository.saveAllTimeScore(userId, finalAllTimeScore, currentTimeMillis)
         return finalAllTimeScore
     }
 
