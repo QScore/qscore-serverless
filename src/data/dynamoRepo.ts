@@ -1,9 +1,7 @@
 import * as AWS from "aws-sdk"
-import {Event, User, UserListResult} from './model/types'
-import {EventDynamo, FollowDynamo, UserDynamo} from "./model/dynamoTypes";
-import {LeaderboardScoreRedis, RedisCache} from './redisCache';
+import {EventDynamo, FollowDynamo, UserDynamo, UserListDynamo} from "./model/dynamoTypes";
 import {decrypt, encrypt} from "../util/encryption/encryptor";
-import {map, mergeRight, prop, sortBy} from "ramda"
+import {EventType} from "./model/Types";
 
 const mainTable = process.env.MAIN_TABLE as string
 
@@ -23,48 +21,12 @@ export interface QueryInputAndOutput {
     readonly queryOutput: AWS.DynamoDB.DocumentClient.QueryOutput
 }
 
-export class MainRepository {
-    private documentClient: AWS.DynamoDB.DocumentClient
-    private redisCache: RedisCache
+export class DynamoRepo {
+    constructor(private readonly documentClient: AWS.DynamoDB.DocumentClient) {
 
-    constructor(
-        documentClient: AWS.DynamoDB.DocumentClient,
-        redisCache: RedisCache
-    ) {
-        this.documentClient = documentClient
-        this.redisCache = redisCache
     }
 
-    async getAllTimeScore(userId: string): Promise<number> {
-        return await this.redisCache.getAllTimeScore(userId)
-    }
-
-    async saveAllTimeScore(userId: string, score: number, updatedTime: number, latestEvent?: Event): Promise<void> {
-        if (latestEvent) {
-            const updatedEvent = mergeRight(latestEvent, {timestamp: updatedTime.toString()})
-            await this.redisCache.setLatestEvent(updatedEvent)
-        }
-        await this.redisCache.saveScoreToLeaderboard(userId, score)
-        await this.redisCache.saveSocialScore(userId, userId, score)
-    }
-
-    async getAllTimeLeaderboardRank(userId: string): Promise<number> {
-        return await this.redisCache.getLeaderboardRank(userId) + 1
-    }
-
-    async getSocialLeaderboard(currentUserId: string, start: number, end: number): Promise<User[]> {
-        //Check for redis sorted set
-        const leaderboard = await this.redisCache.getSocialLeaderboardScoreRange(currentUserId, start, end)
-        return this.buildUsersForLeaderboard(currentUserId, leaderboard)
-    }
-
-    async getLeaderboardScoreRange(currentUserId: string, min: number, max: number): Promise<User[]> {
-        //Get leaderboard scores from redis
-        const leaderboard = await this.redisCache.getLeaderboardScoreRange(min, max)
-        return this.buildUsersForLeaderboard(currentUserId, leaderboard)
-    }
-
-    async getWhichUsersAreFollowed(currentUserId: string, userIdsToCheck: string[]): Promise<string[]> {
+    async getWhichUserIdsAreFollowed(currentUserId: string, userIdsToCheck: string[]): Promise<string[]> {
         if (userIdsToCheck.length == 0) {
             return []
         }
@@ -81,37 +43,42 @@ export class MainRepository {
         }) ?? []
     }
 
-    async getFollowedUsersWithCursor(currentUserId: string, cursor: string): Promise<UserListResult> {
+    async getFollowedUsersWithCursor(currentUserId: string, cursor: string): Promise<UserListDynamo> {
         const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
-        const result = await this.fetchUsers(queryInput, "followingUserId")
-        const users = await this.updateAllUserInfo(currentUserId, result.users)
-        return mergeRight(result, {users: users} as UserListResult)
+        return await this.fetchUsers(queryInput, "followingUserId")
     }
 
-    async getFollowersWithCursor(currentUserId: string, cursor: string): Promise<UserListResult> {
+    async getFollowersWithCursor(currentUserId: string, cursor: string): Promise<UserListDynamo> {
         const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
-        const result = await this.fetchUsers(queryInput, "userId")
-        const users = await this.updateAllUserInfo(currentUserId, result.users)
-        return mergeRight(result, {users: users} as UserListResult)
+        return await this.fetchUsers(queryInput, "userId")
     }
 
-    async searchQueryWithCursor(currentUserId: string, cursor: string): Promise<UserListResult> {
+    async searchQueryWithCursor(currentUserId: string, cursor: string): Promise<UserListDynamo> {
         const queryInput = JSON.parse(decrypt(cursor)) as AWS.DynamoDB.DocumentClient.QueryInput
-        const result = await this.fetchUsers(queryInput, "userId")
-        const users = await this.updateAllUserInfo(currentUserId, result.users)
-        return mergeRight(result, {users: users} as UserListResult)
+        return await this.fetchUsers(queryInput, "userId")
     }
 
-    async searchUsers(searchQuery: string, currentUserId: string, limit: number): Promise<UserListResult> {
-        const searchResult = await this.querySearchItems(searchQuery, limit)
-        if (searchResult.users.length == 0) {
-            return {
-                users: [],
-                nextCursor: undefined
-            }
+    async searchUsers(searchQuery: string, currentUserId: string, limit: number): Promise<UserListDynamo> {
+        const queryInput: AWS.DynamoDB.DocumentClient.QueryInput = {
+            TableName: mainTable,
+            IndexName: "GS1",
+            KeyConditionExpression: '#GS1PK = :GS1PK And begins_with(#GS1SK, :GS1SK)',
+            ExpressionAttributeNames: {
+                '#GS1PK': "GS1PK",
+                '#GS1SK': "GS1SK"
+            },
+            ExpressionAttributeValues: {
+                ':GS1PK': 'SEARCH',
+                ':GS1SK': searchQuery.toLowerCase(),
+            },
+            Limit: limit
         }
-        const users = await this.updateAllUserInfo(currentUserId, searchResult.users)
-        return mergeRight(searchResult, {users: users} as UserListResult)
+        const result = await this.documentClient.query(queryInput).promise()
+        const users = result.Items as UserDynamo[]
+        return {
+            userDynamos: users,
+            nextCursor: this.buildCursorFromQuery(queryInput, result)
+        }
     }
 
     async unfollowUser(currentUserId: string, targetUserId: string): Promise<void> {
@@ -217,21 +184,15 @@ export class MainRepository {
             ]
         }
         await this.documentClient.transactWrite(params).promise()
-
-        //Save social score for user so they show up in the social leaderboards
-        const score = await this.redisCache.getAllTimeScore(targetUserId)
-        await this.redisCache.saveSocialScore(currentUserId, targetUserId, score)
     }
 
-    async getFollowedUsers(currentUserId: string, userId: string): Promise<UserListResult> {
+    async getFollowedUsers(currentUserId: string, userId: string): Promise<UserListDynamo> {
         //Run the query
         const queryInput = this.getFollowedUsersQuery(userId, 30)
-        const userResult = await this.fetchUsers(queryInput, "followingUserId")
-        const updatedUsers = await this.updateAllUserInfo(currentUserId, userResult.users)
-        return mergeRight(userResult, {users: updatedUsers} as UserListResult)
+        return this.fetchUsers(queryInput, "followingUserId")
     }
 
-    async getFollowers(currentUserId: string, userId: string): Promise<UserListResult> {
+    async getFollowers(currentUserId: string, userId: string): Promise<UserListDynamo> {
         //Run the query
         const queryParams: AWS.DynamoDB.DocumentClient.QueryInput = {
             TableName: mainTable,
@@ -247,23 +208,18 @@ export class MainRepository {
             },
             ScanIndexForward: false
         }
-        const result = await this.fetchUsers(queryParams, "userId")
-        const updatedUsers = await this.updateAllUserInfo(currentUserId, result.users)
-        return mergeRight(result, {users: updatedUsers} as UserListResult)
+        return await this.fetchUsers(queryParams, "userId")
     }
 
-    async createEvent(event: Event): Promise<Event> {
-        //Set latest event in redis
-        await this.redisCache.setLatestEvent(event)
-
+    async createEvent(userId: string, eventType: EventType, timestamp: string): Promise<EventDynamo> {
         //Set latest event in dynamodb
         const inputItem: EventDynamo = {
-            PK: `USER#${event.userId}`,
-            SK: `EVENT#${event.timestamp}`,
+            PK: `USER#${userId}`,
+            SK: `EVENT#${timestamp}`,
             itemType: `Event`,
-            eventType: event.eventType,
-            timestamp: event.timestamp,
-            userId: event.userId
+            eventType: eventType,
+            timestamp: timestamp,
+            userId: userId
         }
 
         const params: AWS.DynamoDB.DocumentClient.PutItemInput = {
@@ -275,7 +231,7 @@ export class MainRepository {
             }
         }
         await this.documentClient.put(params).promise()
-        return event
+        return inputItem
     }
 
     async updateUserInfo(userInfoParams: UserInfoParams): Promise<void> {
@@ -320,7 +276,7 @@ export class MainRepository {
         await this.documentClient.transactWrite(params).promise()
     }
 
-    async createUser(userId: string, username: string, avatar?: string): Promise<User> {
+    async createUser(userId: string, username: string, avatar?: string): Promise<void> {
         const userItem: UserDynamo = {
             PK: `USER#${userId}`,
             SK: `EVENT#9999`,
@@ -350,14 +306,6 @@ export class MainRepository {
             ]
         }
         await this.documentClient.transactWrite(params).promise()
-        return {
-            userId: userId,
-            username: username,
-            allTimeScore: 0,
-            followerCount: 0,
-            followingCount: 0,
-            avatar: avatar
-        }
     }
 
     async getUserAndEventsFromStartTime(userId: string, startTimestamp: string): Promise<GetUserAndEventsResult> {
@@ -387,55 +335,39 @@ export class MainRepository {
         }
 
         //Return results
-        const user: User = {
-            userId: userResult.userId,
-            username: userResult.username,
-            followerCount: userResult.followerCount,
-            followingCount: userResult.followingCount,
-            allTimeScore: userResult.allTimeScore,
-            avatar: userResult.avatar
-        }
-        const events = queryResult.Items as Event[]
+        const user: UserDynamo = userResult as UserDynamo
+        const events = queryResult.Items as EventDynamo[]
         return {
             user: user,
             events: events
         }
     }
 
-    async getLatestEventForUser(userId: string): Promise<Event | undefined> {
-        const latestEvent = await this.redisCache.getLatestEvent(userId)
+    async getLatestEventForUser(userId: string): Promise<EventDynamo | undefined> {
+        //Couldn't find in redis, get from dynamodb
+        const params: AWS.DynamoDB.DocumentClient.QueryInput = {
+            TableName: mainTable,
+            KeyConditionExpression: '#PK = :PK And #SK < :SK',
+            ExpressionAttributeNames: {
+                '#PK': "PK",
+                '#SK': "SK"
+            },
+            ExpressionAttributeValues: {
+                ':PK': `USER#${userId}`,
+                ':SK': `EVENT#9999`
+            },
+            ScanIndexForward: false,
+            Limit: 1
+        }
+        const result = await this.documentClient.query(params).promise()
+        const latestEvent = result.Items?.pop() as EventDynamo
         if (!latestEvent) {
-            //Couldn't find in redis, get from dynamodb
-            const params: AWS.DynamoDB.DocumentClient.QueryInput = {
-                TableName: mainTable,
-                KeyConditionExpression: '#PK = :PK And #SK < :SK',
-                ExpressionAttributeNames: {
-                    '#PK': "PK",
-                    '#SK': "SK"
-                },
-                ExpressionAttributeValues: {
-                    ':PK': `USER#${userId}`,
-                    ':SK': `EVENT#9999`
-                },
-                ScanIndexForward: false,
-                Limit: 1
-            }
-            const result = await this.documentClient.query(params).promise()
-            const latestEvent = result.Items?.pop() as Event
-            if (!latestEvent) {
-                return undefined
-            }
-            await this.redisCache.setLatestEvent(latestEvent)
-            return latestEvent
+            return undefined
         }
-        return {
-            eventType: latestEvent.eventType,
-            timestamp: latestEvent.timestamp,
-            userId: latestEvent.userId
-        }
+        return latestEvent
     }
 
-    async getUser(currentUserId: string, userId: string): Promise<User | undefined> {
+    async getUser(currentUserId: string, userId: string): Promise<UserDynamo | undefined> {
         const params: AWS.DynamoDB.DocumentClient.GetItemInput = {
             TableName: mainTable,
             Key: {
@@ -447,16 +379,7 @@ export class MainRepository {
         if (!result.Item) {
             return undefined
         }
-
-        const user = {
-            userId: result.Item.userId,
-            username: result.Item.username,
-            followerCount: result.Item.followerCount,
-            followingCount: result.Item.followingCount,
-            allTimeScore: result.Item.allTimeScore,
-            avatar: result.Item.avatar
-        }
-        return await this.updateAllUserInfoSingleUser(currentUserId, user)
+        return result.Item as UserDynamo
     }
 
     async save24HourScore(userId: string, score24: number): Promise<void> {
@@ -472,14 +395,6 @@ export class MainRepository {
             }
         }
         await this.documentClient.update(params).promise()
-    }
-
-    async getLastUpdatedTime(userId: string): Promise<number | undefined> {
-        return await this.redisCache.getLastUpdatedTime(userId)
-    }
-
-    async updateLastUpdatedTime(userId: string): Promise<void> {
-        return await this.redisCache.updateLastUpdatedTime(userId)
     }
 
     async checkUsernameExists(username: string): Promise<boolean> {
@@ -502,47 +417,6 @@ export class MainRepository {
             return false
         }
         return queryOutput.Items.length > 0
-    }
-
-    private async buildUsersForLeaderboard(currentUserId: string, leaderboard: LeaderboardScoreRedis[]) {
-        //If no scores, early return
-        if (leaderboard.length == 0) return []
-
-        //Get users for scores
-        const leaderboardUserIds = map(item => item.userId, leaderboard)
-        const leaderboardUsers = await this.batchGetUsers(leaderboardUserIds)
-
-        //Assign scores and ranks to each user
-        return await this.updateAllUserInfo(currentUserId, leaderboardUsers)
-    }
-
-    private async updateAllUserInfo(currentUserId: string, users: User[]): Promise<User[]> {
-        //Update current user following status
-        const userIdsToCheck: string[] = this.mapUsersToUserIds(users)
-        const followedUserIds = await this.getWhichUsersAreFollowed(currentUserId, userIdsToCheck)
-        const followedMap = this.convertUserIdsToMap(followedUserIds)
-        const getLeaderboardRank = async (user: User) => {
-            const rank = await this.redisCache.getLeaderboardRank(user.userId)
-            if (rank > -1) {
-                return rank + 1
-            } else {
-                return rank
-            }
-        }
-        const updatedPromises = map(async user => mergeRight(user, {
-            isCurrentUserFollowing: followedMap.get(user.userId) ?? false,
-            allTimeScore: await this.redisCache.getAllTimeScore(user.userId),
-            rank: await getLeaderboardRank(user)
-        } as User), users)
-
-        const updatedUsers = await Promise.all(updatedPromises)
-        const sortByRank = sortBy(prop('rank'))
-        return sortByRank(updatedUsers)
-    }
-
-    private async updateAllUserInfoSingleUser(currentUserId: string, user: User): Promise<User> {
-        const result = await this.updateAllUserInfo(currentUserId, [user])
-        return result[0]
     }
 
     private getFollowedUsersQuery(userId: string, limit: number, startKey: AWS.DynamoDB.Key | undefined = undefined): AWS.DynamoDB.DocumentClient.QueryInput {
@@ -576,25 +450,6 @@ export class MainRepository {
         }
         const results = await this.documentClient.batchGet(batchGetParams).promise()
         return results.Responses?.[mainTable]
-    }
-
-    private convertUserIdsToMap(userIds: string[]) {
-        return new Map(userIds.map(userId => [userId, true]));
-    }
-
-    private mapUsersToUserIds(users: User[]) {
-        return users.map(item => {
-            return item.userId
-        })
-    }
-
-    private async querySearchItems(searchQuery: string, limit: number): Promise<UserListResult> {
-        const result = await this.queryGs1BeginsWith('SEARCH', searchQuery.toLowerCase(), limit)
-        const users = this.mapItemsToUsers(result.queryOutput.Items)
-        return {
-            users: users,
-            nextCursor: this.buildCursorFromQuery(result.queryInput, result.queryOutput)
-        }
     }
 
     private async queryGs1BeginsWith(gs1Pk: string, gs1Sk: string, limit: number): Promise<QueryInputAndOutput> {
@@ -631,26 +486,11 @@ export class MainRepository {
         return encrypt(JSON.stringify(newQuery))
     }
 
-    private mapItemsToUsers(items?: AWS.DynamoDB.DocumentClient.ItemList): User[] {
-        return items?.map((item: User) => {
-            return {
-                userId: item.userId,
-                username: item.username,
-                allTimeScore: item.allTimeScore,
-                avatar: item.avatar,
-                followerCount: item.followerCount,
-                followingCount: item.followingCount,
-                score: item.score,
-                rank: item.rank
-            }
-        }) ?? []
-    }
-
-    private async fetchUsers(queryInput: AWS.DynamoDB.DocumentClient.QueryInput, userIdProperty: string): Promise<UserListResult> {
+    private async fetchUsers(queryInput: AWS.DynamoDB.DocumentClient.QueryInput, userIdProperty: string): Promise<UserListDynamo> {
         const queryResult = await this.documentClient.query(queryInput).promise()
         if (!queryResult.Items || queryResult.Items.length == 0) {
             return {
-                users: [],
+                userDynamos: [],
                 nextCursor: undefined
             }
         }
@@ -663,7 +503,7 @@ export class MainRepository {
         const users = await this.batchGetUsers(userIds)
 
         return {
-            users: users,
+            userDynamos: users,
             nextCursor: ((): string | undefined => {
                 const lastKey = queryResult?.LastEvaluatedKey
                 if (!lastKey) {
@@ -677,7 +517,7 @@ export class MainRepository {
         }
     }
 
-    private async batchGetUsers(userIds: string[]): Promise<User[]> {
+    async batchGetUsers(userIds: string[]): Promise<UserDynamo[]> {
         //Batch get users
         const keys = userIds.map(userId => {
             return {
@@ -694,20 +534,11 @@ export class MainRepository {
             }
         }
         const results = await this.documentClient.batchGet(batchGetParams).promise()
-        return results.Responses?.[mainTable].map((user: UserDynamo) => {
-            return {
-                userId: user.userId,
-                username: user.username,
-                followerCount: user.followerCount,
-                followingCount: user.followingCount,
-                allTimeScore: user.allTimeScore,
-                avatar: user.avatar
-            }
-        }) ?? []
+        return results.Responses?.[mainTable] as UserDynamo[] ?? []
     }
 }
 
 export interface GetUserAndEventsResult {
-    readonly user?: User
-    readonly events: Event[]
+    readonly user?: UserDynamo
+    readonly events: EventDynamo[]
 }

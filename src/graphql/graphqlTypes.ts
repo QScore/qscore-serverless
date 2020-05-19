@@ -32,12 +32,7 @@ export interface GetUserPayloadGql {
     readonly user?: User
 }
 
-export interface FollowedUsersPayloadGql {
-    readonly users: User[]
-    readonly nextCursor: (string | undefined)
-}
-
-export interface FollowingUsersPayloadGql {
+export interface UsersPayloadGql {
     readonly users: User[]
     readonly nextCursor: (string | undefined)
 }

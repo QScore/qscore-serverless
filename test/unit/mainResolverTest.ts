@@ -18,32 +18,37 @@ const fakeUser: User = {
     avatar: undefined
 }
 
+
 describe('Main Resolver Integration tests', function () {
     const repository = testInjector.testRepository
     const resolver = testInjector.testResolver
 
+    async function createUser(): Promise<User> {
+        return (await resolver.createUser(uuid(), uuid())).user
+    }
+
     it('should create new user', async () => {
         const username = uuid()
         const userId = uuid()
-        const result = await resolver.createUser(userId, username)
-        assert.equal(result.user.username, username)
-        assert.equal(result.user.userId, userId)
+        const user = (await resolver.createUser(userId, username)).user
+        assert.equal(user.username, username)
+        assert.equal(user.userId, userId)
     })
 
     it('should get user', async () => {
-        const user = await repository.createUser(uuid(), uuid())
-        const result = await repository.getUser(user.userId, user.userId)
+        const user = await createUser()
+        const result = await resolver.getUser(user.userId, user.userId)
         const expected = mergeRight(user, {
             isCurrentUserFollowing: false,
             rank: -1
         })
-        assert.deepStrictEqual(expected, result)
+        assert.deepStrictEqual(expected, result.user)
     })
 
     it('should follow and unfollow user', async () => {
-        const currentUser = await repository.createUser(uuid(), uuid())
-        const user1 = await repository.createUser(uuid(), uuid())
-        const user2 = await repository.createUser(uuid(), uuid())
+        const currentUser = await createUser()
+        const user1 = await createUser()
+        const user2 = await createUser()
 
         assert.equal(user1.followingCount, 0)
         assert.equal(user2.followingCount, 0)
@@ -89,7 +94,7 @@ describe('Main Resolver Integration tests', function () {
 
     it('should search users', async () => {
         const userSuffix = uuid()
-        const user = await repository.createUser(uuid(), "Billy" + userSuffix)
+        const user = (await resolver.createUser(uuid(), "Billy" + userSuffix)).user
         const searchResults1 = (await resolver.searchUsers(user.userId, "billy", 50)).users
         const searchResults2 = (await resolver.searchUsers(user.userId, "billy" + userSuffix, 50)).users
         const expected: User = mergeDeepRight(user, {
@@ -97,22 +102,20 @@ describe('Main Resolver Integration tests', function () {
             followerCount: 0,
             followingCount: 0,
             allTimeScore: 0,
-            rank: 0,
-            score: undefined
+            rank: 0
         } as User)
         assert(searchResults1.length > 0)
-        assert.deepStrictEqual(searchResults2[0], expected)
+        assert.deepEqual(searchResults2[0], expected)
 
         //Should show that we are following user
-        const user2 = await repository.createUser(uuid(), "Someone" + userSuffix)
+        const user2 = (await resolver.createUser(uuid(), "Someone" + userSuffix)).user
         await resolver.followUser(user.userId, user2.userId)
         const expected2: User = Object.assign(user2, {
             isCurrentUserFollowing: true,
             followerCount: 1,
             followingCount: 0,
             allTimeScore: 0,
-            rank: 0,
-            score: undefined
+            rank: 0
         } as User)
         const searchResults3 = (await resolver.searchUsers(user.userId, "someone" + userSuffix, 50)).users
         assert.deepStrictEqual(searchResults3[0], expected2)
@@ -123,8 +126,8 @@ describe('Main Resolver Integration tests', function () {
     })
 
     it('should paginate search users', async () => {
-        const user = await repository.createUser(uuid(), "Billy" + uuid())
-        const user2 = await repository.createUser(uuid(), "Billy" + uuid())
+        const user = (await resolver.createUser(uuid(), "Billy" + uuid())).user
+        const user2 = (await resolver.createUser(uuid(), "Billy" + uuid())).user
         const searchResults = await resolver.searchUsers(user.userId, "billy", 1)
         assert.equal(searchResults.users.length, 1)
         assert.exists(searchResults.nextCursor)
@@ -135,8 +138,8 @@ describe('Main Resolver Integration tests', function () {
 
 
     it('should update user info', async () => {
-        const currentUser = await repository.createUser(uuid(), uuid())
-        const user1 = await repository.createUser(uuid(), uuid())
+        const currentUser = await createUser()
+        const user1 = await createUser()
         const newUsername = user1.username + "zzz"
         await resolver.updateUserInfo({userId: user1.userId, username: newUsername})
         const result = await resolver.getUser(currentUser.userId, user1.userId)
@@ -166,7 +169,7 @@ describe('Main Resolver Integration tests', function () {
 
     it('should throw error if user does not exist', async () => {
         try {
-            const currentUser = await repository.createUser(uuid(), uuid())
+            const currentUser = await createUser()
             await resolver.getUser(currentUser.userId, uuid())
             assert.fail("Returned a user that does not exist")
         } catch (error) {
@@ -175,9 +178,9 @@ describe('Main Resolver Integration tests', function () {
     })
 
     it('should get leaderboard range', async () => {
-        const user1 = await repository.createUser("first-" + uuid(), uuid())
-        const user2 = await repository.createUser("second-" + uuid(), uuid())
-        const user3 = await repository.createUser("third-" + uuid(), uuid())
+        const user1 = (await resolver.createUser("first-" + uuid(), uuid())).user
+        const user2 = (await resolver.createUser("second-" + uuid(), uuid())).user
+        const user3 = (await resolver.createUser("third-" + uuid(), uuid())).user
 
         clock = sinon.useFakeTimers({now: 1000000})
         await resolver.createEvent(user1.userId, "HOME")
@@ -249,17 +252,16 @@ describe('Main Resolver Integration tests', function () {
     })
 
     it('should not be able to follow yourself', async () => {
-        const userId = uuid()
-        const user = await repository.createUser(userId, uuid())
+        const user = await createUser()
         try {
-            await resolver.followUser(userId, userId)
+            await resolver.followUser(user.userId, user.userId)
             assert.fail("Was able to follow yourself")
         } catch (error) {
             assert.ok("OK")
         }
         assert.equal(user.followingCount, 0)
         assert.equal(user.followerCount, 0)
-        const followingUsers = await resolver.getFollowedUsers(user.userId, userId)
+        const followingUsers = await resolver.getFollowedUsers(user.userId, user.userId)
         assert.equal(followingUsers.users.length, 0)
     })
 
@@ -279,7 +281,7 @@ describe('Main Resolver Integration tests', function () {
     })
 
     it('creating event should update all time score', async () => {
-        const user = await repository.createUser(uuid(), uuid())
+        const user = await createUser()
         clock = sinon.useFakeTimers({now: 1000000})
         await resolver.createEvent(user.userId, "HOME")
         let result = await resolver.getCurrentUser(user.userId)

@@ -1,4 +1,3 @@
-import {LatestEventRedis} from '../../src/data/redisCache';
 import {Event} from '../../src/data/model/types';
 
 import faker from 'faker';
@@ -24,7 +23,7 @@ describe("Redis cache tests", () => {
 
         await redisCache.setLatestEvent(event)
         const latest = await redisCache.getLatestEvent(event.userId)
-        const expected: LatestEventRedis = {
+        const expected: Event = {
             userId: event.userId,
             eventType: event.eventType,
             timestamp: event.timestamp,
@@ -34,7 +33,7 @@ describe("Redis cache tests", () => {
 
     it('Should return null for nonexistent event', async () => {
         const result = await redisCache.getLatestEvent(uuid())
-        assert.isNull(result)
+        assert.isUndefined(result)
     })
 
     it('Should get leaderboard rank', async () => {
@@ -57,7 +56,7 @@ describe("Redis cache tests", () => {
 
     it('Should get current user with all time score', async () => {
         const result = await redisCache.getLatestEvent(uuid())
-        assert.isNull(result)
+        assert.isUndefined(result)
     })
 
 })

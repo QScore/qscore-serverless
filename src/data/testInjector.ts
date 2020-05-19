@@ -1,4 +1,4 @@
-import {MainRepository} from "./mainRepository";
+import {DynamoRepo} from "./dynamoRepo";
 import * as AWS from "aws-sdk"
 import RedisMock from 'ioredis-mock';
 import Redis from 'ioredis'
@@ -26,13 +26,13 @@ class TestInjector {
     }
 
     @LazyGetter(true)
-    public get testRepository(): MainRepository {
-        return new MainRepository(this.localDocumentClient, this.testRedisCache)
+    public get testRepository(): DynamoRepo {
+        return new DynamoRepo(this.localDocumentClient)
     }
 
     @LazyGetter(true)
     public get testResolver(): MainResolver {
-        return new MainResolver(this.testRepository)
+        return new MainResolver(this.testRepository, this.testRedisCache)
     }
 
     @LazyGetter(true)
@@ -46,13 +46,13 @@ class TestInjector {
     }
 
     @LazyGetter(true)
-    public get localRepository(): MainRepository {
-        return new MainRepository(this.localDocumentClient, this.localRedisCache)
+    public get localRepository(): DynamoRepo {
+        return new DynamoRepo(this.localDocumentClient)
     }
 
     @LazyGetter(true)
     public get localResolver(): MainResolver {
-        return new MainResolver(this.localRepository)
+        return new MainResolver(this.localRepository, this.localRedisCache)
     }
 }
 

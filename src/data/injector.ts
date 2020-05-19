@@ -1,4 +1,4 @@
-import {MainRepository} from "./mainRepository";
+import {DynamoRepo} from "./dynamoRepo";
 import * as AWS from "aws-sdk"
 import {RedisCache} from './redisCache';
 import {MainResolver} from "./mainResolver";
@@ -28,13 +28,13 @@ class Injector {
     }
 
     @LazyGetter(true)
-    public get mainRepository(): MainRepository {
-        return new MainRepository(this.documentClient, this.redisCache)
+    public get mainRepository(): DynamoRepo {
+        return new DynamoRepo(this.documentClient)
     }
 
     @LazyGetter(true)
     public get mainResolver(): MainResolver {
-        return new MainResolver(this.mainRepository)
+        return new MainResolver(this.mainRepository, this.redisCache)
     }
 }
 

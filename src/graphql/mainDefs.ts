@@ -6,7 +6,6 @@ import {
     CreateGeofenceEventPayloadGql,
     CreateUserPayloadGql,
     CurrentUserPayloadGql,
-    FollowingUsersPayloadGql,
     FollowUserPayloadGql,
     GetUserPayloadGql,
     LeaderboardRangePayloadGql,

@@ -10,12 +10,6 @@ export interface LeaderboardScoreRedis {
     readonly rank: number
 }
 
-export interface LatestEventRedis {
-    readonly userId: string
-    readonly eventType: EventType
-    readonly timestamp: string //ISO formatted
-}
-
 export class RedisCache {
     private redis: RedisInterface
 
@@ -57,11 +51,11 @@ export class RedisCache {
         return this.redis.set(key, `${event.eventType}:${timestampMillis}:-1`)
     }
 
-    async getLatestEvent(userId: string): Promise<LatestEventRedis | null> {
+    async getLatestEvent(userId: string): Promise<Event | undefined> {
         const key = this.getLatestEventKey(userId)
         const result = await this.redis.get(key)
         if (!result) {
-            return null
+            return undefined
         }
         const [eventType, timestamp] = result.split(":")
         return {
@@ -116,7 +110,7 @@ export class RedisCache {
         })
     }
 
-    private getLastUpdatedKey(userId: String) {
+    private getLastUpdatedKey(userId: string) {
         return `${lastUpdatedPartialKey}:${userId}`
     }
 

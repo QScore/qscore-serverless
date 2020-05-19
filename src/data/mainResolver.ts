@@ -5,67 +5,80 @@ import {
     CreateGeofenceEventPayloadGql,
     CreateUserPayloadGql,
     CurrentUserPayloadGql,
-    FollowedUsersPayloadGql,
-    FollowingUsersPayloadGql,
     FollowUserPayloadGql,
     GetUserPayloadGql,
     LeaderboardRangePayloadGql,
     SearchUsersPayloadGql,
-    UpdateUserInfoPayloadGql
+    UpdateUserInfoPayloadGql,
+    UsersPayloadGql
 } from '../graphql/graphqlTypes';
-import {MainRepository, UserInfoParams} from "./mainRepository";
-import {map, mergeRight} from "ramda";
+import {DynamoRepo, UserInfoParams} from "./dynamoRepo";
+import {map, mergeRight, prop, sortBy} from "ramda";
+import {LeaderboardScoreRedis, RedisCache} from "./redisCache";
+import {UserDynamo, UserListDynamo} from "./model/dynamoTypes";
 
 export class MainResolver {
-    constructor(private readonly repository: MainRepository) {
-        this.repository = repository
+    constructor(private readonly dynamo: DynamoRepo, private readonly redis: RedisCache) {
     }
 
     async createUser(userId: string, username: any): Promise<CreateUserPayloadGql> {
-        const user = await this.repository.createUser(userId, username)
+        await this.dynamo.createUser(userId, username)
         return {
-            user: user
+            user: {
+                userId: userId,
+                username: username,
+                allTimeScore: 0,
+                followerCount: 0,
+                followingCount: 0,
+                avatar: undefined
+            }
         }
     }
 
     async getLeaderboardRange(currentUserId: string, start: number, end: number): Promise<LeaderboardRangePayloadGql> {
-        const users = await this.repository.getLeaderboardScoreRange(currentUserId, start, end)
+        const users = await this.getLeaderboardScoreRange(currentUserId, start, end)
         return {
             users: users
         }
     }
 
     async getUser(currentUserId: string, userId: string): Promise<GetUserPayloadGql> {
-        const user = await this.repository.getUser(currentUserId, userId)
-        if (!user) {
+        const userDynamo = await this.dynamo.getUser(currentUserId, userId)
+        if (!userDynamo) {
             throw new ApolloError("User could not be resolved for id: " + userId)
         }
+        const user = this.convertUserDynamoToUser(userDynamo)
+        const updatedUser = await this.updateSingleUser(currentUserId, user)
         return {
-            user: user
+            user: updatedUser
         }
     }
 
-    async getFollowers(currentUserId: string, userId: string): Promise<FollowingUsersPayloadGql> {
-        return await this.repository.getFollowers(currentUserId, userId)
+    async getFollowers(currentUserId: string, userId: string): Promise<UsersPayloadGql> {
+        const userListDynamo = await this.dynamo.getFollowers(currentUserId, userId)
+        return this.updateUserList(currentUserId, userListDynamo)
     }
 
-    async getFollowersWithCursor(currentUserId: string, cursor: string): Promise<FollowedUsersPayloadGql> {
-        return await this.repository.getFollowedUsersWithCursor(currentUserId, cursor)
+    async getFollowersWithCursor(currentUserId: string, cursor: string): Promise<UsersPayloadGql> {
+        const userListDynamo = await this.dynamo.getFollowedUsersWithCursor(currentUserId, cursor)
+        return this.updateUserList(currentUserId, userListDynamo)
     }
 
-    async getFollowedUsers(currentUserId: string, userId: string): Promise<FollowedUsersPayloadGql> {
-        return await this.repository.getFollowedUsers(currentUserId, userId)
+    async getFollowedUsers(currentUserId: string, userId: string): Promise<UsersPayloadGql> {
+        const userListDynamo = await this.dynamo.getFollowedUsers(currentUserId, userId)
+        return this.updateUserList(currentUserId, userListDynamo)
     }
 
-    async getFollowedUsersWithCursor(currentUserId: string, cursor: string): Promise<FollowedUsersPayloadGql> {
-        return await this.repository.getFollowedUsersWithCursor(currentUserId, cursor)
+    async getFollowedUsersWithCursor(currentUserId: string, cursor: string): Promise<UsersPayloadGql> {
+        const userListDynamo = await this.dynamo.getFollowedUsersWithCursor(currentUserId, cursor)
+        return this.updateUserList(currentUserId, userListDynamo)
     }
 
     async unfollowUser(currentUserId: string, userIdToUnfollow: string): Promise<FollowUserPayloadGql> {
         if (currentUserId === userIdToUnfollow) {
             throw new ApolloError("Cannot unfollow yourself", "400");
         }
-        await this.repository.unfollowUser(currentUserId, userIdToUnfollow)
+        await this.dynamo.unfollowUser(currentUserId, userIdToUnfollow)
         return {
             userId: userIdToUnfollow
         }
@@ -75,7 +88,10 @@ export class MainResolver {
         if (currentUserId == userIdToFollow) {
             throw new ApolloError("Cannot follow yourself", "400");
         }
-        await this.repository.followUser(currentUserId, userIdToFollow)
+        await this.dynamo.followUser(currentUserId, userIdToFollow)
+        //Save social score for user so they show up in the social leaderboards
+        const score = await this.redis.getAllTimeScore(userIdToFollow)
+        await this.redis.saveSocialScore(currentUserId, userIdToFollow, score)
         return {
             userId: userIdToFollow
         }
@@ -83,38 +99,41 @@ export class MainResolver {
 
     async createEvent(userId: string, eventType: EventType): Promise<CreateGeofenceEventPayloadGql> {
         const input: Event = {
+            userId: userId,
             eventType: eventType,
-            timestamp: new Date().toISOString(),
-            userId: userId
+            timestamp: new Date().toISOString()
         }
 
         //Early return if the event type is the same as the previous event
-        const previousEvent = await this.repository.getLatestEventForUser(userId)
-        if (previousEvent && previousEvent.eventType === input.eventType) {
+        const previousEvent = await this.redis.getLatestEvent(userId) ?? await this.dynamo.getLatestEventForUser(userId)
+        if (previousEvent && previousEvent.eventType === eventType) {
             return {
                 geofenceEvent: input
             }
         }
 
+        //Set latest event in redis
+        await this.redis.setLatestEvent(input)
+
         //Update the all time score if previously home, now away
-        const event = await this.repository.createEvent(input)
+        const event = await this.dynamo.createEvent(input.userId, input.eventType, input.timestamp)
         if (previousEvent && previousEvent.eventType == "HOME" && event?.eventType == "AWAY") {
             await this.updateAllTimeScore(userId)
         }
-        await this.repository.updateLastUpdatedTime(userId)
-
+        await this.updateLastUpdatedTime(userId)
         return {
             geofenceEvent: event
         }
     }
 
     async searchUsersWithCursor(currentUserId: string, cursor: string): Promise<SearchUsersPayloadGql> {
-        return await this.repository.searchQueryWithCursor(currentUserId, cursor)
+        const userListDynamo = await this.dynamo.searchQueryWithCursor(currentUserId, cursor)
+        return this.updateUserList(currentUserId, userListDynamo)
     }
 
     async searchUsers(currentUserId: string, searchQuery: string, limit: number): Promise<SearchUsersPayloadGql> {
-        const searchResult = await this.repository.searchUsers(searchQuery, currentUserId, limit)
-        const searchUserIds = searchResult.users.map(user => {
+        const searchResult = await this.dynamo.searchUsers(searchQuery, currentUserId, limit)
+        const searchUserIds = searchResult.userDynamos.map(user => {
             return user.userId
         })
         if (searchUserIds.length == 0) {
@@ -123,26 +142,25 @@ export class MainResolver {
                 nextCursor: undefined
             }
         }
-        const followedUserIds = await this.repository.getWhichUsersAreFollowed(currentUserId, searchUserIds)
-
+        const users = this.convertUserDynamosToUsers(searchResult.userDynamos)
+        const followedUserIds = await this.dynamo.getWhichUserIdsAreFollowed(currentUserId, searchUserIds)
         const updateUser = async (user: User): Promise<User> => {
             return mergeRight(user, {
                 isCurrentUserFollowing: followedUserIds.includes(user.userId),
-                allTimeScore: await this.repository.getAllTimeScore(user.userId),
-                rank: await this.repository.getAllTimeLeaderboardRank(user.userId)
+                allTimeScore: await this.getAllTimeScore(user.userId),
+                rank: await this.getAllTimeLeaderboardRank(user.userId)
             } as User)
         }
-
-        const users = await Promise.all(map(updateUser, searchResult.users))
+        const updatedUsers = await Promise.all(map(updateUser, users))
 
         return {
-            users: users,
+            users: updatedUsers,
             nextCursor: searchResult.nextCursor
         }
     }
 
     async updateUserInfo(userInfoParams: UserInfoParams): Promise<UpdateUserInfoPayloadGql> {
-        await this.repository.updateUserInfo(userInfoParams)
+        await this.dynamo.updateUserInfo(userInfoParams)
         const result: UpdateUserInfoPayloadGql = {
             id: userInfoParams.userId,
             username: userInfoParams.userId,
@@ -153,15 +171,15 @@ export class MainResolver {
 
     async getCurrentUser(userId: string): Promise<CurrentUserPayloadGql> {
         const startTime = this.getYesterdayISOString()
-        const {user, events} = await this.repository.getUserAndEventsFromStartTime(userId, startTime)
+        const {user, events} = await this.dynamo.getUserAndEventsFromStartTime(userId, startTime)
         if (!user) {
             throw new ApolloError("Current user could not be resolved")
         }
 
-        const latestEvent = await this.repository.getLatestEventForUser(userId)
+        const latestEvent = await this.dynamo.getLatestEventForUser(userId)
         const score24 = this.calculate24HourScore(events, latestEvent)
         //Save 24 hour score
-        await this.repository.save24HourScore(userId, score24)
+        await this.dynamo.save24HourScore(userId, score24)
 
         const {allTimeScore, rank} = await this.setupScoreForUser(latestEvent, userId)
 
@@ -178,7 +196,7 @@ export class MainResolver {
     }
 
     async getSocialLeaderboardRange(currentUserId: string, start: number, end: number): Promise<LeaderboardRangePayloadGql> {
-        const users = await this.repository.getSocialLeaderboard(currentUserId, start, end)
+        const users = await this.getSocialLeaderboard(currentUserId, start, end)
         return {
             users: users
         }
@@ -190,9 +208,26 @@ export class MainResolver {
                 exists: false
             }
         }
-        const exists = await this.repository.checkUsernameExists(username)
+        const exists = await this.dynamo.checkUsernameExists(username)
         return {
             exists: exists
+        }
+    }
+
+    async getLastUpdatedTime(userId: string): Promise<number | undefined> {
+        return await this.redis.getLastUpdatedTime(userId)
+    }
+
+    async updateLastUpdatedTime(userId: string): Promise<void> {
+        return await this.redis.updateLastUpdatedTime(userId)
+    }
+
+    private async updateUserList(currentUserId: string, userListDynamo: UserListDynamo): Promise<UsersPayloadGql> {
+        const users = this.convertUserDynamosToUsers(userListDynamo.userDynamos)
+        const updatedUsers = await this.updateUsers(currentUserId, users)
+        return {
+            users: updatedUsers,
+            nextCursor: userListDynamo.nextCursor
         }
     }
 
@@ -201,26 +236,26 @@ export class MainResolver {
         if (latestEvent?.eventType == "HOME") {
             allTimeScore = await this.updateAllTimeScore(userId)
         } else {
-            allTimeScore = await this.repository.getAllTimeScore(userId)
+            allTimeScore = await this.getAllTimeScore(userId)
         }
-        await this.repository.updateLastUpdatedTime(userId)
-        const rank = await this.repository.getAllTimeLeaderboardRank(userId)
+        await this.updateLastUpdatedTime(userId)
+        const rank = await this.getAllTimeLeaderboardRank(userId)
         return {allTimeScore, rank};
     }
 
     private async isCurrentUserFollowing(currentUserId: string, userId: string) {
-        const followedUserIds = await this.repository.getWhichUsersAreFollowed(currentUserId, [userId])
+        const followedUserIds = await this.dynamo.getWhichUserIdsAreFollowed(currentUserId, [userId])
         return followedUserIds.includes(userId)
     }
 
     private async updateAllTimeScore(userId: string): Promise<number> {
         const currentTimeMillis = Date.now()
-        const currentAllTimeScore = await this.repository.getAllTimeScore(userId) //This should include last updated time
-        const lastUpdatedTime = await this.repository.getLastUpdatedTime(userId) ?? currentTimeMillis
+        const currentAllTimeScore = await this.getAllTimeScore(userId) //This should include last updated time
+        const lastUpdatedTime = await this.getLastUpdatedTime(userId) ?? currentTimeMillis
         const extra = (currentTimeMillis - lastUpdatedTime) / 1000 / 10 //Every 10 seconds
 
         const finalAllTimeScore = currentAllTimeScore + extra
-        await this.repository.saveAllTimeScore(userId, finalAllTimeScore, currentTimeMillis)
+        await this.saveAllTimeScore(userId, finalAllTimeScore, currentTimeMillis)
         return finalAllTimeScore
     }
 
@@ -280,6 +315,24 @@ export class MainResolver {
         return finalScore
     }
 
+
+    private async getAllTimeScore(userId: string): Promise<number> {
+        return await this.redis.getAllTimeScore(userId)
+    }
+
+    private async saveAllTimeScore(userId: string, score: number, updatedTime: number, latestEvent?: Event): Promise<void> {
+        if (latestEvent) {
+            const updatedEvent = mergeRight(latestEvent, {timestamp: updatedTime.toString()})
+            await this.redis.setLatestEvent(updatedEvent)
+        }
+        await this.redis.saveScoreToLeaderboard(userId, score)
+        await this.redis.saveSocialScore(userId, userId, score)
+    }
+
+    private async getAllTimeLeaderboardRank(userId: string): Promise<number> {
+        return await this.redis.getLeaderboardRank(userId) + 1
+    }
+
     private getOneDayMillis(): number {
         return 24 * 60 * 60 * 1000
     }
@@ -290,5 +343,86 @@ export class MainResolver {
 
     private getYesterdayISOString(): string {
         return new Date(this.getYesterdayMillis()).toISOString()
+    }
+
+    private async getSocialLeaderboard(currentUserId: string, start: number, end: number): Promise<User[]> {
+        //Check for redis sorted set
+        const leaderboard = await this.redis.getSocialLeaderboardScoreRange(currentUserId, start, end)
+        return this.buildUsersForLeaderboard(currentUserId, leaderboard)
+    }
+
+    private async getLeaderboardScoreRange(currentUserId: string, min: number, max: number): Promise<User[]> {
+        //Get leaderboard scores from redis
+        const leaderboard = await this.redis.getLeaderboardScoreRange(min, max)
+        return this.buildUsersForLeaderboard(currentUserId, leaderboard)
+    }
+
+    private async buildUsersForLeaderboard(currentUserId: string, leaderboard: LeaderboardScoreRedis[]): Promise<User[]> {
+        //If no scores, early return
+        if (leaderboard.length == 0) return []
+
+        //Get users for scores
+        const leaderboardUserIds = map(item => item.userId, leaderboard)
+        const leaderboardUserDynamos = await this.dynamo.batchGetUsers(leaderboardUserIds)
+        const users = this.convertUserDynamosToUsers(leaderboardUserDynamos)
+        const updatedUsers = await this.updateUsers(currentUserId, users)
+        const sortByRank = sortBy(prop('rank'))
+        return sortByRank(updatedUsers)
+    }
+
+    private async updateSingleUser(currentUserId: string, user: User): Promise<User> {
+        return (await this.updateUsers(currentUserId, [user]))[0]
+    }
+
+    private async updateUsers(currentUserId: string, users: User[]): Promise<User[]> {
+        //Update current user following status
+        const userIdsToCheck: string[] = map((user: User) => user.userId, users)
+        const followedUserIds = await this.dynamo.getWhichUserIdsAreFollowed(currentUserId, userIdsToCheck)
+        const followedMap = this.convertUserIdsToMap(followedUserIds)
+
+        //Update scores and rank
+        const getLeaderboardRank = async (user: User): Promise<number> => {
+            const rank = await this.redis.getLeaderboardRank(user.userId)
+            if (rank > -1) {
+                return rank + 1
+            } else {
+                return rank
+            }
+        }
+
+        //Build update promises
+        const updatedUserPromises = map(async user => mergeRight(user, {
+            isCurrentUserFollowing: followedMap.get(user.userId) ?? false,
+            allTimeScore: await this.redis.getAllTimeScore(user.userId),
+            rank: await getLeaderboardRank(user)
+        } as User), users)
+
+        //Resolve promises
+        return await Promise.all(updatedUserPromises)
+    }
+
+    private convertUserIdsToMap(userIds: string[]) {
+        return new Map(userIds.map(userId => [userId, true]));
+    }
+
+    private mapUsersToUserIds(users: User[]) {
+        return users.map(item => {
+            return item.userId
+        })
+    }
+
+    private convertUserDynamosToUsers(userDynamos: UserDynamo[]): User[] {
+        return map((userDynamo: UserDynamo) => this.convertUserDynamoToUser(userDynamo), userDynamos)
+    }
+
+    private convertUserDynamoToUser(userDynamo: UserDynamo): User {
+        return {
+            userId: userDynamo.userId,
+            username: userDynamo.username,
+            followerCount: userDynamo.followerCount,
+            followingCount: userDynamo.followingCount,
+            allTimeScore: userDynamo.allTimeScore,
+            avatar: userDynamo.avatar
+        }
     }
 }
