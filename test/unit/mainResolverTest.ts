@@ -97,7 +97,7 @@ describe('Main Resolver Integration tests', function () {
             followerCount: 0,
             followingCount: 0,
             allTimeScore: 0,
-            rank: undefined,
+            rank: 0,
             score: undefined
         } as User)
         assert(searchResults1.length > 0)
@@ -111,7 +111,7 @@ describe('Main Resolver Integration tests', function () {
             followerCount: 1,
             followingCount: 0,
             allTimeScore: 0,
-            rank: undefined,
+            rank: 0,
             score: undefined
         } as User)
         const searchResults3 = (await resolver.searchUsers(user.userId, "someone" + userSuffix, 50)).users

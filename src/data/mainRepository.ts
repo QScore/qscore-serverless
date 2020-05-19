@@ -3,7 +3,7 @@ import {Event, User, UserListResult} from './model/types'
 import {EventDynamo, FollowDynamo, UserDynamo} from "./model/dynamoTypes";
 import {LeaderboardScoreRedis, RedisCache} from './redisCache';
 import {decrypt, encrypt} from "../util/encryption/encryptor";
-import {map, mergeRight} from "ramda"
+import {map, mergeRight, prop, sortBy} from "ramda"
 
 const mainTable = process.env.MAIN_TABLE as string
 
@@ -521,12 +521,23 @@ export class MainRepository {
         const userIdsToCheck: string[] = this.mapUsersToUserIds(users)
         const followedUserIds = await this.getWhichUsersAreFollowed(currentUserId, userIdsToCheck)
         const followedMap = this.convertUserIdsToMap(followedUserIds)
-        const updated = map(async user => mergeRight(user, {
+        const getLeaderboardRank = async (user: User) => {
+            const rank = await this.redisCache.getLeaderboardRank(user.userId)
+            if (rank > -1) {
+                return rank + 1
+            } else {
+                return rank
+            }
+        }
+        const updatedPromises = map(async user => mergeRight(user, {
             isCurrentUserFollowing: followedMap.get(user.userId) ?? false,
             allTimeScore: await this.redisCache.getAllTimeScore(user.userId),
-            rank: await this.redisCache.getLeaderboardRank(user.userId)
+            rank: await getLeaderboardRank(user)
         } as User), users)
-        return Promise.all(updated)
+
+        const updatedUsers = await Promise.all(updatedPromises)
+        const sortByRank = sortBy(prop('rank'))
+        return sortByRank(updatedUsers)
     }
 
     private async updateAllUserInfoSingleUser(currentUserId: string, user: User): Promise<User> {
