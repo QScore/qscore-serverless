@@ -1,3 +1,5 @@
+import {UserDynamo} from "./dynamoTypes";
+
 export type EventType = "HOME" | "AWAY"
 
 export interface Event {
@@ -13,19 +15,13 @@ export interface User {
     readonly username: string
     readonly allTimeScore?: number
     readonly score?: number
-    readonly avatar: (string | undefined)
+    readonly avatar?: string
     readonly isCurrentUserFollowing?: boolean
     readonly rank?: number
     readonly geofenceStatus?: EventType
-}
-
-export interface UserListResult {
-    readonly users: User[]
-    readonly nextCursor: (string | undefined)
 }
 
 export interface Follow {
     readonly userId: string
     readonly followingUserId: string
 }
-

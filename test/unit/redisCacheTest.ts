@@ -1,12 +1,12 @@
-import { LatestEventRedis } from '../../src/data/redisCache';
-import { Event } from '../../src/data/model/types';
+import {Event} from '../../src/data/model/types';
 
 import faker from 'faker';
-import { assert } from 'chai';
-import { v4 as uuid } from 'uuid';
-import { testRedisCache, testRedis } from '../../src/data/testInjector';
-const redisClient = testRedis
-const redisCache = testRedisCache
+import {assert} from 'chai';
+import {v4 as uuid} from 'uuid';
+import {testInjector} from "../../src/data/testInjector";
+
+const redisClient = testInjector.testRedis
+const redisCache = testInjector.testRedisCache
 faker.seed(123)
 
 describe("Redis cache tests", () => {
@@ -23,7 +23,7 @@ describe("Redis cache tests", () => {
 
         await redisCache.setLatestEvent(event)
         const latest = await redisCache.getLatestEvent(event.userId)
-        const expected: LatestEventRedis = {
+        const expected: Event = {
             userId: event.userId,
             eventType: event.eventType,
             timestamp: event.timestamp,
@@ -33,7 +33,7 @@ describe("Redis cache tests", () => {
 
     it('Should return null for nonexistent event', async () => {
         const result = await redisCache.getLatestEvent(uuid())
-        assert.isNull(result)
+        assert.isUndefined(result)
     })
 
     it('Should get leaderboard rank', async () => {
@@ -56,7 +56,7 @@ describe("Redis cache tests", () => {
 
     it('Should get current user with all time score', async () => {
         const result = await redisCache.getLatestEvent(uuid())
-        assert.isNull(result)
+        assert.isUndefined(result)
     })
 
 })

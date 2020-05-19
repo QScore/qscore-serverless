@@ -1,4 +1,4 @@
-import {EventType} from "./types"
+import {Event, EventType} from "./types"
 
 export type DynamoType = "Event" | "User" | "Follow" | "Search"
 
@@ -16,7 +16,12 @@ export interface UserDynamo {
     readonly avatar?: string
 }
 
-export interface EventDynamo {
+export interface UserListDynamo {
+    readonly userDynamos: UserDynamo[]
+    readonly nextCursor: (string | undefined)
+}
+
+export interface EventDynamo extends Event {
     readonly PK: string
     readonly SK: string
     readonly itemType: DynamoType
