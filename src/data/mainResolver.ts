@@ -13,7 +13,7 @@ import {
     UsersPayloadGql
 } from '../graphql/graphqlTypes';
 import {DynamoRepo, UserInfoParams} from "./dynamoRepo";
-import {map, mergeRight, prop, sortBy} from "ramda";
+import {filter, map, mergeRight, prop, sortBy} from "ramda";
 import {LeaderboardScoreRedis, RedisCache} from "./redisCache";
 import {UserDynamo, UserListDynamo} from "./model/dynamoTypes";
 
@@ -348,7 +348,9 @@ export class MainResolver {
     private async getSocialLeaderboard(currentUserId: string, start: number, end: number): Promise<User[]> {
         //Check for redis sorted set
         const leaderboard = await this.redis.getSocialLeaderboardScoreRange(currentUserId, start, end)
-        return this.buildUsersForLeaderboard(currentUserId, leaderboard)
+        const users = await this.buildUsersForLeaderboard(currentUserId, leaderboard)
+        const isRankValid = (user: User): boolean => user.rank != undefined && user.rank > 0
+        return filter(isRankValid, users)
     }
 
     private async getLeaderboardScoreRange(currentUserId: string, min: number, max: number): Promise<User[]> {
