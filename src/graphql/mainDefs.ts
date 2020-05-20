@@ -11,7 +11,8 @@ import {
     LeaderboardRangePayloadGql,
     SearchUsersPayloadGql,
     UnfollowUserPayloadGql,
-    UpdateUserInfoPayloadGql
+    UpdateUserInfoPayloadGql,
+    UsersPayloadGql
 } from './graphqlTypes';
 import {MainResolver} from '../data/mainResolver';
 
@@ -243,25 +244,25 @@ export function buildResolver(resolver: MainResolver): any {
                 return await resolver.getUser(currentUserId, userId)
             },
 
-            getFollowedUsers: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
+            getFollowedUsers: async (parent: any, args: any, context: any): Promise<UsersPayloadGql> => {
                 const currentUserId = getUserIdFromContext(context)
                 const userId = args.input.userId
                 return await resolver.getFollowedUsers(currentUserId, userId)
             },
 
-            getFollowedUsersWithCursor: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
+            getFollowedUsersWithCursor: async (parent: any, args: any, context: any): Promise<UsersPayloadGql> => {
                 const currentUserId = getUserIdFromContext(context)
                 const cursor = args.input.cursor
                 return await resolver.getFollowedUsersWithCursor(currentUserId, cursor)
             },
 
-            getFollowers: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
+            getFollowers: async (parent: any, args: any, context: any): Promise<UsersPayloadGql> => {
                 const currentUserId = getUserIdFromContext(context)
                 const userId = args.input.userId
                 return await resolver.getFollowers(currentUserId, userId)
             },
 
-            getFollowersWithCursor: async (parent: any, args: any, context: any): Promise<FollowingUsersPayloadGql> => {
+            getFollowersWithCursor: async (parent: any, args: any, context: any): Promise<UsersPayloadGql> => {
                 const currentUserId = getUserIdFromContext(context)
                 const cursor = args.input.cursor
                 return await resolver.getFollowersWithCursor(currentUserId, cursor)

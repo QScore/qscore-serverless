@@ -1,5 +1,4 @@
 import {Redis as RedisInterface} from "ioredis";
-import {Event, EventType} from './model/types';
 
 const leaderboardAllTimeKey = "leaderboardAllTime"
 const lastUpdatedPartialKey = "LASTUPDATED"
@@ -45,28 +44,8 @@ export class RedisCache {
         return this.convertToLeaderboardScoreRedis(result)
     }
 
-    async setLatestEvent(event: Event): Promise<string> {
-        const key = this.getLatestEventKey(event.userId)
-        const timestampMillis = new Date(event.timestamp).getTime()
-        return this.redis.set(key, `${event.eventType}:${timestampMillis}:-1`)
-    }
-
-    async getLatestEvent(userId: string): Promise<Event | undefined> {
-        const key = this.getLatestEventKey(userId)
-        const result = await this.redis.get(key)
-        if (!result) {
-            return undefined
-        }
-        const [eventType, timestamp] = result.split(":")
-        return {
-            userId: userId,
-            eventType: eventType as EventType,
-            timestamp: new Date(parseInt(timestamp)).toISOString(),
-        }
-    }
-
-    async updateLastUpdatedTime(userId: string) {
-        await this.redis.set(this.getLastUpdatedKey(userId), Date.now().toString())
+    async saveLastUpdatedTime(userId: string, updatedTime: number) {
+        await this.redis.set(this.getLastUpdatedKey(userId), updatedTime.toString())
     }
 
     async removeScore(userId: string) {

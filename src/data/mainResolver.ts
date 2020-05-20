@@ -12,10 +12,10 @@ import {
     UpdateUserInfoPayloadGql,
     UsersPayloadGql
 } from '../graphql/graphqlTypes';
-import {DynamoRepo, UserInfoParams} from "./dynamoRepo";
 import {filter, map, mergeRight, prop, sortBy} from "ramda";
 import {LeaderboardScoreRedis, RedisCache} from "./redisCache";
 import {UserDynamo, UserListDynamo} from "./model/dynamoTypes";
+import {DynamoRepo, UserInfoParams} from "./dynamoRepo";
 
 export class MainResolver {
     constructor(private readonly dynamo: DynamoRepo, private readonly redis: RedisCache) {
@@ -105,22 +105,19 @@ export class MainResolver {
         }
 
         //Early return if the event type is the same as the previous event
-        const previousEvent = await this.redis.getLatestEvent(userId) ?? await this.dynamo.getLatestEventForUser(userId)
+        const previousEvent = await this.dynamo.getLatestEventForUser(userId)
         if (previousEvent && previousEvent.eventType === eventType) {
             return {
                 geofenceEvent: input
             }
         }
 
-        //Set latest event in redis
-        await this.redis.setLatestEvent(input)
-
-        //Update the all time score if previously home, now away
         const event = await this.dynamo.createEvent(input.userId, input.eventType, input.timestamp)
-        if (previousEvent && previousEvent.eventType == "HOME" && event?.eventType == "AWAY") {
+        if (previousEvent && previousEvent.eventType == "HOME") {
             await this.updateAllTimeScore(userId)
+        } else {
+            await this.redis.saveLastUpdatedTime(userId, Date.now())
         }
-        await this.updateLastUpdatedTime(userId)
         return {
             geofenceEvent: event
         }
@@ -178,10 +175,15 @@ export class MainResolver {
 
         const latestEvent = await this.dynamo.getLatestEventForUser(userId)
         const score24 = this.calculate24HourScore(events, latestEvent)
-        //Save 24 hour score
-        await this.dynamo.save24HourScore(userId, score24)
+        await this.dynamo.save24HourScore(userId, score24) //This is unnecessary
 
-        const {allTimeScore, rank} = await this.setupScoreForUser(latestEvent, userId)
+        let allTimeScore = 0
+        if (latestEvent?.eventType == "HOME") {
+            allTimeScore = await this.updateAllTimeScore(userId)
+        } else {
+            allTimeScore = await this.getAllTimeScore(userId)
+        }
+        const rank = await this.getAllTimeLeaderboardRank(userId)
 
         const result: User = mergeRight(user, {
             allTimeScore: allTimeScore,
@@ -218,10 +220,6 @@ export class MainResolver {
         return await this.redis.getLastUpdatedTime(userId)
     }
 
-    async updateLastUpdatedTime(userId: string): Promise<void> {
-        return await this.redis.updateLastUpdatedTime(userId)
-    }
-
     private async updateUserList(currentUserId: string, userListDynamo: UserListDynamo): Promise<UsersPayloadGql> {
         const users = this.convertUserDynamosToUsers(userListDynamo.userDynamos)
         const updatedUsers = await this.updateUsers(currentUserId, users)
@@ -229,18 +227,6 @@ export class MainResolver {
             users: updatedUsers,
             nextCursor: userListDynamo.nextCursor
         }
-    }
-
-    private async setupScoreForUser(latestEvent: Event | undefined, userId: string) {
-        let allTimeScore = 0
-        if (latestEvent?.eventType == "HOME") {
-            allTimeScore = await this.updateAllTimeScore(userId)
-        } else {
-            allTimeScore = await this.getAllTimeScore(userId)
-        }
-        await this.updateLastUpdatedTime(userId)
-        const rank = await this.getAllTimeLeaderboardRank(userId)
-        return {allTimeScore, rank};
     }
 
     private async isCurrentUserFollowing(currentUserId: string, userId: string) {
@@ -255,7 +241,9 @@ export class MainResolver {
         const extra = (currentTimeMillis - lastUpdatedTime) / 1000 / 10 //Every 10 seconds
 
         const finalAllTimeScore = currentAllTimeScore + extra
-        await this.saveAllTimeScore(userId, finalAllTimeScore, currentTimeMillis)
+        await this.redis.saveScoreToLeaderboard(userId, finalAllTimeScore)
+        await this.redis.saveSocialScore(userId, userId, finalAllTimeScore)
+        await this.redis.saveLastUpdatedTime(userId, currentTimeMillis)
         return finalAllTimeScore
     }
 
@@ -318,15 +306,6 @@ export class MainResolver {
 
     private async getAllTimeScore(userId: string): Promise<number> {
         return await this.redis.getAllTimeScore(userId)
-    }
-
-    private async saveAllTimeScore(userId: string, score: number, updatedTime: number, latestEvent?: Event): Promise<void> {
-        if (latestEvent) {
-            const updatedEvent = mergeRight(latestEvent, {timestamp: updatedTime.toString()})
-            await this.redis.setLatestEvent(updatedEvent)
-        }
-        await this.redis.saveScoreToLeaderboard(userId, score)
-        await this.redis.saveSocialScore(userId, userId, score)
     }
 
     private async getAllTimeLeaderboardRank(userId: string): Promise<number> {

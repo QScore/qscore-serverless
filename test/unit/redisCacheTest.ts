@@ -1,5 +1,3 @@
-import {Event} from '../../src/data/model/types';
-
 import faker from 'faker';
 import {assert} from 'chai';
 import {v4 as uuid} from 'uuid';
@@ -12,28 +10,6 @@ faker.seed(123)
 describe("Redis cache tests", () => {
     beforeEach('flush cache', async () => {
         await redisClient.flushall()
-    })
-
-    it('Should save and get latest events', async () => {
-        const event: Event = {
-            userId: faker.random.uuid(),
-            eventType: "HOME",
-            timestamp: new Date(100).toISOString()
-        }
-
-        await redisCache.setLatestEvent(event)
-        const latest = await redisCache.getLatestEvent(event.userId)
-        const expected: Event = {
-            userId: event.userId,
-            eventType: event.eventType,
-            timestamp: event.timestamp,
-        }
-        assert.deepStrictEqual(latest, expected)
-    })
-
-    it('Should return null for nonexistent event', async () => {
-        const result = await redisCache.getLatestEvent(uuid())
-        assert.isUndefined(result)
     })
 
     it('Should get leaderboard rank', async () => {
@@ -53,10 +29,4 @@ describe("Redis cache tests", () => {
         assert.equal(await redisCache.getLeaderboardRank(thirdUserId), 1)
         assert.equal(await redisCache.getLeaderboardRank(fourthUserId), 2)
     })
-
-    it('Should get current user with all time score', async () => {
-        const result = await redisCache.getLatestEvent(uuid())
-        assert.isUndefined(result)
-    })
-
 })
