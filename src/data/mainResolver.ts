@@ -91,7 +91,7 @@ export class MainResolver {
         await this.dynamo.followUser(currentUserId, userIdToFollow)
         //Save social score for user so they show up in the social leaderboards
         const score = await this.redis.getAllTimeScore(userIdToFollow)
-        await this.redis.saveSocialScore(currentUserId, userIdToFollow, score)
+        await this.redis.saveSocialAllTimeScore(currentUserId, userIdToFollow, score)
         return {
             userId: userIdToFollow
         }
@@ -157,6 +157,12 @@ export class MainResolver {
     }
 
     async updateUserInfo(userInfoParams: UserInfoParams): Promise<UpdateUserInfoPayloadGql> {
+        if (userInfoParams.username) {
+            const usernameLength = userInfoParams.username?.length ?? 0
+            if (usernameLength < 3) {
+                throw new ApolloError("Username length must be at least 3 characters")
+            }
+        }
         await this.dynamo.updateUserInfo(userInfoParams)
         const result: UpdateUserInfoPayloadGql = {
             id: userInfoParams.userId,
@@ -222,7 +228,7 @@ export class MainResolver {
 
     private async updateUserList(currentUserId: string, userListDynamo: UserListDynamo): Promise<UsersPayloadGql> {
         const users = this.convertUserDynamosToUsers(userListDynamo.userDynamos)
-        const updatedUsers = await this.updateUsers(currentUserId, users)
+        const updatedUsers = await this.updateUsers(currentUserId, false, users)
         return {
             users: updatedUsers,
             nextCursor: userListDynamo.nextCursor
@@ -234,16 +240,15 @@ export class MainResolver {
         return followedUserIds.includes(userId)
     }
 
-    private async updateAllTimeScore(userId: string): Promise<number> {
+    private async updateAllTimeScore(currentUserId: string): Promise<number> {
         const currentTimeMillis = Date.now()
-        const currentAllTimeScore = await this.getAllTimeScore(userId) //This should include last updated time
-        const lastUpdatedTime = await this.getLastUpdatedTime(userId) ?? currentTimeMillis
+        const currentAllTimeScore = await this.getAllTimeScore(currentUserId) //This should include last updated time
+        const lastUpdatedTime = await this.getLastUpdatedTime(currentUserId) ?? currentTimeMillis
         const extra = (currentTimeMillis - lastUpdatedTime) / 1000 / 10 //Every 10 seconds
-
         const finalAllTimeScore = currentAllTimeScore + extra
-        await this.redis.saveScoreToLeaderboard(userId, finalAllTimeScore)
-        await this.redis.saveSocialScore(userId, userId, finalAllTimeScore)
-        await this.redis.saveLastUpdatedTime(userId, currentTimeMillis)
+        await this.redis.saveGlobalAllTimeScore(currentUserId, finalAllTimeScore)
+        await this.redis.saveSocialAllTimeScore(currentUserId, currentUserId, finalAllTimeScore)
+        await this.redis.saveLastUpdatedTime(currentUserId, currentTimeMillis)
         return finalAllTimeScore
     }
 
@@ -309,7 +314,7 @@ export class MainResolver {
     }
 
     private async getAllTimeLeaderboardRank(userId: string): Promise<number> {
-        return await this.redis.getLeaderboardRank(userId) + 1
+        return await this.redis.getGlobalRank(userId) + 1
     }
 
     private getOneDayMillis(): number {
@@ -326,19 +331,19 @@ export class MainResolver {
 
     private async getSocialLeaderboard(currentUserId: string, start: number, end: number): Promise<User[]> {
         //Check for redis sorted set
-        const leaderboard = await this.redis.getSocialLeaderboardScoreRange(currentUserId, start, end)
-        const users = await this.buildUsersForLeaderboard(currentUserId, leaderboard)
+        const leaderboard = await this.redis.getSocialLeaderboardRange(currentUserId, start, end)
+        const users = await this.buildUsersForLeaderboard(currentUserId, true, leaderboard)
         const isRankValid = (user: User): boolean => user.rank != undefined && user.rank > 0
         return filter(isRankValid, users)
     }
 
     private async getLeaderboardScoreRange(currentUserId: string, min: number, max: number): Promise<User[]> {
         //Get leaderboard scores from redis
-        const leaderboard = await this.redis.getLeaderboardScoreRange(min, max)
-        return this.buildUsersForLeaderboard(currentUserId, leaderboard)
+        const leaderboard = await this.redis.getGlobalLeaderboardRange(min, max)
+        return this.buildUsersForLeaderboard(currentUserId, false, leaderboard)
     }
 
-    private async buildUsersForLeaderboard(currentUserId: string, leaderboard: LeaderboardScoreRedis[]): Promise<User[]> {
+    private async buildUsersForLeaderboard(currentUserId: string, isSocialRank: boolean, leaderboard: LeaderboardScoreRedis[]): Promise<User[]> {
         //If no scores, early return
         if (leaderboard.length == 0) return []
 
@@ -346,16 +351,16 @@ export class MainResolver {
         const leaderboardUserIds = map(item => item.userId, leaderboard)
         const leaderboardUserDynamos = await this.dynamo.batchGetUsers(leaderboardUserIds)
         const users = this.convertUserDynamosToUsers(leaderboardUserDynamos)
-        const updatedUsers = await this.updateUsers(currentUserId, users)
+        const updatedUsers = await this.updateUsers(currentUserId, isSocialRank, users)
         const sortByRank = sortBy(prop('rank'))
         return sortByRank(updatedUsers)
     }
 
     private async updateSingleUser(currentUserId: string, user: User): Promise<User> {
-        return (await this.updateUsers(currentUserId, [user]))[0]
+        return (await this.updateUsers(currentUserId, false, [user]))[0]
     }
 
-    private async updateUsers(currentUserId: string, users: User[]): Promise<User[]> {
+    private async updateUsers(currentUserId: string, isSocialRank: boolean, users: User[]): Promise<User[]> {
         //Update current user following status
         const userIdsToCheck: string[] = map((user: User) => user.userId, users)
         const followedUserIds = await this.dynamo.getWhichUserIdsAreFollowed(currentUserId, userIdsToCheck)
@@ -363,7 +368,12 @@ export class MainResolver {
 
         //Update scores and rank
         const getLeaderboardRank = async (user: User): Promise<number> => {
-            const rank = await this.redis.getLeaderboardRank(user.userId)
+            let rank = 0
+            if (isSocialRank) {
+                rank = await this.redis.getSocialRank(currentUserId, user.userId)
+            } else {
+                rank = await this.redis.getGlobalRank(user.userId)
+            }
             if (rank > -1) {
                 return rank + 1
             } else {

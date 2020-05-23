@@ -16,16 +16,6 @@ export class RedisCache {
         this.redis = redis
     }
 
-    async getAllTimeScore(userId: string): Promise<number> {
-        const result = await this.redis.zscore(leaderboardAllTimeKey, this.getLeaderboardKey(userId)) ?? "0"
-        return parseInt(result)
-    }
-
-    async getLeaderboardRank(userId: string): Promise<number> {
-        const rank = await this.redis.zrevrank(leaderboardAllTimeKey, this.getLeaderboardKey(userId)) ?? -1
-        return rank
-    }
-
     async getLastUpdatedTime(userId: string): Promise<number | undefined> {
         const lastUpdatedStr = await this.redis.get(this.getLastUpdatedKey(userId)) ?? undefined
         if (lastUpdatedStr) {
@@ -34,11 +24,21 @@ export class RedisCache {
         return undefined
     }
 
-    async saveScoreToLeaderboard(userId: string, score: number): Promise<void> {
+    async getGlobalRank(userId: string): Promise<number> {
+        const rank = await this.redis.zrevrank(leaderboardAllTimeKey, this.getLeaderboardKey(userId)) ?? -1
+        return rank
+    }
+
+    async getAllTimeScore(userId: string): Promise<number> {
+        const result = await this.redis.zscore(leaderboardAllTimeKey, this.getLeaderboardKey(userId)) ?? "0"
+        return parseFloat(result)
+    }
+
+    async saveGlobalAllTimeScore(userId: string, score: number): Promise<void> {
         await this.redis.zadd(leaderboardAllTimeKey, score.toString(), this.getLeaderboardKey(userId))
     }
 
-    async getLeaderboardScoreRange(min: number, max: number): Promise<LeaderboardScoreRedis[]> {
+    async getGlobalLeaderboardRange(min: number, max: number): Promise<LeaderboardScoreRedis[]> {
         //Get scores from redis
         const result = await this.redis.zrevrange(leaderboardAllTimeKey, min, max, 'WITHSCORES')
         return this.convertToLeaderboardScoreRedis(result)
@@ -48,15 +48,17 @@ export class RedisCache {
         await this.redis.set(this.getLastUpdatedKey(userId), updatedTime.toString())
     }
 
-    async removeScore(userId: string) {
-        await this.redis.zrem(leaderboardAllTimeKey, this.getLeaderboardKey(userId))
+    async getSocialRank(currentUserId: string, userId: string): Promise<number> {
+        //Get scores from redis
+        const rank = await this.redis.zrevrank(this.getSocialScoresKey(currentUserId), this.getLeaderboardKey(userId)) ?? -1
+        return rank
     }
 
-    async saveSocialScore(currentUserId: string, followedUserId: string, score: number) {
+    async saveSocialAllTimeScore(currentUserId: string, followedUserId: string, score: number) {
         await this.redis.zadd(this.getSocialScoresKey(currentUserId), score.toString(), this.getLeaderboardKey(followedUserId))
     }
 
-    async getSocialLeaderboardScoreRange(userId: string, min: number, max: number): Promise<LeaderboardScoreRedis[]> {
+    async getSocialLeaderboardRange(userId: string, min: number, max: number): Promise<LeaderboardScoreRedis[]> {
         //Get scores from redis
         const result = await this.redis.zrevrange(this.getSocialScoresKey(userId), min, max, 'WITHSCORES')
         return this.convertToLeaderboardScoreRedis(result)
@@ -64,6 +66,10 @@ export class RedisCache {
 
     async setSocialLeaderboardExpiration(userId: string, seconds: number) {
         await this.redis.expire(this.getSocialScoresKey(userId), seconds)
+    }
+
+    async removeScore(userId: string) {
+        await this.redis.zrem(leaderboardAllTimeKey, this.getLeaderboardKey(userId))
     }
 
     private convertToLeaderboardScoreRedis(items: string[]): LeaderboardScoreRedis[] {

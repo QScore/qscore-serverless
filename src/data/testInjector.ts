@@ -36,7 +36,7 @@ class TestInjector {
     }
 
     @LazyGetter(true)
-    public get localRedis(): RedisMock {
+    public get localRedis(): Redis.Redis {
         return new Redis()
     }
 

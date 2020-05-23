@@ -1,9 +1,9 @@
-import {DynamoRepo} from "./dynamoRepo";
 import * as AWS from "aws-sdk"
 import {RedisCache} from './redisCache';
 import {MainResolver} from "./mainResolver";
 import Redis from 'ioredis';
 import {LazyGetter} from "lazy-get-decorator";
+import {DynamoRepo} from "./dynamoRepo";
 
 
 const redisUrl = process.env.REDIS_HOST
@@ -28,13 +28,13 @@ class Injector {
     }
 
     @LazyGetter(true)
-    public get mainRepository(): DynamoRepo {
+    public get dynamoRepo(): DynamoRepo {
         return new DynamoRepo(this.documentClient)
     }
 
     @LazyGetter(true)
     public get mainResolver(): MainResolver {
-        return new MainResolver(this.mainRepository, this.redisCache)
+        return new MainResolver(this.dynamoRepo, this.redisCache)
     }
 }
 

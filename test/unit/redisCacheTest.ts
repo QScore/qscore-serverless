@@ -14,19 +14,19 @@ describe("Redis cache tests", () => {
 
     it('Should get leaderboard rank', async () => {
         //Test for nonexistent user
-        const result = await redisCache.getLeaderboardRank(uuid())
+        const result = await redisCache.getGlobalRank(uuid())
         assert.equal(result, -1)
 
         //Add some scores and test with real user
         const secondUserId = uuid()
         const thirdUserId = uuid()
         const fourthUserId = uuid()
-        await redisCache.saveScoreToLeaderboard(secondUserId, 500)
-        await redisCache.saveScoreToLeaderboard(thirdUserId, 300)
-        await redisCache.saveScoreToLeaderboard(fourthUserId, 200)
+        await redisCache.saveGlobalAllTimeScore(secondUserId, 500)
+        await redisCache.saveGlobalAllTimeScore(thirdUserId, 300)
+        await redisCache.saveGlobalAllTimeScore(fourthUserId, 200)
 
-        assert.equal(await redisCache.getLeaderboardRank(secondUserId), 0)
-        assert.equal(await redisCache.getLeaderboardRank(thirdUserId), 1)
-        assert.equal(await redisCache.getLeaderboardRank(fourthUserId), 2)
+        assert.equal(await redisCache.getGlobalRank(secondUserId), 0)
+        assert.equal(await redisCache.getGlobalRank(thirdUserId), 1)
+        assert.equal(await redisCache.getGlobalRank(fourthUserId), 2)
     })
 })

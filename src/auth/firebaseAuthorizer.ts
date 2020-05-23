@@ -12,7 +12,7 @@ const initializeSdk = function (): void {
     }
 }
 
-// Helper funtion for generating the response API Gateway requires to handle the token verification
+// Helper function for generating the response API Gateway requires to handle the token verification
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const generateIamPolicy = (effect: any, resource: any, data: any): any => {
     // Map values into context object passed into Lambda function, if data is present

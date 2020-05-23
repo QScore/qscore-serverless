@@ -186,10 +186,24 @@ export class DynamoRepo {
         await this.documentClient.transactWrite(params).promise()
     }
 
-    async getFollowedUsers(currentUserId: string, userId: string): Promise<UserListDynamo> {
+    //TODO: Do limit correctly
+    async getFollowedUsers(currentUserId: string, userId: string, limit = 30): Promise<UserListDynamo> {
         //Run the query
-        const queryInput = this.getFollowedUsersQuery(userId, 30)
-        return this.fetchUsers(queryInput, "followingUserId")
+        const queryParams: AWS.DynamoDB.DocumentClient.QueryInput = {
+            TableName: mainTable,
+            KeyConditionExpression: '#PK = :PK And begins_with(#SK, :SK)',
+            ExpressionAttributeNames: {
+                '#PK': "PK",
+                '#SK': "SK"
+            },
+            ExpressionAttributeValues: {
+                ':PK': `USER#${userId}`,
+                ':SK': `FOLLOWING#`
+            },
+            ScanIndexForward: false,
+            Limit: limit
+        }
+        return this.fetchUsers(queryParams, "followingUserId")
     }
 
     async getFollowers(currentUserId: string, userId: string): Promise<UserListDynamo> {
@@ -417,27 +431,6 @@ export class DynamoRepo {
             return false
         }
         return queryOutput.Items.length > 0
-    }
-
-    private getFollowedUsersQuery(userId: string, limit: number, startKey: AWS.DynamoDB.Key | undefined = undefined): AWS.DynamoDB.DocumentClient.QueryInput {
-        const queryParams: AWS.DynamoDB.DocumentClient.QueryInput = {
-            TableName: mainTable,
-            KeyConditionExpression: '#PK = :PK And begins_with(#SK, :SK)',
-            ExpressionAttributeNames: {
-                '#PK': "PK",
-                '#SK': "SK"
-            },
-            ExpressionAttributeValues: {
-                ':PK': `USER#${userId}`,
-                ':SK': `FOLLOWING#`
-            },
-            ScanIndexForward: false,
-            Limit: limit
-        }
-        if (startKey) {
-            queryParams["ExclusiveStartKey"] = startKey
-        }
-        return queryParams
     }
 
     private async batchGet(keys: PrimaryKey[]) {
