@@ -78,6 +78,7 @@ export class MainResolver {
         if (currentUserId === userIdToUnfollow) {
             throw new ApolloError("Cannot unfollow yourself", "400");
         }
+        await this.redis.removeSocialScore(currentUserId, userIdToUnfollow)
         await this.dynamo.unfollowUser(currentUserId, userIdToUnfollow)
         return {
             userId: userIdToUnfollow

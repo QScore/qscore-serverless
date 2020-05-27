@@ -58,6 +58,10 @@ export class RedisCache {
         await this.redis.zadd(this.getSocialScoresKey(currentUserId), score.toString(), this.getLeaderboardKey(followedUserId))
     }
 
+    async removeSocialScore(currentUserId: string, userIdToRemove: string) {
+        await this.redis.zrem(this.getSocialScoresKey(currentUserId), this.getLeaderboardKey(userIdToRemove))
+    }
+
     async getSocialLeaderboardRange(userId: string, min: number, max: number): Promise<LeaderboardScoreRedis[]> {
         //Get scores from redis
         const result = await this.redis.zrevrange(this.getSocialScoresKey(userId), min, max, 'WITHSCORES')
